@@ -14,10 +14,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "catalog:build": "tsx scripts/mergeCatalog.ts",
-    "seed:generate": "tsx scripts/generateSeed.ts"
+    "seed:generate": "tsx scripts/generateSeed.ts",
+    "import:supabase": "tsx scripts/importToSupabase.ts"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
+    "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",

@@ -9,10 +9,37 @@
 
 import type {
   DecisionRule,
+  DirectoryCategory,
   Program,
+  ProgramCategory,
   WaitlistEntry,
 } from '../../types';
-import type { DecisionRuleRow, ProgramRow, WaitlistRow } from './dbTypes';
+import {
+  DIRECTORY_CATEGORIES,
+  legacyToDirectoryCategory,
+} from '../../data/categoryMap';
+import type {
+  DecisionRuleRow,
+  ProgramRow,
+  ResourceRow,
+  WaitlistRow,
+} from './dbTypes';
+
+const DIRECTORY_TO_LEGACY: Record<DirectoryCategory, ProgramCategory> = {
+  rent_assistance: 'rental_assistance',
+  eviction_prevention: 'eviction_prevention',
+  emergency_shelter: 'emergency_shelter',
+  outreach: 'comprehensive_support',
+  rapid_rehousing: 'transitional_housing',
+  public_housing: 'long_term_housing_waitlist',
+  section8_waitlist: 'long_term_housing_waitlist',
+  legal_aid: 'legal_aid',
+  supportive_services: 'comprehensive_support',
+};
+
+function isDirectoryCategory(value: string): value is DirectoryCategory {
+  return (DIRECTORY_CATEGORIES as readonly string[]).includes(value);
+}
 
 export function programFromRow(row: ProgramRow): Program {
   return {
@@ -89,10 +116,52 @@ export function waitlistFromRow(row: WaitlistRow): WaitlistEntry {
     status: row.status,
     last_checked: row.last_checked ?? '',
     website: row.application_link ?? row.source_url ?? '',
-    notes: row.notes ?? undefined,
+    notes: row.public_notes ?? row.notes ?? undefined,
     housing_authority: row.housing_authority,
     program_name: row.program_name ?? undefined,
     application_link: row.application_link ?? undefined,
     source_url: row.source_url ?? undefined,
+  };
+}
+
+/**
+ * Translate a `resources` row (admin CMS shape) into the UI `Program`
+ * type so the existing Resources / Results pages keep working without
+ * changes. The `category` column on `resources` stores a directory
+ * taxonomy value; the legacy `Program.category` is back-derived for the
+ * deterministic recommendation engine.
+ *
+ * Public availability is intentionally collapsed to `unknown` /
+ * confidence `low` — the directory does not surface live status.
+ */
+export function programFromResourceRow(row: ResourceRow): Program {
+  const directory: DirectoryCategory = isDirectoryCategory(row.category)
+    ? row.category
+    : legacyToDirectoryCategory(row.category as ProgramCategory) ?? 'supportive_services';
+  const legacy: ProgramCategory = DIRECTORY_TO_LEGACY[directory];
+  return {
+    id: row.id,
+    program_name: row.name,
+    county: row.county,
+    category: legacy,
+    who_it_helps: row.who_it_helps,
+    application_method: row.application_method,
+    referral_required: row.referral_required,
+    phone: row.phone ?? '',
+    website: row.website ?? '',
+    status: 'unknown',
+    status_confidence: 'low',
+    priority_score: row.priority_score,
+    notes: row.public_notes ?? '',
+    last_verified: row.last_verified ?? '',
+    description: row.description ?? undefined,
+    eligibility_summary: row.who_qualifies ?? undefined,
+    city: row.city ?? undefined,
+    state: row.state ?? undefined,
+    address: row.address ?? undefined,
+    source_url: row.source_url ?? undefined,
+    source_type: row.source_type ?? undefined,
+    directory_category: directory,
+    raw_category: row.category,
   };
 }

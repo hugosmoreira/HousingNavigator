@@ -1,67 +1,49 @@
 /**
- * Supabase implementation of `DataService` — *scaffold only*.
+ * Supabase-backed implementation of `DataService`.
  *
- * Intentionally not wired yet:
- *   - `@supabase/supabase-js` is not a runtime dependency
- *   - no live URL or anon key is shipped in the repo
+ * Reads only `published = true` rows — RLS enforces this even if a bug
+ * here forgets the filter. `getDecisionRules` still returns the static
+ * JSON: rules are not edited from the admin CMS in this phase.
  *
- * To activate later:
- *   1. `npm install @supabase/supabase-js`
- *   2. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local`
- *   3. Uncomment the implementation below
- *   4. Switch the export in `./index.ts` from `staticDataService` to
- *      `supabaseDataService`
- *
- * Mappers in `./mappers.ts` are already wired so DB rows translate to
- * the UI-facing `Program` / `WaitlistEntry` types without UI changes.
+ * Activated by setting `VITE_USE_SUPABASE=true` along with
+ * `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. See
+ * `services/data/index.ts` for the env-gated switch.
  */
 
+import rulesData from '../../data/decisionRules.json';
+import { requireSupabase } from '../../lib/supabaseClient';
 import {
-  decisionRuleFromRow,
-  programFromRow,
+  programFromResourceRow,
   waitlistFromRow,
 } from './mappers';
-import type {
-  DecisionRuleRow,
-  ProgramRow,
-  WaitlistRow,
-} from './dbTypes';
+import type { ResourceRow, WaitlistRow } from './dbTypes';
 import type { DataService } from './types';
+import type { DecisionRule } from '../../types';
 
-// import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-//
-// const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-// const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-// const client: SupabaseClient | null =
-//   url && anonKey ? createClient(url, anonKey) : null;
+const RULES = rulesData as unknown as DecisionRule[];
 
 export const supabaseDataService: DataService = {
   async getPrograms() {
-    throw new Error('supabaseDataService is not configured yet');
-    // if (!client) throw new Error('Supabase client not initialised');
-    // const { data, error } = await client.from('programs').select('*');
-    // if (error) throw error;
-    // return (data as ProgramRow[]).map(programFromRow);
+    const client = requireSupabase();
+    const { data, error } = await client
+      .from('resources')
+      .select('*')
+      .eq('published', true);
+    if (error) throw error;
+    return ((data ?? []) as ResourceRow[]).map(programFromResourceRow);
   },
+
   async getDecisionRules() {
-    throw new Error('supabaseDataService is not configured yet');
-    // if (!client) throw new Error('Supabase client not initialised');
-    // const { data, error } = await client.from('decision_rules').select('*');
-    // if (error) throw error;
-    // return (data as DecisionRuleRow[]).map(decisionRuleFromRow);
+    return RULES;
   },
+
   async getWaitlists() {
-    throw new Error('supabaseDataService is not configured yet');
-    // if (!client) throw new Error('Supabase client not initialised');
-    // const { data, error } = await client.from('waitlists').select('*');
-    // if (error) throw error;
-    // return (data as WaitlistRow[]).map(waitlistFromRow);
+    const client = requireSupabase();
+    const { data, error } = await client
+      .from('waitlists')
+      .select('*')
+      .eq('published', true);
+    if (error) throw error;
+    return ((data ?? []) as WaitlistRow[]).map(waitlistFromRow);
   },
 };
-
-// Reference imports so the file type-checks even while the implementation
-// is commented out. Safe to remove once the live client is wired.
-void programFromRow;
-void decisionRuleFromRow;
-void waitlistFromRow;
-export type { ProgramRow, DecisionRuleRow, WaitlistRow };

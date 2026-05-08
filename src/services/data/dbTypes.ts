@@ -72,11 +72,47 @@ export interface WaitlistRow {
   housing_authority: string;
   program_name: string | null;
   county: County;
+  city: string | null;
+  state: string | null;
   status: WaitlistStatus;
   application_link: string | null;
   source_url: string | null;
   last_checked: string | null;
   notes: string | null;
+  public_notes: string | null;
+  internal_notes: string | null;
+  published: boolean;
+}
+
+/**
+ * `resources` is the canonical catalog table introduced by migration
+ * 0002. The legacy `programs` table from 0001 is kept around for the
+ * existing seed pipeline but is not read by the app.
+ */
+export interface ResourceRow {
+  id: string;
+  name: string;
+  category: string;
+  county: County;
+  city: string | null;
+  state: string | null;
+  description: string | null;
+  who_qualifies: string | null;
+  who_it_helps: HouseholdType[];
+  application_method: ApplicationMethod;
+  referral_required: boolean;
+  phone: string | null;
+  website: string | null;
+  address: string | null;
+  source_url: string | null;
+  source_type: string | null;
+  last_verified: string | null;
+  public_notes: string | null;
+  internal_notes: string | null;
+  priority_score: number;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ResourceSubmissionRow {
