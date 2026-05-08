@@ -1,0 +1,56 @@
+[
+  {
+    "id": "home-forward",
+    "agency": "Home Forward (Multnomah)",
+    "county": "Multnomah",
+    "status": "open",
+    "last_checked": "2026-04-18",
+    "website": "https://homeforward.org/find-a-home",
+    "notes": "Section 8 Housing Choice Voucher waitlist currently accepting applications for select properties."
+  },
+  {
+    "id": "vha",
+    "agency": "Vancouver Housing Authority (Clark)",
+    "county": "Clark",
+    "status": "closed",
+    "last_checked": "2026-04-18",
+    "website": "https://www.vhausa.com/apply-for-housing",
+    "notes": "General waitlist closed. Monitor site for reopen announcements."
+  },
+  {
+    "id": "clackamas-housing",
+    "agency": "Clackamas County Housing Authority",
+    "county": "Clackamas",
+    "status": "unknown",
+    "last_checked": "2026-03-24",
+    "website": "https://www.clackamas.us/housingauthority",
+    "notes": "Status last confirmed in March; call (503) 655-8267 to verify."
+  },
+  {
+    "id": "washington-housing",
+    "agency": "Washington County Dept. of Housing Services",
+    "county": "Washington",
+    "status": "closed",
+    "last_checked": "2026-04-18",
+    "website": "https://www.washingtoncountyor.gov/housing",
+    "notes": "Waitlist closed. Project-based waitlists open periodically — check site."
+  },
+  {
+    "id": "hacsa-multnomah",
+    "agency": "Home Forward Short Term Rent Assistance",
+    "county": "Multnomah",
+    "status": "open",
+    "last_checked": "2026-04-17",
+    "website": "https://homeforward.org/rent-assistance",
+    "notes": "Apply through community partner agencies. Funds limited."
+  },
+  {
+    "id": "council-for-homeless",
+    "agency": "Council for the Homeless Coordinated Entry",
+    "county": "Clark",
+    "status": "open",
+    "last_checked": "2026-04-18",
+    "website": "https://www.councilforthehomeless.org",
+    "notes": "Single front door for shelter and housing in Clark County."
+  }
+]

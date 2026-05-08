@@ -1,0 +1,75 @@
+[
+  {
+    "intake_state": "homeless",
+    "goal": "shelter",
+    "primary_action": "Call 211 (Multnomah) or the Council for the Homeless Housing Hotline at (360) 695-9677 (Clark) for same-day shelter placement.",
+    "priority_categories": ["emergency_shelter", "comprehensive_support"],
+    "secondary_categories": ["transitional_housing", "long_term_housing_waitlist"],
+    "caution_notes": [
+      "Shelter capacity changes daily. If the first option is full, call back or try another on the list.",
+      "Bring any ID you have, but lack of ID will not disqualify you from emergency shelter."
+    ],
+    "recommended_documents": [
+      "Photo ID (if available)",
+      "Social Security card (if available)",
+      "Medical/medication list",
+      "Contact info for any case worker"
+    ]
+  },
+  {
+    "intake_state": "eviction_notice",
+    "goal": "stay_housed",
+    "primary_action": "Contact a legal aid eviction defense line TODAY. In Multnomah call Oregon Law Center at (503) 295-2760; in Clark call Northwest Justice Project at (360) 693-6130.",
+    "priority_categories": ["legal_aid", "eviction_prevention", "rental_assistance"],
+    "secondary_categories": ["comprehensive_support", "emergency_shelter"],
+    "caution_notes": [
+      "Do NOT ignore the notice. Deadlines are short (often 72 hours to 10 days).",
+      "Do not move out voluntarily before talking to legal aid — you may have more rights than you think.",
+      "Keep every document and envelope you receive from your landlord."
+    ],
+    "recommended_documents": [
+      "The eviction notice (all pages and envelope)",
+      "Your lease or rental agreement",
+      "Proof of rent payments (receipts, bank statements)",
+      "Photo ID",
+      "Proof of income (last 30 days)"
+    ]
+  },
+  {
+    "intake_state": "at_risk",
+    "goal": "stay_housed",
+    "primary_action": "Apply for short-term rent assistance before you fall further behind. Start with 211 (Multnomah) or Council for the Homeless (Clark).",
+    "priority_categories": ["rental_assistance", "eviction_prevention"],
+    "secondary_categories": ["legal_aid", "comprehensive_support"],
+    "caution_notes": [
+      "Most rent assistance programs require you to apply BEFORE an eviction is filed.",
+      "Talk to your landlord in writing about a payment plan — put everything in email or text."
+    ],
+    "recommended_documents": [
+      "Current lease",
+      "Proof of income (last 30 days)",
+      "Past-due rent notice or ledger from landlord",
+      "Photo ID",
+      "Bills showing hardship (medical, utilities, etc.)"
+    ]
+  },
+  {
+    "intake_state": "at_risk",
+    "goal": "long_term_housing",
+    "primary_action": "Get on every open housing authority waitlist you qualify for. Check Home Forward (Multnomah) and Vancouver Housing Authority (Clark) today.",
+    "priority_categories": ["long_term_housing_waitlist", "transitional_housing"],
+    "secondary_categories": ["rental_assistance", "comprehensive_support"],
+    "caution_notes": [
+      "Waitlists can take months or years. Apply to multiple simultaneously.",
+      "Update your contact info with each authority regularly — missed letters are a common reason people get dropped.",
+      "Some waitlists are only open for short windows — check status frequently."
+    ],
+    "recommended_documents": [
+      "Photo ID for every adult in the household",
+      "Social Security cards or numbers for all household members",
+      "Birth certificates for children",
+      "Proof of income for all adults",
+      "Current address and 2 years of address history"
+    ]
+  }
+]

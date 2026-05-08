@@ -1,0 +1,34 @@
+import { useEffect, useState } from 'react';
+import { dataService } from '../services/data';
+import type { WaitlistEntry } from '../types';
+
+interface WaitlistsState {
+  waitlists: WaitlistEntry[];
+  loading: boolean;
+  error: Error | null;
+}
+
+export function useWaitlists(): WaitlistsState {
+  const [state, setState] = useState<WaitlistsState>({
+    waitlists: [],
+    loading: true,
+    error: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    dataService
+      .getWaitlists()
+      .then((waitlists) => {
+        if (!cancelled) setState({ waitlists, loading: false, error: null });
+      })
+      .catch((error: Error) => {
+        if (!cancelled) setState({ waitlists: [], loading: false, error });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return state;
+}
