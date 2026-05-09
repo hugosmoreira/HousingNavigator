@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Database, Plus, Search } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
 import type { WaitlistRow } from '../../services/data/dbTypes';
+import {
+  BUNDLED_WAITLIST_COUNT,
+  seedWaitlistsFromCatalog,
+} from '../seedFromCatalog';
 
 const STATUS_PRESENTATION: Record<
   string,
@@ -30,18 +34,24 @@ export default function AdminWaitlistsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [seeding, setSeeding] = useState(false);
+
+  async function loadRows() {
+    setError(null);
+    const client = requireSupabase();
+    const { data, error: err } = await client
+      .from('waitlists')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (err) throw err;
+    setRows((data ?? []) as WaitlistRow[]);
+  }
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const client = requireSupabase();
-        const { data, error: err } = await client
-          .from('waitlists')
-          .select('*')
-          .order('updated_at', { ascending: false });
-        if (err) throw err;
-        if (active) setRows((data ?? []) as WaitlistRow[]);
+        await loadRows();
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Failed to load');
       } finally {
@@ -52,6 +62,28 @@ export default function AdminWaitlistsList() {
       active = false;
     };
   }, []);
+
+  async function handleSeed() {
+    if (
+      !window.confirm(
+        `Insert ${BUNDLED_WAITLIST_COUNT} waitlists from the bundled JSON into Supabase? Re-runs upsert by id, so this is safe to repeat.`,
+      )
+    ) {
+      return;
+    }
+    setSeeding(true);
+    setError(null);
+    try {
+      const { inserted } = await seedWaitlistsFromCatalog();
+      await loadRows();
+      // eslint-disable-next-line no-console
+      console.log(`[admin] seeded ${inserted} waitlists from bundled JSON`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Seed failed');
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -120,7 +152,38 @@ export default function AdminWaitlistsList() {
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-on-surface-variant">
-                  No waitlists yet.
+                  {rows.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="font-medium text-on-surface">
+                        Supabase <code>waitlists</code> table is empty.
+                      </div>
+                      <div className="text-xs max-w-md">
+                        Import the {BUNDLED_WAITLIST_COUNT} waitlists currently
+                        powering the public tracker, or add them one at a time.
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={handleSeed}
+                          disabled={seeding}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-primary text-on-primary font-semibold text-sm px-4 py-2 hover:bg-primary-dim disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <Database className="w-4 h-4" />
+                          {seeding
+                            ? 'Seeding…'
+                            : `Seed ${BUNDLED_WAITLIST_COUNT} from bundled JSON`}
+                        </button>
+                        <Link
+                          to="/admin/waitlists/new"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-surface-container-highest text-on-surface font-semibold text-sm px-4 py-2 hover:bg-surface-container-low"
+                        >
+                          <Plus className="w-4 h-4" /> Add manually
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    'No waitlists match that filter.'
+                  )}
                 </td>
               </tr>
             ) : (

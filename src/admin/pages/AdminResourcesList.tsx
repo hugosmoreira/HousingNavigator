@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Database, Plus, Search } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
 import { DIRECTORY_CATEGORY_LABELS } from '../../data/categoryMap';
 import type { ResourceRow } from '../../services/data/dbTypes';
 import type { DirectoryCategory } from '../../types';
+import {
+  BUNDLED_RESOURCE_COUNT,
+  seedResourcesFromCatalog,
+} from '../seedFromCatalog';
 
 function categoryLabel(category: string): string {
   if (category in DIRECTORY_CATEGORY_LABELS) {
@@ -18,18 +22,24 @@ export default function AdminResourcesList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [seeding, setSeeding] = useState(false);
+
+  async function loadRows() {
+    setError(null);
+    const client = requireSupabase();
+    const { data, error: err } = await client
+      .from('resources')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (err) throw err;
+    setRows((data ?? []) as ResourceRow[]);
+  }
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const client = requireSupabase();
-        const { data, error: err } = await client
-          .from('resources')
-          .select('*')
-          .order('updated_at', { ascending: false });
-        if (err) throw err;
-        if (active) setRows((data ?? []) as ResourceRow[]);
+        await loadRows();
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Failed to load');
       } finally {
@@ -40,6 +50,28 @@ export default function AdminResourcesList() {
       active = false;
     };
   }, []);
+
+  async function handleSeed() {
+    if (
+      !window.confirm(
+        `Insert ${BUNDLED_RESOURCE_COUNT} rows from the bundled catalog into Supabase? You can edit or unpublish them after.`,
+      )
+    ) {
+      return;
+    }
+    setSeeding(true);
+    setError(null);
+    try {
+      const { inserted } = await seedResourcesFromCatalog();
+      await loadRows();
+      // eslint-disable-next-line no-console
+      console.log(`[admin] seeded ${inserted} resources from bundled catalog`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Seed failed');
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -108,7 +140,38 @@ export default function AdminResourcesList() {
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-on-surface-variant">
-                  No resources yet.
+                  {rows.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="font-medium text-on-surface">
+                        Supabase <code>resources</code> table is empty.
+                      </div>
+                      <div className="text-xs max-w-md">
+                        Import the {BUNDLED_RESOURCE_COUNT} resources currently
+                        powering the public directory, or add them one at a time.
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={handleSeed}
+                          disabled={seeding}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-primary text-on-primary font-semibold text-sm px-4 py-2 hover:bg-primary-dim disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <Database className="w-4 h-4" />
+                          {seeding
+                            ? 'Seeding…'
+                            : `Seed ${BUNDLED_RESOURCE_COUNT} from bundled catalog`}
+                        </button>
+                        <Link
+                          to="/admin/resources/new"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-surface-container-highest text-on-surface font-semibold text-sm px-4 py-2 hover:bg-surface-container-low"
+                        >
+                          <Plus className="w-4 h-4" /> Add manually
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    'No resources match that filter.'
+                  )}
                 </td>
               </tr>
             ) : (

@@ -7,6 +7,10 @@ import Mission from './pages/Mission';
 import Assessment from './pages/Assessment';
 import Results from './pages/Results';
 import Staff from './pages/Staff';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import Help from './pages/Help';
+import Accessibility from './pages/Accessibility';
 import { AdminAuthProvider } from './admin/AdminAuthContext';
 import AdminLayout from './admin/AdminLayout';
 import RequireAdmin from './admin/RequireAdmin';
@@ -89,6 +93,10 @@ export default function App() {
           <Route path="waitlist" element={<Waitlist />} />
           <Route path="mission" element={<Mission />} />
           <Route path="results" element={<Results />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="help" element={<Help />} />
+          <Route path="accessibility" element={<Accessibility />} />
         </Route>
       </Routes>
     </AdminAuthProvider>

@@ -63,10 +63,10 @@ export default function Layout() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
-            <a className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" href="#">Privacy Policy</a>
-            <a className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" href="#">Terms of Service</a>
-            <a className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" href="#">Help Center</a>
-            <a className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" href="#">Accessibility</a>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/privacy">Privacy Policy</Link>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/terms">Terms of Service</Link>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/help">Help Center</Link>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/accessibility">Accessibility</Link>
           </div>
         </div>
       </footer>
