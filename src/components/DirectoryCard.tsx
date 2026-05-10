@@ -1,8 +1,10 @@
-import { ArrowUpRight, MapPin, Phone, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowUpRight, Bookmark, BookmarkCheck, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import {
   DIRECTORY_CATEGORY_LABELS,
   legacyToDirectoryCategory,
 } from '../data/categoryMap';
+import { useUserData } from '../auth/UserDataContext';
 import type { ApplicationMethod, Program } from '../types';
 
 interface DirectoryCardProps {
@@ -48,6 +50,23 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
     ? `tel:${program.phone.replace(/[^0-9+]/g, '')}`
     : null;
 
+  const { isResourceSaved, toggleResource } = useUserData();
+  const saved = isResourceSaved(program.id);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savingPending, setSavingPending] = useState(false);
+
+  async function handleSave() {
+    setSaveError(null);
+    setSavingPending(true);
+    try {
+      await toggleResource(program.id);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Could not save this resource.');
+    } finally {
+      setSavingPending(false);
+    }
+  }
+
   return (
     <article className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container-highest hover:border-primary/40 hover:shadow-md transition-all flex flex-col">
       <header className="flex items-start justify-between gap-3 mb-4">
@@ -56,6 +75,25 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
             {categoryLabel}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={savingPending}
+          aria-pressed={saved}
+          aria-label={saved ? 'Remove from saved resources' : 'Save resource'}
+          title={saved ? 'Saved · click to remove' : 'Save for later'}
+          className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors disabled:opacity-50 ${
+            saved
+              ? 'text-primary bg-primary/10 hover:bg-primary/15'
+              : 'text-on-surface-variant hover:text-primary hover:bg-primary/5'
+          }`}
+        >
+          {saved ? (
+            <BookmarkCheck className="w-4 h-4" />
+          ) : (
+            <Bookmark className="w-4 h-4" />
+          )}
+        </button>
       </header>
 
       <h3 className="text-lg font-headline font-bold text-on-surface mb-2 tracking-tight">
@@ -116,6 +154,12 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
           </a>
         )}
       </footer>
+
+      {saveError && (
+        <div className="mt-3 text-xs text-error bg-error/5 border border-error/30 rounded-lg px-3 py-2">
+          {saveError}
+        </div>
+      )}
     </article>
   );
 }

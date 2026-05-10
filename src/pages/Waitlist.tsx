@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useWaitlists } from '../hooks/useWaitlists';
+import { useUserData } from '../auth/UserDataContext';
 import type { WaitlistStatus } from '../types';
 
 interface StatusPresentation {
@@ -30,10 +31,20 @@ function formatLastChecked(iso: string): string {
 
 export default function Waitlist() {
   const { waitlists, loading, error } = useWaitlists();
-  const [notifying, setNotifying] = useState<Record<string, boolean>>({});
+  const { isWaitlistFollowed, toggleWaitlistAlert } = useUserData();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
-  function toggleNotify(id: string) {
-    setNotifying((prev) => ({ ...prev, [id]: !prev[id] }));
+  async function handleToggleNotify(id: string) {
+    setToggleError(null);
+    setPendingId(id);
+    try {
+      await toggleWaitlistAlert(id);
+    } catch (err) {
+      setToggleError(err instanceof Error ? err.message : 'Could not update alert.');
+    } finally {
+      setPendingId(null);
+    }
   }
 
   return (
@@ -57,10 +68,17 @@ export default function Waitlist() {
           <p className="text-on-surface-variant text-sm mb-6">Loading waitlists…</p>
         )}
 
+        {toggleError && (
+          <div className="mb-6 rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
+            {toggleError}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {waitlists.map((wl) => {
             const presentation = STATUS_PRESENTATION[wl.status];
-            const isNotifying = notifying[wl.id] ?? false;
+            const isNotifying = isWaitlistFollowed(wl.id);
+            const isPending = pendingId === wl.id;
             return (
               <div
                 key={wl.id}
@@ -106,8 +124,10 @@ export default function Waitlist() {
                     <button
                       type="button"
                       aria-pressed={isNotifying}
-                      onClick={() => toggleNotify(wl.id)}
-                      className={`w-11 h-6 rounded-full relative transition-colors ${
+                      aria-label={isNotifying ? 'Stop notifications for this waitlist' : 'Notify me when this waitlist changes'}
+                      disabled={isPending}
+                      onClick={() => handleToggleNotify(wl.id)}
+                      className={`w-11 h-6 rounded-full relative transition-colors disabled:opacity-60 ${
                         isNotifying ? 'bg-primary' : 'bg-surface-container-highest'
                       }`}
                     >

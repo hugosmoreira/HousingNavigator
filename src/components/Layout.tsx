@@ -1,8 +1,20 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Home, LayoutDashboard, LogIn, LogOut } from 'lucide-react';
+import { usePublicAuth } from '../auth/PublicAuthContext';
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthed, signOut, configured: publicAuthConfigured } = usePublicAuth();
+
+  async function handleSignOut() {
+    try {
+      await signOut();
+    } catch {
+      // Local state already cleared inside signOut(); fall through.
+    }
+    navigate('/', { replace: true });
+  }
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -38,7 +50,33 @@ export default function Layout() {
               );
             })}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {publicAuthConfigured && (isAuthed ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sign out</span>
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign in</span>
+              </Link>
+            ))}
             <Link
               to="/resources"
               className="transition-colors px-5 py-2.5 rounded-full font-semibold text-sm shadow-sm hover:shadow bg-primary text-on-primary hover:bg-primary-dim"

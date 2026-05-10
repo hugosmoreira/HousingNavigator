@@ -11,7 +11,14 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Help from './pages/Help';
 import Accessibility from './pages/Accessibility';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
 import { AdminAuthProvider } from './admin/AdminAuthContext';
+import { PublicAuthProvider } from './auth/PublicAuthContext';
+import { AuthPromptProvider } from './auth/AuthPromptContext';
+import { UserDataProvider } from './auth/UserDataContext';
+import RequireAuth from './auth/RequireAuth';
 import AdminLayout from './admin/AdminLayout';
 import RequireAdmin from './admin/RequireAdmin';
 import AdminLogin from './admin/pages/AdminLogin';
@@ -25,7 +32,10 @@ import AdminWaitlistEdit from './admin/pages/AdminWaitlistEdit';
 export default function App() {
   return (
     <AdminAuthProvider>
-      <Routes>
+      <PublicAuthProvider>
+        <AuthPromptProvider>
+          <UserDataProvider>
+            <Routes>
         {/* Standalone Route for Assessment as it has a different layout */}
         <Route path="/assessment" element={<Assessment />} />
         <Route path="/staff" element={<Layout />}>
@@ -97,8 +107,21 @@ export default function App() {
           <Route path="terms" element={<Terms />} />
           <Route path="help" element={<Help />} />
           <Route path="accessibility" element={<Accessibility />} />
+          <Route path="login" element={<Login />} />
+          <Route path="signup" element={<Signup />} />
+          <Route
+            path="dashboard"
+            element={
+              <RequireAuth>
+                <Dashboard />
+              </RequireAuth>
+            }
+          />
         </Route>
-      </Routes>
+            </Routes>
+          </UserDataProvider>
+        </AuthPromptProvider>
+      </PublicAuthProvider>
     </AdminAuthProvider>
   );
 }
