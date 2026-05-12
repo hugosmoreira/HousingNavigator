@@ -160,6 +160,52 @@ export async function fetchWaitlistsByIds(ids: string[]): Promise<WaitlistRow[]>
   return (data ?? []) as WaitlistRow[];
 }
 
-// TODO(notifications): once Edge Function dispatch is live, expose
-// listNotificationEvents() and markNotificationRead() here so the
-// dashboard can show a small inbox.
+// ---------------------------------------------------------------------------
+// notification_events
+//
+// Read-side only. Inserts come from a future Supabase Edge Function using
+// the service-role key (see TODO at the bottom of this file). RLS already
+// limits SELECT/UPDATE to rows where `user_id = auth.uid()`, so these
+// helpers do not need to pass the user id explicitly.
+// ---------------------------------------------------------------------------
+
+export interface NotificationEventRow {
+  id: string;
+  event_type: string;
+  title: string;
+  body: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+export async function listNotificationEvents(): Promise<NotificationEventRow[]> {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from('notification_events')
+    .select('id, event_type, title, body, read, created_at')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as NotificationEventRow[];
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  const client = requireSupabase();
+  const { error } = await client
+    .from('notification_events')
+    .update({ read: true })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// TODO(notifications): wire actual email sending through a Supabase Edge
+// Function calling Resend. Pseudocode for the worker:
+//
+//   1. Trigger: cron / pg_notify on waitlist status change.
+//   2. For each affected waitlist, fan out to matching `waitlist_alerts`
+//      rows where `notify_on_open` / `notify_on_status_change` is true
+//      and the user's `profiles.email_notifications_enabled` is true.
+//   3. For each user, insert a `notification_events` row (service role)
+//      AND call Resend to deliver the email.
+//   4. On Resend success, set a future `sent_at` column on the event.
+//
+// Until that ships, the dashboard toggles only persist preferences.

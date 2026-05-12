@@ -18,6 +18,13 @@ interface DiagnosticsReport {
   }>;
 }
 
+const NOT_ADMIN_MESSAGE = 'This account does not have admin access.';
+
+// Diagnostics + verbose auth errors are only useful while wiring up a new
+// Supabase project. In production we surface a generic message and skip
+// the diagnostics panel entirely.
+const IS_DEV = import.meta.env.DEV;
+
 export default function AdminLogin() {
   const { signIn, signOut, session, isAdmin, configured } = useAdminAuth();
   const navigate = useNavigate();
@@ -28,9 +35,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(
-    state.error === 'not-admin'
-      ? 'Your account is signed in but is not in admin_users. Ask the project owner to add you.'
-      : null,
+    state.error === 'not-admin' ? NOT_ADMIN_MESSAGE : null,
   );
   const [diagnostics, setDiagnostics] = useState<DiagnosticsReport | null>(null);
   const [diagRunning, setDiagRunning] = useState(false);
@@ -58,17 +63,14 @@ export default function AdminLogin() {
           { replace: true },
         );
       } else {
-        // Auth succeeded but the user is not in admin_users. Sign them
-        // back out so the session does not linger, and surface a clear
-        // message explaining the next step.
+        // Auth succeeded but the user is not authorized. Sign them back
+        // out so the session does not linger, then surface a safe
+        // production message (no internal table names, no SQL).
         await signOut().catch(() => {});
-        setError(
-          "Signed in, but this account is not an admin yet. Run `insert into public.admin_users (user_id) values ('<your auth user uuid>');` in the Supabase SQL editor and try again.",
-        );
+        setError(NOT_ADMIN_MESSAGE);
       }
     } catch (err) {
-      const message = formatAuthError(err);
-      setError(message);
+      setError(formatAuthError(err));
     } finally {
       setSubmitting(false);
     }
@@ -252,27 +254,34 @@ export default function AdminLogin() {
         </button>
       </form>
 
-      {/* Temporary auth diagnostics panel — remove once login is stable. */}
-      <div className="mt-8 border-t border-surface-container-highest pt-6">
-        <button
-          type="button"
-          onClick={runDiagnostics}
-          disabled={diagRunning || !configured}
-          className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant hover:text-on-surface disabled:opacity-50"
-        >
-          {diagRunning ? 'Running diagnostics…' : 'Run auth diagnostics'}
-        </button>
-        {diagnostics && (
-          <pre className="mt-3 max-h-80 overflow-auto rounded-lg bg-surface-container-low p-3 text-[11px] leading-relaxed text-on-surface-variant">
-            {JSON.stringify(diagnostics, null, 2)}
-          </pre>
-        )}
-      </div>
+      {IS_DEV && (
+        <div className="mt-8 border-t border-surface-container-highest pt-6">
+          <button
+            type="button"
+            onClick={runDiagnostics}
+            disabled={diagRunning || !configured}
+            className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant hover:text-on-surface disabled:opacity-50"
+          >
+            {diagRunning ? 'Running diagnostics…' : 'Run auth diagnostics (dev only)'}
+          </button>
+          {diagnostics && (
+            <pre className="mt-3 max-h-80 overflow-auto rounded-lg bg-surface-container-low p-3 text-[11px] leading-relaxed text-on-surface-variant">
+              {JSON.stringify(diagnostics, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function formatAuthError(err: unknown): string {
+  if (!IS_DEV) {
+    // Production: never echo Supabase status codes, timeouts, or internal
+    // identifiers back to the visitor. Invalid credentials and missing
+    // accounts are not distinguished here on purpose.
+    return 'Sign in failed. Please check your email and password.';
+  }
   if (err instanceof Error) {
     const status = (err as { status?: number }).status;
     const code = (err as { code?: string }).code;

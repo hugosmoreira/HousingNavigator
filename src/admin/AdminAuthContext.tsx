@@ -38,9 +38,12 @@ interface AdminAuthValue {
 
 const AdminAuthContext = createContext<AdminAuthValue | null>(null);
 
-// Temporary debug logging while we chase the "stuck on Signing in…" issue.
-// Remove the `[admin-auth]` console lines once the flow is verified end-to-end.
+// Verbose `[admin-auth]` traces are useful while wiring up a new
+// Supabase project but should not ship to production where they would
+// leak email addresses and timing data into the browser console.
+const IS_DEV = import.meta.env.DEV;
 function debug(...args: unknown[]) {
+  if (!IS_DEV) return;
   // eslint-disable-next-line no-console
   console.log('[admin-auth]', ...args);
 }
