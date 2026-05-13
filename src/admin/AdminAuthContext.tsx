@@ -111,9 +111,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(ok);
       return ok;
     } catch (err) {
-      // Bubble up so the login form can display the reason. Local state
-      // stays consistent (not admin) until the next successful check.
-      setIsAdmin(false);
+      // Preserve the last-known-good admin state on transient failures
+      // (token refresh races, network blips, RLS hiccups). A confirmed
+      // admin should not get demoted because a single admin_users lookup
+      // failed — only an explicit sign-out / empty-row response should.
+      // Bubble up so the login form can still surface the failure if it
+      // initiated the call.
+      debug('refreshAdminFlag error — preserving previous isAdmin', err);
       throw err;
     }
   }, []);
@@ -150,14 +154,19 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       async (event, nextSession) => {
         debug('auth state change', event, { hasSession: !!nextSession });
         setSession(nextSession);
-        if (nextSession) {
-          try {
-            await refreshAdminFlag();
-          } catch (err) {
-            debug('refreshAdminFlag (listener) failed', err);
-          }
-        } else {
+        // Demote `isAdmin` only when the session actually ended. Silent
+        // token refreshes (`TOKEN_REFRESHED`) and metadata updates
+        // (`USER_UPDATED`) must NOT flip an existing admin to false —
+        // doing so caused mid-navigation bounces back to /admin/login
+        // with a "not admin" error during routine refreshes.
+        if (event === 'SIGNED_OUT' || !nextSession) {
           setIsAdmin(false);
+          return;
+        }
+        try {
+          await refreshAdminFlag();
+        } catch (err) {
+          debug('refreshAdminFlag (listener) failed — keeping previous isAdmin', err);
         }
       },
     );

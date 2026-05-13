@@ -17,6 +17,11 @@ const STATUS_PRESENTATION: Record<
     className: 'bg-green-50 text-green-800 border-green-200',
     dot: 'bg-green-500',
   },
+  limited: {
+    label: 'Limited',
+    className: 'bg-amber-50 text-amber-900 border-amber-200',
+    dot: 'bg-amber-500',
+  },
   closed: {
     label: 'Closed',
     className: 'bg-surface-container-high text-on-surface-variant border-outline-variant/30',

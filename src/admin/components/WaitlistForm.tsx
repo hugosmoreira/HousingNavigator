@@ -9,6 +9,7 @@ import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
 const COUNTIES: County[] = ['Multnomah', 'Clark', 'Washington', 'Clackamas', 'Other'];
 const STATUSES: Array<{ value: WaitlistStatus; label: string }> = [
   { value: 'open', label: 'Open' },
+  { value: 'limited', label: 'Limited' },
   { value: 'closed', label: 'Closed' },
   { value: 'unknown', label: 'Unknown' },
 ];

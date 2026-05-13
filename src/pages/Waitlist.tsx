@@ -11,6 +11,7 @@ interface StatusPresentation {
 
 const STATUS_PRESENTATION: Record<WaitlistStatus, StatusPresentation> = {
   open: { label: 'OPEN', className: 'bg-blue-100 text-primary', icon: 'check_circle' },
+  limited: { label: 'LIMITED', className: 'bg-amber-100 text-amber-800', icon: 'pending' },
   closed: {
     label: 'CLOSED',
     className: 'bg-surface-container-highest text-on-surface-variant',

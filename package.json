@@ -15,7 +15,9 @@
     "test:watch": "vitest",
     "catalog:build": "tsx scripts/mergeCatalog.ts",
     "seed:generate": "tsx scripts/generateSeed.ts",
-    "import:supabase": "tsx scripts/importToSupabase.ts"
+    "import:supabase": "tsx scripts/importToSupabase.ts",
+    "import:waitlists": "tsx scripts/importWaitlistsCsv.ts",
+    "import:resources": "tsx scripts/importResourcesCsv.ts"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

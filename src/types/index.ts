@@ -55,7 +55,7 @@ export type ProgramStatus = 'open' | 'limited' | 'waitlist' | 'closed' | 'unknow
 
 export type StatusConfidence = 'high' | 'medium' | 'low';
 
-export type WaitlistStatus = 'open' | 'closed' | 'unknown';
+export type WaitlistStatus = 'open' | 'closed' | 'limited' | 'unknown';
 
 export interface IntakeState {
   county: County | null;

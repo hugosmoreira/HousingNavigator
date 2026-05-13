@@ -35,8 +35,10 @@ function formatLastVerified(iso: string): string | null {
 }
 
 function formatLocation(program: Program): string {
+  // County now lives in its own pill in the card header; only show
+  // city/state here to avoid duplicating "Multnomah County · Multnomah County".
   const cityState = [program.city, program.state].filter(Boolean).join(', ');
-  if (cityState) return `${cityState} · ${program.county} County`;
+  if (cityState) return cityState;
   return `${program.county} County`;
 }
 
@@ -70,9 +72,12 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
   return (
     <article className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container-highest hover:border-primary/40 hover:shadow-md transition-all flex flex-col">
       <header className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
             {categoryLabel}
+          </span>
+          <span className="px-2.5 py-1 rounded-full text-xs font-medium border border-surface-container-highest text-on-surface-variant">
+            {program.county} County
           </span>
         </div>
         <button
@@ -101,7 +106,9 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
       </h3>
 
       {summary && (
-        <p className="text-sm text-on-surface-variant leading-relaxed mb-4">{summary}</p>
+        <p className="text-sm text-on-surface-variant leading-relaxed mb-4 line-clamp-3">
+          {summary}
+        </p>
       )}
 
       {program.eligibility_summary && (
@@ -134,10 +141,6 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
           </span>
         </div>
       </dl>
-
-      <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
-        Availability can change. Contact the provider to confirm current access.
-      </p>
 
       <footer className="mt-auto pt-4 border-t border-surface-container-highest/60 flex items-center justify-between gap-4">
         <span className="text-xs text-on-surface-variant">
