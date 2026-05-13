@@ -5,6 +5,13 @@ import { requireSupabase } from '../../lib/supabaseClient';
 import type { WaitlistRow } from '../../services/data/dbTypes';
 import type { County, WaitlistStatus } from '../../types';
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
+import {
+  isDryRun,
+  isMeaningfulUpgrade,
+  isSkipped,
+  notifyWaitlistAlert,
+} from '../notifyWaitlistAlert';
+import NotifySubscribersModal from './NotifySubscribersModal';
 
 const COUNTIES: County[] = ['Multnomah', 'Clark', 'Washington', 'Clackamas', 'Other'];
 const STATUSES: Array<{ value: WaitlistStatus; label: string }> = [
@@ -37,12 +44,24 @@ export interface WaitlistFormProps {
   waitlistId?: string;
 }
 
+interface NotifyPrompt {
+  previous: WaitlistStatus;
+  next: WaitlistStatus;
+  count: number;
+}
+
 export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
   const navigate = useNavigate();
   const [draft, setDraft] = useState<WaitlistDraft>(EMPTY);
   const [loading, setLoading] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Snapshot of the loaded status so we can detect a meaningful upgrade
+  // on save. Null in `new` mode and before the initial load completes.
+  const [originalStatus, setOriginalStatus] = useState<WaitlistStatus | null>(null);
+  const [notifyPrompt, setNotifyPrompt] = useState<NotifyPrompt | null>(null);
+  const [notifying, setNotifying] = useState(false);
+  const [notifyToast, setNotifyToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (mode !== 'edit' || !waitlistId) return;
@@ -59,6 +78,7 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
         if (!data) throw new Error('Waitlist not found');
         if (!active) return;
         const row = data as WaitlistRow;
+        setOriginalStatus(row.status);
         setDraft({
           housing_authority: row.housing_authority,
           program_name: row.program_name ?? '',
@@ -92,6 +112,7 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setNotifyToast(null);
     setSaving(true);
     try {
       const client = requireSupabase();
@@ -104,20 +125,105 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
           .select('id')
           .single();
         if (err) throw err;
+        // New waitlists have no prior status, so the notification flow
+        // never applies on create. Just navigate to the edit screen.
         navigate(`/admin/waitlists/${(data as { id: string }).id}/edit`, { replace: true });
-      } else if (waitlistId) {
-        const { error: err } = await client
-          .from('waitlists')
-          .update(payload)
-          .eq('id', waitlistId);
-        if (err) throw err;
-        navigate('/admin/waitlists');
+        return;
       }
+      if (!waitlistId) return;
+
+      // 1. Commit the DB update FIRST. The notification side is a
+      //    best-effort follow-up; it must never block the save.
+      const { error: err } = await client
+        .from('waitlists')
+        .update(payload)
+        .eq('id', waitlistId);
+      if (err) throw err;
+
+      // 2. If the status moved into a "more open" state, ask the Edge
+      //    Function how many subscribers would be notified, then show
+      //    the confirmation modal. Any failure here (function not
+      //    deployed, network, etc.) is non-blocking — we just navigate
+      //    away as before.
+      if (originalStatus && isMeaningfulUpgrade(originalStatus, draft.status)) {
+        try {
+          const preview = await notifyWaitlistAlert({
+            waitlist_id: waitlistId,
+            previous_status: originalStatus,
+            new_status: draft.status,
+            dry_run: true,
+          });
+          if (isDryRun(preview) && preview.subscriber_count > 0) {
+            setNotifyPrompt({
+              previous: originalStatus,
+              next: draft.status,
+              count: preview.subscriber_count,
+            });
+            return;
+          }
+        } catch (notifyErr) {
+          // eslint-disable-next-line no-console
+          console.warn('[waitlist] notification preview failed', notifyErr);
+        }
+      }
+
+      navigate('/admin/waitlists');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleConfirmNotify() {
+    if (!notifyPrompt || !waitlistId) return;
+    setNotifying(true);
+    try {
+      const result = await notifyWaitlistAlert({
+        waitlist_id: waitlistId,
+        previous_status: notifyPrompt.previous,
+        new_status: notifyPrompt.next,
+      });
+      setNotifyPrompt(null);
+      if (isSkipped(result)) {
+        // Informational — dedupe / nothing to do. Navigate and let the
+        // admin keep moving.
+        navigate('/admin/waitlists');
+        return;
+      }
+      if ('sent_count' in result) {
+        const reason = 'reason' in result ? result.reason : null;
+        const failed = result.failed_count ?? 0;
+        if (reason || failed > 0) {
+          // Surface partial / configuration failures on the form so the
+          // admin can act (configure Resend, retry, etc.). Do not
+          // navigate.
+          setNotifyToast(
+            reason
+              ? `Email could not be sent (${reason}). The status change is saved.`
+              : `Sent ${result.sent_count} of ${result.subscriber_count}, ${failed} failed. The status change is saved.`,
+          );
+          return;
+        }
+        // Clean success — navigate away.
+        navigate('/admin/waitlists');
+      }
+    } catch (err) {
+      // Function error (not admin, transition rejected, function not
+      // deployed). Keep the admin on this page to read the message; the
+      // DB change is already saved.
+      setNotifyPrompt(null);
+      setNotifyToast(
+        err instanceof Error ? `Could not send: ${err.message}` : 'Could not send notifications.',
+      );
+    } finally {
+      setNotifying(false);
+    }
+  }
+
+  function handleCancelNotify() {
+    setNotifyPrompt(null);
+    navigate('/admin/waitlists');
   }
 
   async function handleDelete() {
@@ -173,6 +279,32 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
           {error}
         </div>
       )}
+
+      {notifyToast && (
+        <div
+          role="status"
+          className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900 flex items-start justify-between gap-3"
+        >
+          <span>{notifyToast}</span>
+          <button
+            type="button"
+            onClick={() => setNotifyToast(null)}
+            className="text-xs font-semibold uppercase tracking-wide text-yellow-900/70 hover:text-yellow-900"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <NotifySubscribersModal
+        open={notifyPrompt !== null}
+        previousStatus={notifyPrompt?.previous ?? 'unknown'}
+        newStatus={notifyPrompt?.next ?? 'unknown'}
+        subscriberCount={notifyPrompt?.count ?? 0}
+        sending={notifying}
+        onConfirm={handleConfirmNotify}
+        onCancel={handleCancelNotify}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <Section title="Identity">
