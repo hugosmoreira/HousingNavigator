@@ -24,6 +24,11 @@ export interface WaitlistAlertRow {
   updated_at: string;
 }
 
+// `email` is intentionally NOT writable here. It is mailed directly by the
+// send-waitlist-alert Edge Function, so it must stay a verified address.
+// Migration 0008 enforces this in the DB (column-level grant + auth.users
+// sync trigger) — a PATCH including `email` is rejected, not silently
+// dropped. Keep this type in sync with the granted columns.
 export interface ProfilePatch {
   display_name?: string | null;
   home_county?: string | null;
@@ -136,13 +141,17 @@ export async function updateProfile(userId: string, patch: ProfilePatch): Promis
 // auth. If a saved row points at a now-unpublished resource we simply
 // won't get it back — the dashboard treats that as "no longer
 // available" rather than crashing.
+//
+// Read through the `*_public` views (migration 0007) so the admin-only
+// `internal_notes` column is never delivered to the browser. The dashboard
+// never renders it; the base tables stay reserved for the admin CMS.
 // ---------------------------------------------------------------------------
 
 export async function fetchResourcesByIds(ids: string[]): Promise<ResourceRow[]> {
   if (ids.length === 0) return [];
   const client = requireSupabase();
   const { data, error } = await client
-    .from('resources')
+    .from('resources_public')
     .select('*')
     .in('id', ids);
   if (error) throw error;
@@ -153,7 +162,7 @@ export async function fetchWaitlistsByIds(ids: string[]): Promise<WaitlistRow[]>
   if (ids.length === 0) return [];
   const client = requireSupabase();
   const { data, error } = await client
-    .from('waitlists')
+    .from('waitlists_public')
     .select('*')
     .in('id', ids);
   if (error) throw error;

@@ -5,6 +5,12 @@
  * here forgets the filter. `getDecisionRules` still returns the static
  * JSON: rules are not edited from the admin CMS in this phase.
  *
+ * Reads go through the `resources_public` / `waitlists_public` views
+ * (migration 0007), which expose only public columns — never the
+ * admin-only `internal_notes`. The anon role is additionally column-grant
+ * restricted at the DB so it cannot select `internal_notes` even via a
+ * hand-crafted PostgREST request against the base tables.
+ *
  * Activated by setting `VITE_USE_SUPABASE=true` along with
  * `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. See
  * `services/data/index.ts` for the env-gated switch.
@@ -26,7 +32,7 @@ export const supabaseDataService: DataService = {
   async getPrograms() {
     const client = requireSupabase();
     const { data, error } = await client
-      .from('resources')
+      .from('resources_public')
       .select('*')
       .eq('published', true);
     if (error) throw error;
@@ -40,7 +46,7 @@ export const supabaseDataService: DataService = {
   async getWaitlists() {
     const client = requireSupabase();
     const { data, error } = await client
-      .from('waitlists')
+      .from('waitlists_public')
       .select('*')
       .eq('published', true);
     if (error) throw error;
