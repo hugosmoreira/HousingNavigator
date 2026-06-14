@@ -97,6 +97,58 @@ describe('searchPrograms', () => {
     expect(cityHit[0]?.program.id).toBe('target');
   });
 
+  it('ignores filler/stopwords so a real match outranks a wordy description', () => {
+    const target = program({
+      id: 'target',
+      program_name: 'Multnomah Rent Assistance',
+      county: 'Multnomah',
+    });
+    const wordy = program({
+      id: 'wordy',
+      program_name: 'Community Resource Line',
+      description:
+        'We are here to help with whatever you need, in person or by phone, for any situation.',
+    });
+    const results = searchPrograms([wordy, target], 'rent help in Multnomah');
+    expect(results[0].program.id).toBe('target');
+  });
+
+  it('still returns results when the query is entirely stopwords', () => {
+    const target = program({
+      id: 'target',
+      program_name: 'Generic Help Hotline',
+    });
+    const results = searchPrograms([target], 'help');
+    expect(results.map((r) => r.program.id)).toContain('target');
+  });
+
+  it('expands a single-token entry point (section → voucher programs)', () => {
+    const voucher = program({
+      id: 'voucher',
+      program_name: 'Housing Choice Voucher Program',
+      directory_category: 'section8_waitlist',
+    });
+    const unrelated = program({
+      id: 'unrelated',
+      program_name: 'Family Shelter',
+      directory_category: 'emergency_shelter',
+    });
+    const results = searchPrograms([unrelated, voucher], 'section');
+    expect(results[0].program.id).toBe('voucher');
+  });
+
+  it('matches on a prefix for tokens of length >= 4', () => {
+    const target = program({ id: 'target', program_name: 'Eviction Defense Clinic' });
+    const results = searchPrograms([target], 'evict');
+    expect(results.map((r) => r.program.id)).toContain('target');
+  });
+
+  it('returns no results for a query that matches nothing', () => {
+    const target = program({ id: 'target', program_name: 'Rent Assistance' });
+    const results = searchPrograms([target], 'zzzznotarealword');
+    expect(results).toHaveLength(0);
+  });
+
   it('breaks ties on priority_score desc, then name asc', () => {
     const a = program({
       id: 'a',

@@ -4,15 +4,15 @@ import Home from './pages/Home';
 import Resources from './pages/Resources';
 import Waitlist from './pages/Waitlist';
 import Mission from './pages/Mission';
-import Assessment from './pages/Assessment';
-import Results from './pages/Results';
-import Staff from './pages/Staff';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Help from './pages/Help';
 import Accessibility from './pages/Accessibility';
+import NotFound from './pages/NotFound';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import { AdminAuthProvider } from './admin/AdminAuthContext';
 import { PublicAuthProvider } from './auth/PublicAuthContext';
@@ -36,12 +36,6 @@ export default function App() {
         <AuthPromptProvider>
           <UserDataProvider>
             <Routes>
-        {/* Standalone Route for Assessment as it has a different layout */}
-        <Route path="/assessment" element={<Assessment />} />
-        <Route path="/staff" element={<Layout />}>
-          <Route index element={<Staff />} />
-        </Route>
-
         {/* Admin CMS — its own chrome, gated by Supabase auth + admin_users */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/resources" replace />} />
@@ -102,13 +96,14 @@ export default function App() {
           <Route path="resources" element={<Resources />} />
           <Route path="waitlist" element={<Waitlist />} />
           <Route path="mission" element={<Mission />} />
-          <Route path="results" element={<Results />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="terms" element={<Terms />} />
           <Route path="help" element={<Help />} />
           <Route path="accessibility" element={<Accessibility />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route
             path="dashboard"
             element={
@@ -117,6 +112,8 @@ export default function App() {
               </RequireAuth>
             }
           />
+          {/* Catch-all: keep unknown URLs inside the app chrome instead of a blank page. */}
+          <Route path="*" element={<NotFound />} />
         </Route>
             </Routes>
           </UserDataProvider>

@@ -102,7 +102,15 @@ export default function SavedResourcesPanel() {
           removed by an admin.
         </p>
       ) : (
-        <ul className="divide-y divide-surface-container-highest">
+        <>
+          {rows.length < ids.length && (
+            <p className="mb-4 text-xs text-on-surface-variant">
+              {ids.length - rows.length} saved{' '}
+              {ids.length - rows.length === 1 ? 'resource is' : 'resources are'} no
+              longer published and not shown here.
+            </p>
+          )}
+          <ul className="divide-y divide-surface-container-highest">
           {rows.map((row) => (
             <li key={row.id} className="py-4 first:pt-0 last:pb-0">
               <div className="flex items-start justify-between gap-4">
@@ -156,7 +164,8 @@ export default function SavedResourcesPanel() {
               </div>
             </li>
           ))}
-        </ul>
+          </ul>
+        </>
       )}
     </section>
   );

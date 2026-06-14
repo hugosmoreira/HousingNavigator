@@ -24,18 +24,21 @@ export default function Mission() {
             </div>
           </div>
           
-          <div className="rounded-3xl overflow-hidden relative min-h-[300px] bg-slate-800">
-            {/* Visual map placeholder representing Portland/Vancouver */}
-            <div className="absolute inset-0 opacity-40 bg-[url('https://lh3.googleusercontent.com/aida-public/AB6AXuCo2t3Mo82ItSpsTD1Dj-iPBIcWCp37hlqxAXa573NCnz94rkavuxgz_0oLa6rki0ELYsGvyy9EYQA3WoGMtjkXxP8mj8ASYyQei-6ASdqFw6-oWD2EaKvHSQ9uiadDIEIn6DBSwJkzhTOhLh-E4i7qbCG_e4c07eCWbVKVSrySQMfr3MWGHJut5TOD7E_VNFNKOUeU7N5Ksl8iSYCktjrluj21ADVdAhP4iazIGivCkt88lTUn5-V7JxQNLR98Rp-G9y0YvhmJAw')] bg-cover bg-center mix-blend-overlay"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
-            
-            {/* Dots representing connections/nodes on the map */}
-            <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <circle cx="30" cy="40" r="1.5" fill="#e3c7f7" />
-              <circle cx="50" cy="50" r="1.5" fill="#e3c7f7" />
-              <circle cx="70" cy="30" r="1.5" fill="#e3c7f7" />
-              <circle cx="45" cy="70" r="1.5" fill="#e3c7f7" />
-              <path d="M30 40 L50 50 L70 30 M50 50 L45 70" stroke="rgba(227, 199, 247, 0.3)" strokeWidth="0.5" fill="none" />
+          <div className="rounded-3xl overflow-hidden relative min-h-[300px] bg-gradient-to-br from-primary to-primary-dim">
+            {/* Self-contained decorative network representing connected resources */}
+            <div className="absolute inset-0 opacity-25" aria-hidden="true">
+              <div className="absolute top-10 right-12 w-44 h-44 rounded-full bg-white/30 blur-3xl" />
+              <div className="absolute bottom-8 left-8 w-36 h-36 rounded-full bg-white/20 blur-3xl" />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-primary-dim/80 to-transparent"></div>
+
+            {/* Dots representing connections/nodes across the metro */}
+            <svg className="absolute inset-0 w-full h-full opacity-70" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <circle cx="30" cy="40" r="1.5" fill="white" />
+              <circle cx="50" cy="50" r="1.5" fill="white" />
+              <circle cx="70" cy="30" r="1.5" fill="white" />
+              <circle cx="45" cy="70" r="1.5" fill="white" />
+              <path d="M30 40 L50 50 L70 30 M50 50 L45 70" stroke="rgba(255, 255, 255, 0.35)" strokeWidth="0.5" fill="none" />
             </svg>
 
             <div className="absolute bottom-6 left-6">

@@ -54,6 +54,17 @@ interface PublicAuthValue {
     metadata?: { display_name?: string; home_county?: string },
   ): Promise<{ requiresConfirmation: boolean }>;
   signOut(): Promise<void>;
+  /**
+   * Send a password-reset email with a link back to `/reset-password`.
+   * Resolves whether or not the address has an account (callers should not
+   * reveal which, to avoid leaking account existence).
+   */
+  requestPasswordReset(email: string): Promise<void>;
+  /**
+   * Set a new password for the current session. Used on `/reset-password`
+   * after the emailed recovery link establishes a temporary session.
+   */
+  updatePassword(newPassword: string): Promise<void>;
   /** Re-fetch the profile row (after dashboard updates, etc). */
   refreshProfile(): Promise<void>;
 }
@@ -206,6 +217,27 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error } = await withTimeout(
+      supabase.auth.resetPasswordForEmail(email, { redirectTo }),
+      SIGN_IN_TIMEOUT_MS,
+      'resetPasswordForEmail',
+    );
+    if (error) throw error;
+  }, []);
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await withTimeout(
+      supabase.auth.updateUser({ password: newPassword }),
+      SIGN_IN_TIMEOUT_MS,
+      'updateUser',
+    );
+    if (error) throw error;
+  }, []);
+
   const value = useMemo<PublicAuthValue>(
     () => ({
       session,
@@ -216,9 +248,22 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      requestPasswordReset,
+      updatePassword,
       refreshProfile,
     }),
-    [session, profile, loading, configured, signIn, signUp, signOut, refreshProfile],
+    [
+      session,
+      profile,
+      loading,
+      configured,
+      signIn,
+      signUp,
+      signOut,
+      requestPasswordReset,
+      updatePassword,
+      refreshProfile,
+    ],
   );
 
   return <PublicAuthContext.Provider value={value}>{children}</PublicAuthContext.Provider>;

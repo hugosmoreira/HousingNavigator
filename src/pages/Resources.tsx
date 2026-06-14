@@ -132,6 +132,16 @@ export default function Resources() {
       ranked = [...ranked].sort((a, b) =>
         a.program.program_name.localeCompare(b.program.program_name),
       );
+    } else if (sort === 'relevance' && !searchQuery.trim()) {
+      // No query → searchPrograms preserves catalog order (all score 0).
+      // Give the default view a deterministic, curated-first order instead
+      // of whatever order the data source happened to return.
+      ranked = [...ranked].sort((a, b) => {
+        if (b.program.priority_score !== a.program.priority_score) {
+          return b.program.priority_score - a.program.priority_score;
+        }
+        return a.program.program_name.localeCompare(b.program.program_name);
+      });
     }
     return ranked;
   }, [programs, selectedCategories, householdFilter, county, searchQuery, sort]);
@@ -276,6 +286,7 @@ export default function Resources() {
                     key={c}
                     type="button"
                     onClick={() => setCounty(c)}
+                    aria-pressed={active}
                     className={`text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       active
                         ? 'bg-primary/10 text-primary font-semibold'

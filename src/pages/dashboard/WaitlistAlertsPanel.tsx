@@ -142,7 +142,15 @@ export default function WaitlistAlertsPanel() {
           The waitlists you were following are no longer published.
         </p>
       ) : (
-        <ul className="space-y-4">
+        <>
+          {rows.length < ids.length && (
+            <p className="mb-4 text-xs text-on-surface-variant">
+              {ids.length - rows.length}{' '}
+              {ids.length - rows.length === 1 ? 'waitlist is' : 'waitlists are'} no
+              longer published and not shown here.
+            </p>
+          )}
+          <ul className="space-y-4">
           {rows.map((row) => {
             const alert = alertsByWaitlistId.get(row.id);
             const status = STATUS_LABEL[row.status] ?? STATUS_LABEL.unknown;
@@ -216,7 +224,8 @@ export default function WaitlistAlertsPanel() {
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </>
       )}
 
       {/* TODO(notifications): when the Edge Function dispatch worker is wired

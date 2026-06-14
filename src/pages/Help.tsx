@@ -62,7 +62,7 @@ const FAQS: Faq[] = [
   {
     question: 'Do I need an account to use Housing Navigator?',
     answer:
-      'No. The directory and waitlist tracker are completely public. You only need an account if you are a volunteer maintainer with admin access.',
+      'No. The directory and waitlist tracker are completely public — search, browse, and view everything without signing up. A free account is optional and only adds convenience: save resources for later, follow waitlists, and get an email alert when a waitlist you follow changes status.',
   },
   {
     question: 'Can you tell me if I qualify for a program?',
@@ -72,7 +72,7 @@ const FAQS: Faq[] = [
   {
     question: 'I found wrong or outdated information. How do I report it?',
     answer:
-      'Send a note to the maintainers using the contact details on the About page. Include the listing name and what you found, and we will check it as soon as we can.',
+      'Note the listing name and what looks off. We review listings on a rolling basis, and a built-in "report an issue" button is on our roadmap. In the meantime, the fastest way to confirm current details is the official "Visit site" link on the listing itself.',
   },
   {
     question: 'Why is a program I know about not listed?',

@@ -28,10 +28,10 @@ import type { Program } from '../types';
  * (so "section 8" works even if a user types it with the space).
  */
 const SYNONYM_CLUSTERS: string[][] = [
-  ['section 8', 'section8', 'voucher', 'vouchers', 'hcv', 'hud-vash', 'hudvash'],
+  ['section', 'section 8', 'section8', 'voucher', 'vouchers', 'hcv', 'hud-vash', 'hudvash'],
   ['shelter', 'bed', 'beds', 'shelters'],
-  ['rent assistance', 'rental assistance', 'rent help', 'help with rent', 'back rent'],
-  ['eviction', 'evicted', 'notice to vacate', 'unlawful detainer', 'ud'],
+  ['rent', 'rent assistance', 'rental assistance', 'rent help', 'help with rent', 'back rent'],
+  ['eviction', 'evicted', 'evict', 'notice to vacate', 'unlawful detainer', 'ud'],
   ['legal', 'lawyer', 'attorney', 'tenant rights', 'tenant law'],
   ['dv', 'domestic violence', 'abuse', 'survivor'],
   ['rapid rehousing', 'rrh', 'rapid re-housing'],
@@ -71,6 +71,22 @@ const TOKEN_SYNONYMS = (() => {
 
 const PUNCT_RE = /[^\p{L}\p{N}\s]+/gu;
 
+/**
+ * Function words and generic "I need help"-style filler that would
+ * otherwise match inside long descriptions and inflate noise scores
+ * (the placeholder invites "rent help in Multnomah", so "in"/"help"
+ * arrive constantly). Multi-word synonym phrases are matched against the
+ * whole lowered query independently, so stripping these from the token
+ * list never breaks phrase matching (e.g. "rent help" still expands).
+ */
+const STOPWORDS = new Set<string>([
+  'a', 'an', 'the', 'and', 'or', 'of', 'for', 'to', 'in', 'on', 'at', 'by',
+  'with', 'from', 'near', 'about', 'as', 'is', 'are', 'am', 'be',
+  'i', 'im', 'my', 'me', 'we', 'our', 'us', 'you', 'your',
+  'need', 'needs', 'needed', 'want', 'wants', 'looking', 'seeking',
+  'help', 'please', 'can', 'get', 'find', 'some', 'any', 'this', 'that',
+]);
+
 export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
@@ -82,14 +98,19 @@ export function tokenize(text: string): string[] {
 function expandQueryTokens(raw: string): { tokens: string[]; phrases: string[] } {
   const lowered = raw.trim().toLowerCase();
   const baseTokens = tokenize(lowered);
-  const expanded = new Set<string>(baseTokens);
-  const phrases: string[] = [];
+  // Drop stopwords, but if the query is ENTIRELY stopwords (e.g. a bare
+  // "help") fall back to the raw tokens so the search still returns something.
+  const contentTokens = baseTokens.filter((t) => !STOPWORDS.has(t));
+  const effectiveTokens = contentTokens.length > 0 ? contentTokens : baseTokens;
 
-  for (const token of baseTokens) {
+  const expanded = new Set<string>(effectiveTokens);
+  const phrases = new Set<string>();
+
+  for (const token of effectiveTokens) {
     const synonyms = TOKEN_SYNONYMS.get(token);
     if (synonyms) {
       for (const s of synonyms) {
-        if (s.includes(' ')) phrases.push(s);
+        if (s.includes(' ')) phrases.add(s);
         else expanded.add(s);
       }
     }
@@ -99,13 +120,13 @@ function expandQueryTokens(raw: string): { tokens: string[]; phrases: string[] }
     for (const term of cluster) {
       if (term.includes(' ') && lowered.includes(term)) {
         for (const s of cluster) {
-          if (s.includes(' ')) phrases.push(s);
+          if (s.includes(' ')) phrases.add(s);
           else expanded.add(s);
         }
       }
     }
   }
-  return { tokens: [...expanded], phrases };
+  return { tokens: [...expanded], phrases: [...phrases] };
 }
 
 // ---------------------------------------------------------------------------

@@ -36,7 +36,15 @@ export default function Login() {
       // The auth listener will populate session/profile; the effect above
       // does the redirect once `isAuthed` flips true.
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Sign in failed';
+      const raw = err instanceof Error ? err.message : '';
+      // Map internal/implementation messages to user-facing copy; let
+      // already-friendly Supabase messages (e.g. "Invalid login credentials")
+      // through unchanged.
+      const message = /timed out/i.test(raw)
+        ? 'This is taking longer than expected. Check your connection and try again.'
+        : /Supabase not configured/i.test(raw)
+          ? 'Accounts are temporarily unavailable.'
+          : raw || 'Sign in failed.';
       setError(message);
     } finally {
       setSubmitting(false);
@@ -82,7 +90,15 @@ export default function Login() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-on-surface">Password</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-on-surface">Password</span>
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               autoComplete="current-password"
