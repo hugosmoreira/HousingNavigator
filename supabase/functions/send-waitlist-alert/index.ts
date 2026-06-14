@@ -224,35 +224,51 @@ serve(async (req: Request) => {
     return json({ error: 'server misconfigured (missing supabase env)' }, 500);
   }
 
-  // ---- AuthN: bearer token belongs to a real Supabase auth user --------
-  const authz = req.headers.get('authorization') ?? '';
-  const token = authz.replace(/^Bearer\s+/i, '').trim();
-  if (!token) return json({ error: 'missing bearer token' }, 401);
-
-  const userClient = createClient(SUPABASE_URL, token, {
-    auth: { autoRefreshToken: false, persistSession: false },
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-  const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData?.user) {
-    return json({ error: 'unauthorized' }, 401);
-  }
-  const callerId = userData.user.id;
-
-  // ---- AuthZ: caller must be in public.admin_users --------------------
+  // ---- AuthN / AuthZ ---------------------------------------------------
+  // Two callers are allowed:
+  //   1. An admin from the CMS — verified via their JWT against
+  //      public.admin_users (the user-facing path).
+  //   2. An internal server-to-server call from the DB status-change
+  //      trigger (migration 0009 `on_waitlist_status_change`), which carries
+  //      a shared secret in the `x-internal-secret` header. The secret lives
+  //      only in the function env (INTERNAL_TRIGGER_SECRET) + Vault, never in
+  //      the browser. It is checked FIRST so the trigger needs no user JWT.
+  //      The function is deployed with --no-verify-jwt, so THIS block is the
+  //      sole authorization gate.
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: adminRow, error: adminErr } = await admin
-    .from('admin_users')
-    .select('user_id')
-    .eq('user_id', callerId)
-    .maybeSingle();
-  if (adminErr) {
-    return json({ error: 'admin lookup failed' }, 500);
-  }
-  if (!adminRow) {
-    return json({ error: 'not admin' }, 403);
+
+  // @ts-expect-error — Deno-only global
+  const INTERNAL_TRIGGER_SECRET = Deno.env.get('INTERNAL_TRIGGER_SECRET');
+  const isInternal =
+    !!INTERNAL_TRIGGER_SECRET &&
+    req.headers.get('x-internal-secret') === INTERNAL_TRIGGER_SECRET;
+
+  if (!isInternal) {
+    const authz = req.headers.get('authorization') ?? '';
+    const token = authz.replace(/^Bearer\s+/i, '').trim();
+    if (!token) return json({ error: 'missing bearer token' }, 401);
+
+    const userClient = createClient(SUPABASE_URL, token, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return json({ error: 'unauthorized' }, 401);
+    }
+    const { data: adminRow, error: adminErr } = await admin
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+    if (adminErr) {
+      return json({ error: 'admin lookup failed' }, 500);
+    }
+    if (!adminRow) {
+      return json({ error: 'not admin' }, 403);
+    }
   }
 
   // ---- Parse + validate body ------------------------------------------
