@@ -101,6 +101,20 @@ export default function AdminWaitlistsList() {
     );
   }, [rows, query]);
 
+  // Authorities that have more than one waitlist (e.g. "Vancouver Housing
+  // Authority" has both Public Housing and Owned & Managed Housing). For
+  // these, the program name is the only thing that tells the rows apart, so
+  // we surface it as a highlighted chip below.
+  const duplicateAuthorities = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      counts.set(r.housing_authority, (counts.get(r.housing_authority) ?? 0) + 1);
+    }
+    return new Set(
+      [...counts.entries()].filter(([, n]) => n > 1).map(([authority]) => authority),
+    );
+  }, [rows]);
+
   return (
     <div className="max-w-6xl mx-auto px-6 lg:px-10 py-10">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
@@ -194,14 +208,29 @@ export default function AdminWaitlistsList() {
             ) : (
               filtered.map((row) => {
                 const status = STATUS_PRESENTATION[row.status] ?? STATUS_PRESENTATION.unknown;
+                const sharesAuthority = duplicateAuthorities.has(row.housing_authority);
                 return (
                   <tr key={row.id}>
                     <td className="px-4 py-3 text-on-surface">
                       <div className="font-medium">{row.housing_authority}</div>
-                      {row.program_name && (
-                        <div className="text-xs text-on-surface-variant">
-                          {row.program_name}
+                      {row.program_name ? (
+                        <div className="mt-1">
+                          <span
+                            className={
+                              sharesAuthority
+                                ? 'inline-block rounded bg-primary/10 text-primary text-xs font-semibold px-1.5 py-0.5'
+                                : 'text-xs text-on-surface-variant'
+                            }
+                          >
+                            {row.program_name}
+                          </span>
                         </div>
+                      ) : (
+                        sharesAuthority && (
+                          <div className="mt-1 text-xs italic text-on-surface-variant">
+                            No program name
+                          </div>
+                        )
                       )}
                     </td>
                     <td className="px-4 py-3 text-on-surface-variant">{row.county}</td>
