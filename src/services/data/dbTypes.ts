@@ -82,6 +82,12 @@ export interface WaitlistRow {
   public_notes: string | null;
   internal_notes: string | null;
   published: boolean;
+  /**
+   * Only present on `waitlists_public` (migration 0011): most recent
+   * transition to `open` from `waitlist_status_history`. Null until the
+   * waitlist reopens at least once after history recording began.
+   */
+  last_opened_at?: string | null;
 }
 
 /**

@@ -50,8 +50,11 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
     (async () => {
       try {
         const client = requireSupabase();
+        // Read via waitlists_admin (migration 0010): internal_notes is no
+        // longer selectable from the base table by the authenticated role.
+        // Writes below still target the base table (unchanged grants + RLS).
         const { data, error: err } = await client
-          .from('waitlists')
+          .from('waitlists_admin')
           .select('*')
           .eq('id', waitlistId)
           .maybeSingle();

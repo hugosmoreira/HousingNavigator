@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Pin Node so builds stay reproducible on Vite 6 (needs Node 18+).
+  NODE_VERSION = "20"
+
+# SPA fallback. React Router uses BrowserRouter (path-based) routes such as
+# /resources, /waitlist, /admin/*, /login, /reset-password. Netlify serves
+# real files in `dist` first, then rewrites everything else to index.html
+# (status 200 = rewrite, not a 3xx redirect) so deep links, browser refreshes,
+# and Supabase PKCE email links resolve to the app instead of a 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

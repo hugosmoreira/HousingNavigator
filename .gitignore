@@ -6,3 +6,11 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Machine-local Claude Code config (per-developer, not shared).
+.claude/settings.local.json
+.claude/launch.json
+
+# Internal security-scan artifact — keep the exploitation roadmap out of the
+# (public) GitHub repo. Force-add deliberately if you want it in a private repo.
+CODEX_SECURITY_SCAN_REPORT.md

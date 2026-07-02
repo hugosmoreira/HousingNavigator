@@ -17,7 +17,8 @@
     "seed:generate": "tsx scripts/generateSeed.ts",
     "import:supabase": "tsx scripts/importToSupabase.ts",
     "import:waitlists": "tsx scripts/importWaitlistsCsv.ts",
-    "import:resources": "tsx scripts/importResourcesCsv.ts"
+    "import:resources": "tsx scripts/importResourcesCsv.ts",
+    "verify:rls": "tsx scripts/verifyRls.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",

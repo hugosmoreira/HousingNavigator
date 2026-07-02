@@ -28,6 +28,7 @@ import AdminResourceEdit from './admin/pages/AdminResourceEdit';
 import AdminWaitlistsList from './admin/pages/AdminWaitlistsList';
 import AdminWaitlistNew from './admin/pages/AdminWaitlistNew';
 import AdminWaitlistEdit from './admin/pages/AdminWaitlistEdit';
+import AdminAlertsLog from './admin/pages/AdminAlertsLog';
 
 export default function App() {
   return (
@@ -85,6 +86,14 @@ export default function App() {
             element={
               <RequireAdmin>
                 <AdminWaitlistEdit />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="alerts"
+            element={
+              <RequireAdmin>
+                <AdminAlertsLog />
               </RequireAdmin>
             }
           />

@@ -27,8 +27,11 @@ export default function AdminResourcesList() {
   async function loadRows() {
     setError(null);
     const client = requireSupabase();
+    // resources_admin (migration 0010) is the only read surface that still
+    // includes internal_notes; base-table selects lost that column for the
+    // authenticated role. The view returns zero rows for non-admins.
     const { data, error: err } = await client
-      .from('resources')
+      .from('resources_admin')
       .select('*')
       .order('updated_at', { ascending: false });
     if (err) throw err;

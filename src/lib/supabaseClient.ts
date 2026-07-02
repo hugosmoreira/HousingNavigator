@@ -24,6 +24,13 @@ if (url && anonKey) {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      // PKCE instead of the implicit flow: auth links carry a one-time
+      // ?code= that only completes with the code_verifier this browser
+      // stored when the flow started. A crafted URL pasted to a victim can
+      // no longer install an attacker's session (login-CSRF / session
+      // fixation — Codex finding 4). Trade-off: email links (confirm,
+      // recovery) must be opened in the browser that requested them.
+      flowType: 'pkce',
     },
   });
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Home, ListChecks, LogOut, Sparkles } from 'lucide-react';
+import { BellRing, Home, ListChecks, LogOut, Sparkles } from 'lucide-react';
 import { useAdminAuth } from './AdminAuthContext';
 
 export default function AdminLayout() {
@@ -47,6 +47,9 @@ export default function AdminLayout() {
               </AdminNavLink>
               <AdminNavLink to="/admin/waitlists" icon={<ListChecks className="w-4 h-4" />}>
                 Waitlists
+              </AdminNavLink>
+              <AdminNavLink to="/admin/alerts" icon={<BellRing className="w-4 h-4" />}>
+                Alerts
               </AdminNavLink>
             </nav>
           )}

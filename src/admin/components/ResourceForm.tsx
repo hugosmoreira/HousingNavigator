@@ -58,8 +58,11 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
     (async () => {
       try {
         const client = requireSupabase();
+        // Read via resources_admin (migration 0010): internal_notes is no
+        // longer selectable from the base table by the authenticated role.
+        // Writes below still target the base table (unchanged grants + RLS).
         const { data, error: err } = await client
-          .from('resources')
+          .from('resources_admin')
           .select('*')
           .eq('id', resourceId)
           .maybeSingle();

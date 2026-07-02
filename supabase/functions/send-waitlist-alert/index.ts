@@ -15,11 +15,18 @@
 //     public.admin_users. The service-role client is only used AFTER
 //     that gate passes.
 //
-// Failure modes (intentional graceful degradation — see plan):
+// Failure modes:
 //   * RESEND_API_KEY missing → returns sent_count=0, failed_count=N,
 //     reason 'resend_not_configured'. DB state is not corrupted.
 //   * Duplicate within 24h → returns { skipped: true } without sending.
+//     Dedupe is an ATOMIC claim (public.claim_waitlist_alert_send upsert on
+//     a unique key, migration 0010) taken BEFORE any email goes out, so
+//     concurrent invocations can never both send. If the claim RPC errors,
+//     the function FAILS CLOSED (500, nothing sent) — never "assume no
+//     duplicate and send anyway".
 //   * Zero eligible recipients → returns counts of zero, no Resend call.
+//   * Unpublished / unknown waitlist → 404, nothing sent (draft rows must
+//     never leak by email, even if a stale subscription row points at them).
 //
 // Deploy:
 //   supabase functions deploy send-waitlist-alert
@@ -75,6 +82,7 @@ interface ProfileRow {
   email: string | null;
   display_name: string | null;
   email_notifications_enabled: boolean;
+  unsubscribe_token: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,6 +138,7 @@ function buildEmail(
   prev: WaitlistStatus,
   next: WaitlistStatus,
   appUrl: string,
+  unsubscribeUrl: string | null,
 ): { subject: string; html: string; text: string } {
   const subject = 'Housing Navigator Alert: A waitlist you follow was updated';
   const name = [wl.housing_authority, wl.program_name].filter(Boolean).join(' — ');
@@ -148,6 +157,7 @@ function buildEmail(
     `Please confirm current availability directly with the provider — listings can change without notice.`,
     ``,
     `Manage your alerts: ${dashboardUrl}`,
+    unsubscribeUrl ? `Unsubscribe from all alert emails: ${unsubscribeUrl}` : null,
   ]
     .filter(Boolean)
     .join('\n');
@@ -165,6 +175,9 @@ function buildEmail(
   <p style="margin: 0; font-size: 13px;">
     <a href="${escapeHtml(dashboardUrl)}" style="color:#1d4ed8;">Manage your alerts on Housing Navigator</a>
   </p>
+  ${unsubscribeUrl ? `<p style="margin: 12px 0 0; font-size: 12px; color:#8a8a8f;">
+    <a href="${escapeHtml(unsubscribeUrl)}" style="color:#8a8a8f;">Unsubscribe from all alert emails</a>
+  </p>` : ''}
 </body></html>`;
 
   return { subject, html, text };
@@ -181,14 +194,23 @@ async function sendViaResend(
   subject: string,
   html: string,
   text: string,
+  unsubscribeUrl: string | null,
 ): Promise<boolean> {
+  // RFC 8058 one-click unsubscribe headers — Gmail/Yahoo bulk-sender
+  // requirements; also protects the sending domain's reputation.
+  const headers = unsubscribeUrl
+    ? {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      }
+    : undefined;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'authorization': `Bearer ${apiKey}`,
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ from, to, subject, html, text }),
+    body: JSON.stringify({ from, to, subject, html, text, headers }),
   });
   if (!res.ok) {
     // Drain the body to free the connection but don't fail the whole batch.
@@ -245,6 +267,7 @@ serve(async (req: Request) => {
     !!INTERNAL_TRIGGER_SECRET &&
     req.headers.get('x-internal-secret') === INTERNAL_TRIGGER_SECRET;
 
+  let adminUserId: string | null = null;
   if (!isInternal) {
     const authz = req.headers.get('authorization') ?? '';
     const token = authz.replace(/^Bearer\s+/i, '').trim();
@@ -269,6 +292,7 @@ serve(async (req: Request) => {
     if (!adminRow) {
       return json({ error: 'not admin' }, 403);
     }
+    adminUserId = userData.user.id;
   }
 
   // ---- Parse + validate body ------------------------------------------
@@ -286,35 +310,49 @@ serve(async (req: Request) => {
     return json({ error: 'transition is not eligible for notification' }, 400);
   }
 
-  // ---- Dedupe: skip if we already sent for this waitlist+status -----
-  //              in the last 24 hours (covers re-saves & retries). The
-  //              dry-run path skips this check so the modal can still
-  //              show the subscriber count.
-  if (!dry_run) {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { data: dupes } = await admin
-      .from('notification_events')
-      .select('id')
-      .eq('event_type', 'waitlist_status_change')
-      .gt('created_at', cutoff)
-      .filter('metadata->>waitlist_id', 'eq', waitlist_id)
-      .filter('metadata->>new_status', 'eq', new_status)
-      .limit(1);
-    if (dupes && dupes.length > 0) {
-      return json({ skipped: true, reason: 'duplicate within 24h' });
+  // ---- Rate limit the admin-JWT path (migration 0011) -------------------
+  // Caps real (non-dry-run) fan-outs per admin per hour so a compromised
+  // admin token can't blast subscribers. Internal trigger calls are exempt:
+  // they're gated by the shared secret + the atomic dedupe claim. Fails
+  // CLOSED — if the ledger can't be read or written, nothing is sent.
+  const ADMIN_SENDS_PER_HOUR = 10;
+  if (adminUserId && !dry_run) {
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count, error: rateErr } = await admin
+      .from('alert_invocations')
+      .select('id', { count: 'exact', head: true })
+      .eq('admin_user_id', adminUserId)
+      .gt('invoked_at', hourAgo);
+    if (rateErr) {
+      console.error(`[send-waitlist-alert] rate-limit lookup failed: ${rateErr.message}`);
+      return json({ error: 'rate limit check failed; nothing sent' }, 500);
+    }
+    if ((count ?? 0) >= ADMIN_SENDS_PER_HOUR) {
+      return json({ error: 'rate limit exceeded; try again later' }, 429);
+    }
+    const { error: recordErr } = await admin
+      .from('alert_invocations')
+      .insert({ admin_user_id: adminUserId });
+    if (recordErr) {
+      console.error(`[send-waitlist-alert] rate-limit record failed: ${recordErr.message}`);
+      return json({ error: 'rate limit check failed; nothing sent' }, 500);
     }
   }
 
   // ---- Load waitlist ---------------------------------------------------
+  // published = true is REQUIRED: subscriptions are RLS-gated to published
+  // waitlists (migration 0010), but a row could have been unpublished after
+  // someone followed it, and this function must never email draft details.
   const { data: wlData, error: wlErr } = await admin
     .from('waitlists')
     .select(
       'id, housing_authority, program_name, county, city, state, status, application_link, source_url, last_checked, public_notes',
     )
     .eq('id', waitlist_id)
+    .eq('published', true)
     .maybeSingle();
   if (wlErr) return json({ error: 'waitlist lookup failed' }, 500);
-  if (!wlData) return json({ error: 'waitlist not found' }, 404);
+  if (!wlData) return json({ error: 'waitlist not found or not published' }, 404);
   const wl = wlData as WaitlistRow;
 
   // ---- Load subscribers + their prefs ----------------------------------
@@ -341,7 +379,7 @@ serve(async (req: Request) => {
   // ---- Load profiles (email + master opt-out) --------------------------
   const { data: profilesData, error: profilesErr } = await admin
     .from('profiles')
-    .select('id, email, display_name, email_notifications_enabled')
+    .select('id, email, display_name, email_notifications_enabled, unsubscribe_token')
     .in('id', Array.from(candidateIds));
   if (profilesErr) return json({ error: 'profile lookup failed' }, 500);
   const profiles = (profilesData ?? []) as ProfileRow[];
@@ -365,14 +403,41 @@ serve(async (req: Request) => {
     });
   }
 
+  // ---- Dedupe: atomically claim this (waitlist, new_status) send --------
+  // claim_waitlist_alert_send (migration 0010) upserts into a unique-keyed
+  // server-only table: exactly one caller per 24h window gets `true`.
+  // Claimed AFTER the cheap read-only checks (so a dry run / zero-recipient
+  // call never burns the window) but BEFORE any email, so two overlapping
+  // invocations — admin double-click, trigger + manual, retries — can never
+  // both fan out. If the database can't confirm the claim, FAIL CLOSED:
+  // better a delayed alert than a duplicate blast.
+  const { data: claimed, error: claimErr } = await admin.rpc(
+    'claim_waitlist_alert_send',
+    { p_waitlist_id: waitlist_id, p_new_status: new_status },
+  );
+  if (claimErr) {
+    console.error(
+      `[send-waitlist-alert] dedupe claim failed for waitlist=${waitlist_id} status=${new_status}: ${claimErr.message}`,
+    );
+    return json({ error: 'dedupe check failed; nothing sent' }, 500);
+  }
+  if (claimed !== true) {
+    return json({ skipped: true, reason: 'duplicate within 24h' });
+  }
+
   // ---- Send + log ------------------------------------------------------
-  const email = buildEmail(wl, previous_status, new_status, APP_URL);
+  // Emails are built per recipient: each carries that user's own one-click
+  // unsubscribe link (profiles.unsubscribe_token → unsubscribe-alerts fn).
   let sent = 0;
   let failed = 0;
   const successfulRecipientIds: string[] = [];
 
   for (const p of recipients) {
     try {
+      const unsubscribeUrl = p.unsubscribe_token
+        ? `${SUPABASE_URL}/functions/v1/unsubscribe-alerts?token=${p.unsubscribe_token}`
+        : null;
+      const email = buildEmail(wl, previous_status, new_status, APP_URL, unsubscribeUrl);
       const ok = await sendViaResend(
         RESEND_API_KEY,
         RESEND_FROM,
@@ -380,6 +445,7 @@ serve(async (req: Request) => {
         email.subject,
         email.html,
         email.text,
+        unsubscribeUrl,
       );
       if (ok) {
         sent += 1;
@@ -392,8 +458,36 @@ serve(async (req: Request) => {
     }
   }
 
-  // Log notification_events ONLY for successful sends. Failures stay out
-  // so a future retry isn't blocked by the dedupe window.
+  // If EVERY send failed (Resend outage etc.), release the claim so a retry
+  // can go out once the outage clears — nothing was delivered, so there is
+  // no duplicate risk. Best effort: if the delete itself fails the claim
+  // simply expires after 24h.
+  if (sent === 0 && failed > 0) {
+    const { error: releaseErr } = await admin
+      .from('waitlist_alert_sends')
+      .delete()
+      .eq('waitlist_id', waitlist_id)
+      .eq('new_status', new_status);
+    if (releaseErr) {
+      console.error(
+        `[send-waitlist-alert] could not release claim after total send failure for waitlist=${waitlist_id}: ${releaseErr.message}`,
+      );
+    }
+    return json({
+      subscriber_count: recipients.length,
+      sent_count: 0,
+      failed_count: failed,
+      skipped: false,
+      reason: 'all_sends_failed',
+    });
+  }
+
+  // Log notification_events ONLY for successful sends (in-app history).
+  // Dedupe no longer depends on this table — the claim above already
+  // guards the window — so an insert failure here can't cause a duplicate
+  // blast, but it must not pass silently either: log it and tell the
+  // caller the audit trail is incomplete.
+  let auditLogged = true;
   if (successfulRecipientIds.length > 0) {
     const eventRows = successfulRecipientIds.map((uid) => ({
       user_id: uid,
@@ -406,7 +500,15 @@ serve(async (req: Request) => {
         new_status,
       },
     }));
-    await admin.from('notification_events').insert(eventRows);
+    const { error: auditErr } = await admin
+      .from('notification_events')
+      .insert(eventRows);
+    if (auditErr) {
+      auditLogged = false;
+      console.error(
+        `[send-waitlist-alert] notification_events insert failed for waitlist=${waitlist_id} (${eventRows.length} rows): ${auditErr.message}`,
+      );
+    }
   }
 
   return json({
@@ -414,5 +516,6 @@ serve(async (req: Request) => {
     sent_count: sent,
     failed_count: failed,
     skipped: false,
+    audit_logged: auditLogged,
   });
 });

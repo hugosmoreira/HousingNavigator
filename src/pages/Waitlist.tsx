@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock,
   HelpCircle,
+  History,
   Info,
   Lock,
   MinusCircle,
@@ -51,6 +52,15 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 
 function presentationFor(status: WaitlistStatus): StatusPresentation {
   return STATUS_PRESENTATION[status] ?? STATUS_PRESENTATION.unknown;
+}
+
+// "Last opened Apr 2026" — month granularity is honest for a signal that
+// says "this list does reopen sometimes", without implying day precision.
+function formatLastOpened(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
 }
 
 function formatLastChecked(iso: string): string | null {
@@ -229,6 +239,9 @@ export default function Waitlist() {
             const isNotifying = isWaitlistFollowed(wl.id);
             const isPending = pendingId === wl.id;
             const lastChecked = formatLastChecked(wl.last_checked);
+            // Only meaningful on lists that are NOT currently open: "it does
+            // reopen — most recently <month>".
+            const lastOpened = wl.status !== 'open' ? formatLastOpened(wl.last_opened_at) : null;
             const hasLink = Boolean(wl.website);
             return (
               <div
@@ -260,6 +273,12 @@ export default function Waitlist() {
                     <span className="inline-flex items-center gap-1.5 bg-surface-container-low text-on-surface-variant text-xs px-2.5 py-1 rounded-full font-medium">
                       <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                       Checked {lastChecked}
+                    </span>
+                  )}
+                  {lastOpened && (
+                    <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                      <History className="w-3.5 h-3.5" aria-hidden="true" />
+                      Last opened {lastOpened}
                     </span>
                   )}
                 </div>

@@ -121,6 +121,7 @@ export function waitlistFromRow(row: WaitlistRow): WaitlistEntry {
     program_name: row.program_name ?? undefined,
     application_link: row.application_link ?? undefined,
     source_url: row.source_url ?? undefined,
+    last_opened_at: row.last_opened_at ?? undefined,
   };
 }
 

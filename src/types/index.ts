@@ -130,4 +130,6 @@ export interface WaitlistEntry {
   program_name?: string;
   application_link?: string;
   source_url?: string;
+  /** ISO timestamp of the most recent transition to `open`, when known. */
+  last_opened_at?: string;
 }
