@@ -1,13 +1,39 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BellRing, Home, ListChecks, LogOut, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { BellRing, ClipboardCheck, Home, ListChecks, LogOut, Sparkles } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 import { useAdminAuth } from './AdminAuthContext';
 
 export default function AdminLayout() {
   const { session, isAdmin, signOut, configured } = useAdminAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [pendingReviews, setPendingReviews] = useState(0);
+
+  // Pending-suggestion count for the Review badge. Cheap head request,
+  // refreshed on navigation so approvals/rejections update it promptly.
+  useEffect(() => {
+    if (!session || !isAdmin) return;
+    const client = supabase;
+    if (!client) return;
+    let active = true;
+    (async () => {
+      try {
+        const { count } = await client
+          .from('waitlist_status_suggestions')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        if (active) setPendingReviews(count ?? 0);
+      } catch {
+        // Badge is informational only — never surface an error for it.
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [session, isAdmin, location.pathname]);
 
   async function handleSignOut() {
     setSignOutError(null);
@@ -50,6 +76,13 @@ export default function AdminLayout() {
               </AdminNavLink>
               <AdminNavLink to="/admin/alerts" icon={<BellRing className="w-4 h-4" />}>
                 Alerts
+              </AdminNavLink>
+              <AdminNavLink
+                to="/admin/review"
+                icon={<ClipboardCheck className="w-4 h-4" />}
+                badge={pendingReviews}
+              >
+                Review
               </AdminNavLink>
             </nav>
           )}
@@ -104,10 +137,12 @@ export default function AdminLayout() {
 function AdminNavLink({
   to,
   icon,
+  badge,
   children,
 }: {
   to: string;
   icon: React.ReactNode;
+  badge?: number;
   children: React.ReactNode;
 }) {
   return (
@@ -123,6 +158,11 @@ function AdminNavLink({
     >
       {icon}
       {children}
+      {badge != null && badge > 0 && (
+        <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-primary text-on-primary text-[11px] font-semibold leading-none">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </NavLink>
   );
 }

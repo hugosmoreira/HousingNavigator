@@ -98,3 +98,45 @@ psql "$DATABASE_URL" -f supabase/seed.sql
 
 The application no longer reads this table — `supabaseDataService`
 points at `resources`.
+
+## Automated waitlist status checking (migration 0012)
+
+Migration `0012_auto_status_checks.sql` + the `check-waitlist-status`
+Edge Function re-verify each published waitlist against its own
+`source_url` about once a day, in **suggest mode**: detected status
+changes wait in `/admin/review` and nothing is published (and no
+subscriber is emailed) until an admin approves. Approval reuses the
+existing alert pipeline from `0009`/`0010` unchanged.
+
+One-time setup after applying the migration:
+
+```bash
+# 1. Deploy the checker (no JWT verify: cron authenticates via shared secret)
+supabase functions deploy check-waitlist-status --no-verify-jwt
+
+# 2. Function secrets. INTERNAL_TRIGGER_SECRET must equal the Vault value
+#    created for 0009. CLAUDE_MODEL is optional (default claude-opus-4-8;
+#    claude-haiku-4-5 is a ~5x cheaper option for this classification task).
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase secrets set CLAUDE_MODEL=claude-opus-4-8
+
+# 3. Vault: tell the cron function where the checker lives (SQL editor):
+#    select vault.create_secret(
+#      'https://<project-ref>.supabase.co/functions/v1/check-waitlist-status',
+#      'internal_check_fn_url',
+#      'destination for the scheduled waitlist status checker');
+```
+
+Operational notes:
+
+- The cron job (`check-waitlist-status`, every 15 min) only processes
+  rows whose last attempt is older than ~20 h, oldest first, in batches
+  of `CHECK_BATCH_SIZE` (default 10) — so a tick with nothing due is a
+  single cheap SELECT.
+- `waitlists.auto_check_enabled` opts a row out; `check_failures >= 3`
+  shows an "URL check failing" hint in the admin list.
+- Pages that render client-side (RentCafe-style portals) log
+  `insufficient_content` and appear under "Check health" on
+  `/admin/review` — those still need a manual look.
+- "Run checker now" on `/admin/review` invokes the function with the
+  admin's JWT for an immediate batch — handy for testing end to end.
