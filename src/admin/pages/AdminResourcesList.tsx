@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Database, Plus, Search } from 'lucide-react';
-import { requireSupabase } from '../../lib/supabaseClient';
 import { DIRECTORY_CATEGORY_LABELS } from '../../data/categoryMap';
 import type { ResourceRow } from '../../services/data/dbTypes';
 import type { DirectoryCategory } from '../../types';
+import { usePagedAdminRows } from '../usePagedAdminRows';
 import {
   BUNDLED_RESOURCE_COUNT,
   seedResourcesFromCatalog,
@@ -18,41 +18,19 @@ function categoryLabel(category: string): string {
 }
 
 export default function AdminResourcesList() {
-  const [rows, setRows] = useState<ResourceRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    rows,
+    totalCount,
+    loading,
+    loadingMore,
+    error,
+    setError,
+    reload,
+    loadMore,
+    hasMore,
+  } = usePagedAdminRows<ResourceRow>('resources_admin');
   const [query, setQuery] = useState('');
   const [seeding, setSeeding] = useState(false);
-
-  async function loadRows() {
-    setError(null);
-    const client = requireSupabase();
-    // resources_admin (migration 0010) is the only read surface that still
-    // includes internal_notes; base-table selects lost that column for the
-    // authenticated role. The view returns zero rows for non-admins.
-    const { data, error: err } = await client
-      .from('resources_admin')
-      .select('*')
-      .order('updated_at', { ascending: false });
-    if (err) throw err;
-    setRows((data ?? []) as ResourceRow[]);
-  }
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        await loadRows();
-      } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : 'Failed to load');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
 
   async function handleSeed() {
     if (
@@ -66,7 +44,7 @@ export default function AdminResourcesList() {
     setError(null);
     try {
       const { inserted } = await seedResourcesFromCatalog();
-      await loadRows();
+      await reload();
       // eslint-disable-next-line no-console
       console.log(`[admin] seeded ${inserted} resources from bundled catalog`);
     } catch (err) {
@@ -104,15 +82,23 @@ export default function AdminResourcesList() {
         </Link>
       </div>
 
-      <div className="relative max-w-sm mb-5">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-        <input
-          type="search"
-          placeholder="Filter by name, city, county"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full rounded-full border border-surface-container-highest bg-surface-container-lowest pl-9 pr-4 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-        />
+      <div className="max-w-sm mb-5">
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+          <input
+            type="search"
+            placeholder="Filter by name, city, county"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-full border border-surface-container-highest bg-surface-container-lowest pl-9 pr-4 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+          />
+        </div>
+        {query.trim() && hasMore && (
+          <p className="mt-1.5 px-1 text-xs text-on-surface-variant">
+            Searching the {rows.length} loaded rows — use “Load more” below to
+            include older entries.
+          </p>
+        )}
       </div>
 
       {error && (
@@ -222,6 +208,22 @@ export default function AdminResourcesList() {
           </tbody>
         </table>
       </div>
+
+      {!loading && hasMore && (
+        <div className="mt-4 flex items-center justify-center gap-3 text-sm text-on-surface-variant">
+          <span>
+            Showing {rows.length} of {totalCount}
+          </span>
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="rounded-full border border-surface-container-highest px-4 py-1.5 font-semibold text-on-surface hover:bg-surface-container-low disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loadingMore ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

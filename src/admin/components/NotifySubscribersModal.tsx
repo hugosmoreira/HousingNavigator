@@ -32,12 +32,45 @@ export default function NotifySubscribersModal({
   onCancel,
 }: NotifySubscribersModalProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Return focus to the element that opened the dialog once it closes.
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    return () => previouslyFocused?.focus();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     confirmRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' && !sending) onCancel();
+      if (e.key === 'Escape' && !sending) {
+        onCancel();
+        return;
+      }
+      // Trap Tab inside the dialog: without this, focus walks into the
+      // page behind the overlay, which screen-reader and keyboard users
+      // experience as the dialog silently disappearing.
+      if (e.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !dialog.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !dialog.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -56,7 +89,10 @@ export default function NotifySubscribersModal({
       aria-labelledby="notify-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-on-surface/40 backdrop-blur-sm"
     >
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl border border-surface-container-highest max-w-md w-full p-6 relative">
+      <div
+        ref={dialogRef}
+        className="bg-surface-container-lowest rounded-2xl shadow-xl border border-surface-container-highest max-w-md w-full p-6 relative"
+      >
         <button
           type="button"
           onClick={onCancel}

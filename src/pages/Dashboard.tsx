@@ -1,6 +1,7 @@
 import { usePublicAuth } from '../auth/PublicAuthContext';
 import SavedResourcesPanel from './dashboard/SavedResourcesPanel';
 import WaitlistAlertsPanel from './dashboard/WaitlistAlertsPanel';
+import NotificationsPanel from './dashboard/NotificationsPanel';
 import NotificationSettingsPanel from './dashboard/NotificationSettingsPanel';
 
 export default function Dashboard() {
@@ -26,6 +27,10 @@ export default function Dashboard() {
         <div className="grid gap-6 lg:grid-cols-2">
           <WaitlistAlertsPanel />
           <SavedResourcesPanel />
+        </div>
+
+        <div className="mt-6">
+          <NotificationsPanel />
         </div>
 
         <div className="mt-6">

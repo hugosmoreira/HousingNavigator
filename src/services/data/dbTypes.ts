@@ -88,6 +88,13 @@ export interface WaitlistRow {
    * waitlist reopens at least once after history recording began.
    */
   last_opened_at?: string | null;
+  /**
+   * Automation columns (migration 0012). Present on the base table and
+   * `waitlists_admin`, never on the public views.
+   */
+  auto_check_enabled?: boolean;
+  check_failures?: number;
+  last_auto_check_at?: string | null;
 }
 
 /**

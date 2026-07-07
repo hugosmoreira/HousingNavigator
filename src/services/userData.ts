@@ -172,10 +172,11 @@ export async function fetchWaitlistsByIds(ids: string[]): Promise<WaitlistRow[]>
 // ---------------------------------------------------------------------------
 // notification_events
 //
-// Read-side only. Inserts come from a future Supabase Edge Function using
-// the service-role key (see TODO at the bottom of this file). RLS already
-// limits SELECT/UPDATE to rows where `user_id = auth.uid()`, so these
-// helpers do not need to pass the user id explicitly.
+// Read-side only. Inserts come from the `send-waitlist-alert` Edge Function
+// using the service-role key (one row per successfully emailed recipient).
+// RLS limits SELECT/UPDATE to rows where `user_id = auth.uid()`, and the
+// column grant (migration 0010) makes `read` the only writable column, so
+// these helpers do not need to pass the user id explicitly.
 // ---------------------------------------------------------------------------
 
 export interface NotificationEventRow {
@@ -189,10 +190,13 @@ export interface NotificationEventRow {
 
 export async function listNotificationEvents(): Promise<NotificationEventRow[]> {
   const client = requireSupabase();
+  // Newest 50 is plenty for the dashboard panel; older history stays
+  // queryable but never inflates this payload.
   const { data, error } = await client
     .from('notification_events')
     .select('id, event_type, title, body, read, created_at')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50);
   if (error) throw error;
   return (data ?? []) as NotificationEventRow[];
 }
@@ -206,15 +210,18 @@ export async function markNotificationRead(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// TODO(notifications): wire actual email sending through a Supabase Edge
-// Function calling Resend. Pseudocode for the worker:
-//
-//   1. Trigger: cron / pg_notify on waitlist status change.
-//   2. For each affected waitlist, fan out to matching `waitlist_alerts`
-//      rows where `notify_on_open` / `notify_on_status_change` is true
-//      and the user's `profiles.email_notifications_enabled` is true.
-//   3. For each user, insert a `notification_events` row (service role)
-//      AND call Resend to deliver the email.
-//   4. On Resend success, set a future `sent_at` column on the event.
-//
+export async function markAllNotificationsRead(): Promise<void> {
+  const client = requireSupabase();
+  // RLS scopes the update to the caller's own rows.
+  const { error } = await client
+    .from('notification_events')
+    .update({ read: true })
+    .eq('read', false);
+  if (error) throw error;
+}
+
+// Email delivery is implemented end-to-end: the `on_waitlist_status_change`
+// trigger (migration 0009) or an admin's manual confirmation invokes the
+// `send-waitlist-alert` Edge Function, which fans out via Resend and inserts
+// the notification_events rows read above.
 // Until that ships, the dashboard toggles only persist preferences.
