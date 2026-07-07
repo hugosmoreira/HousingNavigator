@@ -15,3 +15,26 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Security headers for every response.
+#
+# CSP notes:
+#   * script-src 'self' — Vite emits only external module scripts; no inline
+#     JS anywhere, so this alone neutralizes most XSS payloads.
+#   * style-src includes 'unsafe-inline' (React style attributes) and
+#     fonts.googleapis.com (loaded from src/index.css via @import).
+#   * connect-src allows the Supabase REST/auth/functions endpoints plus
+#     websockets (realtime), nothing else.
+#   * frame-ancestors 'none' + X-Frame-Options DENY: the app is never framed,
+#     which blocks clickjacking on the admin CMS.
+# If a new external service is added (analytics, image CDN), extend the
+# matching directive here or the browser will silently block it.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Strict-Transport-Security = "max-age=31536000"
