@@ -61,7 +61,7 @@ describe('searchPrograms', () => {
   it('expands synonyms (section 8 ↔ voucher ↔ hud-vash)', () => {
     const sec8 = program({
       id: 'sec8',
-      program_name: 'Home Forward Section 8 / Public Housing',
+      program_name: 'County Housing Authority Section 8 / Public Housing',
       directory_category: 'section8_waitlist',
     });
     const unrelated = program({

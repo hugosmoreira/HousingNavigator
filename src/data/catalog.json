@@ -444,34 +444,6 @@
     "raw_category": "rent assistance"
   },
   {
-    "id": "csv-10hed73",
-    "program_name": "Home Forward - Deposit Assistance",
-    "county": "Multnomah",
-    "category": "rental_assistance",
-    "who_it_helps": [
-      "single_adult",
-      "family"
-    ],
-    "application_method": "phone",
-    "referral_required": true,
-    "phone": "503-415-8000",
-    "website": "https://www.homeforward.org/",
-    "status": "open",
-    "status_confidence": "high",
-    "priority_score": 8,
-    "notes": "Funds are limited and subject to availability.",
-    "last_verified": "2026-05-06",
-    "description": "Assistance with security deposits for households with vouchers.",
-    "eligibility_summary": "Must have an active Home Forward voucher.",
-    "city": "Portland",
-    "state": "OR",
-    "address": "135 SW Ash St, Portland, OR 97204",
-    "source_url": "https://www.homeforward.org/",
-    "source_type": "Government",
-    "directory_category": "rent_assistance",
-    "raw_category": "deposit/move-in assistance"
-  },
-  {
     "id": "csv-154rdej",
     "program_name": "Human Solutions (Our Just Future) - Deposit Assistance",
     "county": "Multnomah",

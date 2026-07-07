@@ -64,22 +64,6 @@
     "last_verified": "2026-04-15"
   },
   {
-    "id": "mult-home-forward-waitlist",
-    "program_name": "Home Forward Section 8 / Public Housing",
-    "county": "Multnomah",
-    "category": "long_term_housing_waitlist",
-    "who_it_helps": ["single_adult", "family", "senior", "veteran", "disability"],
-    "application_method": "online",
-    "referral_required": false,
-    "phone": "(503) 802-8333",
-    "website": "https://homeforward.org",
-    "status": "open",
-    "status_confidence": "high",
-    "priority_score": 95,
-    "notes": "Multnomah County's primary public housing authority. Waitlist currently open for select programs.",
-    "last_verified": "2026-04-18"
-  },
-  {
     "id": "mult-central-city-concern",
     "program_name": "Central City Concern Transitional Housing",
     "county": "Multnomah",

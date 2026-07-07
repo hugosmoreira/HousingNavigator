@@ -56,7 +56,7 @@
   {
     "intake_state": "at_risk",
     "goal": "long_term_housing",
-    "primary_action": "Get on every open housing authority waitlist you qualify for. Check Home Forward (Multnomah) and Vancouver Housing Authority (Clark) today.",
+    "primary_action": "Get on every open housing authority waitlist you qualify for. Use the waitlist tracker to see which county lists are open today.",
     "priority_categories": ["long_term_housing_waitlist", "transitional_housing"],
     "secondary_categories": ["rental_assistance", "comprehensive_support"],
     "caution_notes": [

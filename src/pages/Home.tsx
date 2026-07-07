@@ -82,7 +82,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xs text-on-surface-variant leading-tight">Waitlist alert</p>
-                  <p className="font-headline font-bold text-on-surface text-sm leading-tight">Home Forward</p>
+                  <p className="font-headline font-bold text-on-surface text-sm leading-tight">Vancouver Housing Authority</p>
                 </div>
               </div>
               <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700">
@@ -144,7 +144,7 @@ export default function Home() {
           <div className="order-2 lg:order-1">
             {/* Self-contained waitlist preview list */}
             <div className="bg-surface-container-lowest rounded-3xl border border-surface-container-highest shadow-[0px_12px_40px_rgba(45,51,55,0.06)] p-6 lg:p-8 space-y-3">
-              <WaitlistPreviewRow agency="Home Forward (Multnomah)" status="open" label="OPEN" checked="Apr 2026" />
+              <WaitlistPreviewRow agency="Washington County Housing Services" status="open" label="OPEN" checked="Apr 2026" />
               <WaitlistPreviewRow agency="Vancouver Housing Authority" status="limited" label="LIMITED" checked="Apr 2026" />
               <WaitlistPreviewRow agency="Clackamas Housing Authority" status="closed" label="CLOSED" checked="Mar 2026" />
             </div>

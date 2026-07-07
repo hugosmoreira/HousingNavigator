@@ -1,14 +1,5 @@
 [
   {
-    "id": "home-forward",
-    "agency": "Home Forward (Multnomah)",
-    "county": "Multnomah",
-    "status": "open",
-    "last_checked": "2026-04-18",
-    "website": "https://homeforward.org/find-a-home",
-    "notes": "Section 8 Housing Choice Voucher waitlist currently accepting applications for select properties."
-  },
-  {
     "id": "vha",
     "agency": "Vancouver Housing Authority (Clark)",
     "county": "Clark",
@@ -34,15 +25,6 @@
     "last_checked": "2026-04-18",
     "website": "https://www.washingtoncountyor.gov/housing",
     "notes": "Waitlist closed. Project-based waitlists open periodically — check site."
-  },
-  {
-    "id": "hacsa-multnomah",
-    "agency": "Home Forward Short Term Rent Assistance",
-    "county": "Multnomah",
-    "status": "open",
-    "last_checked": "2026-04-17",
-    "website": "https://homeforward.org/rent-assistance",
-    "notes": "Apply through community partner agencies. Funds limited."
   },
   {
     "id": "council-for-homeless",

@@ -78,7 +78,7 @@ dev path.
 // POST /functions/v1/send-waitlist-alert
 // Authorization: Bearer <admin user's JWT>
 {
-  "waitlist_id": "home-forward-section-8",
+  "waitlist_id": "vancouver-housing-authority",
   "previous_status": "closed",
   "new_status": "open",
   "dry_run": false

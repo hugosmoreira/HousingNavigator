@@ -42,7 +42,7 @@ const SYNONYM_CLUSTERS: string[][] = [
   ['disability', 'disabled', 'ada', 'accessible'],
   ['family', 'families', 'kids', 'children', 'parent'],
   ['homeless', 'unhoused', 'unsheltered'],
-  ['public housing', 'housing authority', 'home forward', 'vha'],
+  ['public housing', 'housing authority', 'vha'],
   ['211', 'two one one', 'coordinated entry', 'cea'],
   ['portland', 'pdx', 'multnomah', 'mult'],
   ['vancouver', 'clark county', 'clark'],
