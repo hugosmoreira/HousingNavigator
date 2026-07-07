@@ -43,12 +43,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 // @ts-expect-error — Deno std http
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import {
+  isMeaningfulUpgrade,
+  WAITLIST_STATUS_LABEL as STATUS_LABEL,
+} from '../_shared/waitlistTransitions.ts';
+import type { WaitlistStatus } from '../_shared/waitlistTransitions.ts';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-type WaitlistStatus = 'open' | 'limited' | 'closed' | 'unknown';
 
 interface AlertPayload {
   waitlist_id: string;
@@ -86,24 +89,6 @@ interface ProfileRow {
 }
 
 // ---------------------------------------------------------------------------
-// Transition rule (must match src/admin/notifyWaitlistAlert.ts).
-// ---------------------------------------------------------------------------
-
-const UPGRADE_FROM = new Set<WaitlistStatus>(['closed', 'unknown', 'limited']);
-const UPGRADE_TO = new Set<WaitlistStatus>(['open', 'limited']);
-
-function isMeaningfulUpgrade(prev: WaitlistStatus, next: WaitlistStatus): boolean {
-  return prev !== next && UPGRADE_FROM.has(prev) && UPGRADE_TO.has(next);
-}
-
-const STATUS_LABEL: Record<WaitlistStatus, string> = {
-  open: 'Open',
-  limited: 'Limited',
-  closed: 'Closed',
-  unknown: 'Unknown',
-};
-
-// ---------------------------------------------------------------------------
 // HTTP helpers
 // ---------------------------------------------------------------------------
 
@@ -133,6 +118,33 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
+// Only http(s) URLs may become clickable hrefs in emails — escaping alone
+// would still let an admin-entered javascript: or data: URL through.
+function safeHttpUrl(u: string | null): string | null {
+  if (!u) return null;
+  try {
+    const parsed = new URL(u);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? u : null;
+  } catch {
+    return null;
+  }
+}
+
+// Constant-time secret comparison: hash both sides so neither length nor
+// prefix matches leak through response timing.
+async function timingSafeEqual(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(a)),
+    crypto.subtle.digest('SHA-256', enc.encode(b)),
+  ]);
+  const va = new Uint8Array(ha);
+  const vb = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < va.length; i++) diff |= va[i] ^ vb[i];
+  return diff === 0;
+}
+
 function buildEmail(
   wl: WaitlistRow,
   prev: WaitlistStatus,
@@ -142,7 +154,7 @@ function buildEmail(
 ): { subject: string; html: string; text: string } {
   const subject = 'Housing Navigator Alert: A waitlist you follow was updated';
   const name = [wl.housing_authority, wl.program_name].filter(Boolean).join(' — ');
-  const sourceLink = wl.application_link ?? wl.source_url ?? null;
+  const sourceLink = safeHttpUrl(wl.application_link) ?? safeHttpUrl(wl.source_url);
   const lastChecked = wl.last_checked ?? 'not recorded';
   const dashboardUrl = `${appUrl.replace(/\/+$/, '')}/dashboard`;
 
@@ -263,9 +275,11 @@ serve(async (req: Request) => {
 
   // @ts-expect-error — Deno-only global
   const INTERNAL_TRIGGER_SECRET = Deno.env.get('INTERNAL_TRIGGER_SECRET');
+  const headerSecret = req.headers.get('x-internal-secret');
   const isInternal =
     !!INTERNAL_TRIGGER_SECRET &&
-    req.headers.get('x-internal-secret') === INTERNAL_TRIGGER_SECRET;
+    !!headerSecret &&
+    (await timingSafeEqual(headerSecret, INTERNAL_TRIGGER_SECRET));
 
   let adminUserId: string | null = null;
   if (!isInternal) {

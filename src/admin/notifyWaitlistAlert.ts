@@ -9,30 +9,18 @@
  *   * If the function isn't deployed yet, every call rejects with a
  *     descriptive error and the caller (WaitlistForm) treats that as
  *     "skip notifications", leaving the DB save flow intact.
- *   * The transition rule lives in BOTH this file and the Edge Function
- *     so the frontend can skip the round-trip entirely when the change
- *     is not meaningful. Keep the two definitions in sync.
+ *   * The transition rule is shared with the Edge Function via
+ *     supabase/functions/_shared/waitlistTransitions.ts so the frontend
+ *     can skip the round-trip entirely when the change is not meaningful.
  */
 
 import { requireSupabase } from '../lib/supabaseClient';
 import type { WaitlistStatus } from '../types';
 
-const UPGRADE_FROM = new Set<WaitlistStatus>(['closed', 'unknown', 'limited']);
-const UPGRADE_TO = new Set<WaitlistStatus>(['open', 'limited']);
-
-export function isMeaningfulUpgrade(
-  previous: WaitlistStatus,
-  next: WaitlistStatus,
-): boolean {
-  return previous !== next && UPGRADE_FROM.has(previous) && UPGRADE_TO.has(next);
-}
-
-export const WAITLIST_STATUS_LABEL: Record<WaitlistStatus, string> = {
-  open: 'Open',
-  limited: 'Limited',
-  closed: 'Closed',
-  unknown: 'Unknown',
-};
+export {
+  isMeaningfulUpgrade,
+  WAITLIST_STATUS_LABEL,
+} from '../../supabase/functions/_shared/waitlistTransitions.ts';
 
 export interface NotifyAlertRequest {
   waitlist_id: string;
