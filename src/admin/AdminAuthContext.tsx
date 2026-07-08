@@ -151,7 +151,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event, nextSession) => {
+      (event, nextSession) => {
         debug('auth state change', event, { hasSession: !!nextSession });
         setSession(nextSession);
         // Demote `isAdmin` only when the session actually ended. Silent
@@ -163,11 +163,15 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           return;
         }
-        try {
-          await refreshAdminFlag();
-        } catch (err) {
-          debug('refreshAdminFlag (listener) failed — keeping previous isAdmin', err);
-        }
+        // Deferred to a macrotask: supabase-js holds its auth lock while
+        // dispatching this callback, and the admin_users query needs the
+        // same lock to attach the JWT — awaiting it here deadlocks until
+        // the lookup times out (see PublicAuthContext for the long form).
+        setTimeout(() => {
+          void refreshAdminFlag().catch((err) => {
+            debug('refreshAdminFlag (listener) failed — keeping previous isAdmin', err);
+          });
+        }, 0);
       },
     );
 

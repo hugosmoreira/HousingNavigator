@@ -162,11 +162,22 @@ export default function AdminReviewQueue() {
       );
       await load();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? `Could not run the checker: ${err.message}`
-          : 'Could not run the checker',
-      );
+      // supabase-js wraps a non-2xx response in FunctionsHttpError with the
+      // generic message "Edge Function returned a non-2xx status code" and
+      // the actual Response on `.context` — unwrap it so the admin sees the
+      // real status and the function's own error text.
+      let detail = err instanceof Error ? err.message : 'unknown error';
+      const ctx = (err as { context?: unknown }).context;
+      if (ctx instanceof Response) {
+        detail = `HTTP ${ctx.status}`;
+        try {
+          const body = (await ctx.clone().json()) as { error?: string };
+          if (body?.error) detail += ` — ${body.error}`;
+        } catch {
+          // non-JSON body; the status alone is still more useful
+        }
+      }
+      setError(`Could not run the checker: ${detail}`);
     } finally {
       setRunningCheck(false);
     }

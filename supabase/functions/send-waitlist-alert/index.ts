@@ -287,11 +287,11 @@ serve(async (req: Request) => {
     const token = authz.replace(/^Bearer\s+/i, '').trim();
     if (!token) return json({ error: 'missing bearer token' }, 401);
 
-    const userClient = createClient(SUPABASE_URL, token, {
-      auth: { autoRefreshToken: false, persistSession: false },
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    // Validate the JWT explicitly. `getUser()` without an argument resolves
+    // the session from client-side storage — an edge function has none, so
+    // supabase-js rejects with "Auth session missing" before ever asking the
+    // auth server. Passing the token forces a real server-side check.
+    const { data: userData, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !userData?.user) {
       return json({ error: 'unauthorized' }, 401);
     }

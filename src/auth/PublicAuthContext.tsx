@@ -71,6 +71,15 @@ interface PublicAuthValue {
 
 const PublicAuthContext = createContext<PublicAuthValue | null>(null);
 
+// Mirror AdminAuthContext: verbose traces are dev-only so production
+// consoles don't leak emails, ids, or timing data.
+const IS_DEV = import.meta.env.DEV;
+function debug(...args: unknown[]) {
+  if (!IS_DEV) return;
+  // eslint-disable-next-line no-console
+  console.warn('[public-auth]', ...args);
+}
+
 const SIGN_IN_TIMEOUT_MS = 12_000;
 const SIGN_UP_TIMEOUT_MS = 15_000;
 const PROFILE_TIMEOUT_MS = 8_000;
@@ -94,23 +103,29 @@ function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T
 
 async function fetchProfile(userId: string): Promise<PublicProfile | null> {
   if (!supabase) return null;
-  const { data, error } = await withTimeout(
-    supabase
-      .from('profiles')
-      .select('id, email, display_name, home_county, email_notifications_enabled')
-      .eq('id', userId)
-      .maybeSingle(),
-    PROFILE_TIMEOUT_MS,
-    'profile lookup',
-  );
-  if (error) {
-    // RLS or transient — surface to the caller via console; don't crash
-    // the app. Treat as "no profile" so the dashboard can redirect.
-    // eslint-disable-next-line no-console
-    console.warn('[public-auth] profile fetch failed', error);
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('profiles')
+        .select('id, email, display_name, home_county, email_notifications_enabled')
+        .eq('id', userId)
+        .maybeSingle(),
+      PROFILE_TIMEOUT_MS,
+      'profile lookup',
+    );
+    if (error) {
+      // RLS or transient — treat as "no profile" so the dashboard can
+      // redirect instead of crashing the app.
+      debug('profile fetch failed', error);
+      return null;
+    }
+    return (data ?? null) as PublicProfile | null;
+  } catch (err) {
+    // Timeout or network failure. Never throw: this runs from auth event
+    // plumbing where a rejection surfaces as an uncaught promise error.
+    debug('profile fetch failed', err);
     return null;
   }
-  return (data ?? null) as PublicProfile | null;
 }
 
 export function PublicAuthProvider({ children }: { children: ReactNode }) {
@@ -136,28 +151,41 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
 
     let active = true;
 
+    // supabase-js holds an internal auth lock while it dispatches
+    // `onAuthStateChange` events, and a PostgREST query needs that same
+    // lock to attach the JWT. Awaiting a query inside the callback
+    // therefore deadlocks until the query's timeout fires ("profile
+    // lookup timed out"), and stalls every other auth consumer queued
+    // on the lock. Deferring to a macrotask runs the query after the
+    // lock is released.
+    const loadProfile = (userId: string) => {
+      setTimeout(() => {
+        void fetchProfile(userId).then((p) => {
+          if (active) setProfile(p);
+        });
+      }, 0);
+    };
+
     supabase.auth
       .getSession()
-      .then(async ({ data }) => {
+      .then(({ data }) => {
         if (!active) return;
         setSession(data.session);
-        if (data.session) {
-          setProfile(await fetchProfile(data.session.user.id));
-        }
+        if (data.session) loadProfile(data.session.user.id);
       })
       .catch((err) => {
-        // eslint-disable-next-line no-console
-        console.warn('[public-auth] getSession failed', err);
+        debug('getSession failed', err);
       })
       .finally(() => {
         if (active) setLoading(false);
       });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (_event, nextSession) => {
+      (_event, nextSession) => {
+        if (!active) return;
         setSession(nextSession);
         if (nextSession) {
-          setProfile(await fetchProfile(nextSession.user.id));
+          loadProfile(nextSession.user.id);
         } else {
           setProfile(null);
         }
@@ -211,8 +239,7 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       // Local state is already cleared; surface the failure but don't
       // strand the UI in a half-signed-out state.
-      // eslint-disable-next-line no-console
-      console.warn('[public-auth] signOut error', err);
+      debug('signOut error', err);
       throw err;
     }
   }, []);
