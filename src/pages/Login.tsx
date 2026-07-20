@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { usePublicAuth } from '../auth/PublicAuthContext';
+import TurnstileChallenge, {
+  isTurnstileConfigured,
+} from '../components/TurnstileChallenge';
 
 interface LocationState {
   from?: string;
@@ -21,6 +24,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaGeneration, setCaptchaGeneration] = useState(0);
 
   // Already signed in → bounce to wherever they were going.
   useEffect(() => {
@@ -30,9 +35,13 @@ export default function Login() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (isTurnstileConfigured && !captchaToken) {
+      setError('Please complete the security check.');
+      return;
+    }
     setSubmitting(true);
     try {
-      await signIn(email.trim(), password);
+      await signIn(email.trim(), password, captchaToken ?? undefined);
       // The auth listener will populate session/profile; the effect above
       // does the redirect once `isAuthed` flips true.
     } catch (err) {
@@ -48,6 +57,10 @@ export default function Login() {
       setError(message);
     } finally {
       setSubmitting(false);
+      if (isTurnstileConfigured) {
+        setCaptchaToken(null);
+        setCaptchaGeneration((value) => value + 1);
+      }
     }
   }
 
@@ -115,9 +128,16 @@ export default function Login() {
             </div>
           )}
 
+          <TurnstileChallenge
+            key={captchaGeneration}
+            action="public_login"
+            onTokenChange={setCaptchaToken}
+            onProblem={() => setError('The security check could not load. Please try again.')}
+          />
+
           <button
             type="submit"
-            disabled={submitting || !configured}
+            disabled={submitting || !configured || (isTurnstileConfigured && !captchaToken)}
             className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary text-on-primary font-semibold text-sm px-5 py-2.5 hover:bg-primary-dim disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <LogIn className="w-4 h-4" />

@@ -3,7 +3,7 @@
 -- Run with `npm run verify:rls` (scripts/verifyRls.ts) after applying any
 -- migration. Simulates the `authenticated` and `anon` PostgREST roles with
 -- `set local role` + a fake JWT claim, exercises every security invariant
--- from migrations 0004-0011, and prints one PASS/FAIL row per check.
+-- from migrations 0004-0013, and prints one PASS/FAIL row per check.
 --
 -- Self-contained: creates a throwaway auth user + two test waitlists, and
 -- deletes them at the end (cascades clean up profiles, alerts, events,
@@ -19,6 +19,10 @@ values ('11111111-1111-1111-1111-111111111111', 'rls-test@example.com', 'authent
 insert into public.waitlists (id, housing_authority, county, status, published, internal_notes)
 values ('test-wl-pub',   'Test HA Published', 'Multnomah', 'closed', true,  'secret staff note pub'),
        ('test-wl-draft', 'Test HA Draft',     'Multnomah', 'closed', false, 'secret staff note draft');
+
+insert into public.resources (id, name, category, county, published, internal_notes)
+values ('22222222-2222-2222-2222-222222222222', 'Test Resource Draft', 'housing',
+        'Multnomah', false, 'secret resource note');
 
 insert into public.notification_events (user_id, event_type, title, body, metadata)
 values ('11111111-1111-1111-1111-111111111111', 'waitlist_status_change', 't', 'b',
@@ -155,6 +159,43 @@ begin
   insert into results (test, outcome) values ('9b client read claim table', 'FAIL: select allowed (' || cnt || ' rows)');
 exception when others then
   insert into results (test, outcome) values ('9b client read claim table', 'PASS: blocked (' || sqlerrm || ')');
+end $$;
+
+do $$
+declare cnt int;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  set local role authenticated;
+  select count(*) into cnt from public.resources_admin;
+  reset role;
+  insert into results (test, outcome) values ('12c non-admin resources_admin view',
+    case when cnt = 0 then 'PASS: 0 rows' else 'FAIL: ' || cnt || ' rows' end);
+exception when others then
+  insert into results (test, outcome) values ('12c non-admin resources_admin view', 'FAIL: error (' || sqlerrm || ')');
+end $$;
+
+do $$
+declare cnt int;
+begin
+  select count(*) into cnt
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public'
+     and c.relname in ('resources_admin', 'waitlists_admin', 'alert_send_log_admin')
+     and c.reloptions @> array['security_invoker=true']::text[];
+  insert into results (test, outcome) values ('12d admin views use security_invoker',
+    case when cnt = 3 then 'PASS: 3 views' else 'FAIL: ' || cnt || ' of 3 views' end);
+end $$;
+
+do $$
+declare cnt int;
+begin
+  set local role anon;
+  select count(*) into cnt from public.resources_admin;
+  reset role;
+  insert into results (test, outcome) values ('12e anon reads admin view', 'FAIL: select allowed');
+exception when others then
+  insert into results (test, outcome) values ('12e anon reads admin view', 'PASS: blocked (' || sqlerrm || ')');
 end $$;
 
 -- ---- 10. RLS does not leak unpublished waitlists ----
@@ -311,6 +352,42 @@ exception when others then
   insert into results (test, outcome) values ('17 admin reads drafts + internal_notes via view', 'FAIL: error (' || sqlerrm || ')');
 end $$;
 
+do $$
+declare v text; automation_ok boolean;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  set local role authenticated;
+  select internal_notes into v
+    from public.resources_admin
+   where id = '22222222-2222-2222-2222-222222222222';
+  select bool_and(auto_check_enabled is not null and check_failures is not null)
+    into automation_ok
+    from public.waitlists_admin
+   where id like 'test-wl-%';
+  reset role;
+  insert into results (test, outcome) values ('17b invoker views preserve admin contracts',
+    case when v = 'secret resource note' and automation_ok
+      then 'PASS: notes + automation columns readable'
+      else 'FAIL: resource note/automation columns missing' end);
+exception when others then
+  insert into results (test, outcome) values ('17b invoker views preserve admin contracts', 'FAIL: error (' || sqlerrm || ')');
+end $$;
+
+do $$
+declare cnt int;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  set local role authenticated;
+  select count(*) into cnt
+    from public.alert_send_log_admin
+   where waitlist_id = 'real-wl' and new_status = 'open';
+  reset role;
+  insert into results (test, outcome) values ('17c admin alert aggregate remains readable',
+    case when cnt = 1 then 'PASS: aggregate readable' else 'FAIL: ' || cnt || ' rows' end);
+exception when others then
+  insert into results (test, outcome) values ('17c admin alert aggregate remains readable', 'FAIL: error (' || sqlerrm || ')');
+end $$;
+
 -- ---- 18. regression: public read surfaces still work ----
 do $$
 declare cnt int; ts timestamptz;
@@ -330,5 +407,6 @@ end $$;
 -- ---- cleanup: cascades remove profiles, alerts, events, history, claims ----
 delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
 delete from public.waitlists where id in ('test-wl-pub', 'test-wl-draft');
+delete from public.resources where id = '22222222-2222-2222-2222-222222222222';
 
 select test, outcome from results order by n;
