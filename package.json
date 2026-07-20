@@ -21,11 +21,13 @@
     "verify:rls": "tsx scripts/verifyRls.ts"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.5.3",
     "@supabase/supabase-js": "^2.105.3",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.546.0",
+    "posthog-js": "^1.404.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.14.1"

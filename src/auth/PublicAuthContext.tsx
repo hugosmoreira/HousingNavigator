@@ -23,6 +23,7 @@ import {
 } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { resetAnalytics } from '../lib/analytics';
 
 export interface PublicProfile {
   id: string;
@@ -40,7 +41,7 @@ interface PublicAuthValue {
   loading: boolean;
   configured: boolean;
   /** Sign in with email + password. Throws on auth failure. */
-  signIn(email: string, password: string): Promise<void>;
+  signIn(email: string, password: string, captchaToken?: string): Promise<void>;
   /**
    * Create an account. Resolves once Supabase Auth has accepted the
    * credentials; the `profiles` row is auto-created by an `on auth.users
@@ -52,6 +53,7 @@ interface PublicAuthValue {
     email: string,
     password: string,
     metadata?: { display_name?: string; home_county?: string },
+    captchaToken?: string,
   ): Promise<{ requiresConfirmation: boolean }>;
   signOut(): Promise<void>;
   /**
@@ -59,7 +61,7 @@ interface PublicAuthValue {
    * Resolves whether or not the address has an account (callers should not
    * reveal which, to avoid leaking account existence).
    */
-  requestPasswordReset(email: string): Promise<void>;
+  requestPasswordReset(email: string, captchaToken?: string): Promise<void>;
   /**
    * Set a new password for the current session. Used on `/reset-password`
    * after the emailed recovery link establishes a temporary session.
@@ -198,10 +200,14 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, captchaToken?: string) => {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await withTimeout(
-      supabase.auth.signInWithPassword({ email, password }),
+      supabase.auth.signInWithPassword({
+        email,
+        password,
+        options: captchaToken ? { captchaToken } : undefined,
+      }),
       SIGN_IN_TIMEOUT_MS,
       'signInWithPassword',
     );
@@ -209,13 +215,16 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = useCallback<PublicAuthValue['signUp']>(
-    async (email, password, metadata) => {
+    async (email, password, metadata, captchaToken) => {
       if (!supabase) throw new Error('Supabase not configured');
       const { data, error } = await withTimeout(
         supabase.auth.signUp({
           email,
           password,
-          options: metadata ? { data: metadata } : undefined,
+          options:
+            metadata || captchaToken
+              ? { data: metadata, captchaToken }
+              : undefined,
         }),
         SIGN_UP_TIMEOUT_MS,
         'signUp',
@@ -233,6 +242,7 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setProfile(null);
     setSession(null);
+    resetAnalytics();
     if (!supabase) return;
     try {
       await withTimeout(supabase.auth.signOut(), SIGN_OUT_TIMEOUT_MS, 'signOut');
@@ -244,11 +254,11 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const requestPasswordReset = useCallback(async (email: string) => {
+  const requestPasswordReset = useCallback(async (email: string, captchaToken?: string) => {
     if (!supabase) throw new Error('Supabase not configured');
     const redirectTo = `${window.location.origin}/reset-password`;
     const { error } = await withTimeout(
-      supabase.auth.resetPasswordForEmail(email, { redirectTo }),
+      supabase.auth.resetPasswordForEmail(email, { redirectTo, captchaToken }),
       SIGN_IN_TIMEOUT_MS,
       'resetPasswordForEmail',
     );

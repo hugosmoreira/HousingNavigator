@@ -2,6 +2,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../AdminAuthContext';
 import { supabase } from '../../lib/supabaseClient';
+import TurnstileChallenge, {
+  isTurnstileConfigured,
+} from '../../components/TurnstileChallenge';
 
 interface LocationState {
   from?: string;
@@ -9,7 +12,7 @@ interface LocationState {
 }
 
 interface DiagnosticsReport {
-  env: { url: string | null; keyPrefix: string | null };
+  env: { hasUrl: boolean; hasAnonKey: boolean };
   steps: Array<{
     label: string;
     elapsedMs: number;
@@ -39,6 +42,8 @@ export default function AdminLogin() {
   );
   const [diagnostics, setDiagnostics] = useState<DiagnosticsReport | null>(null);
   const [diagRunning, setDiagRunning] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaGeneration, setCaptchaGeneration] = useState(0);
 
   // If the page mounts while a valid admin session is already cached
   // (returning visit, magic link, etc.), bounce straight to the dashboard.
@@ -54,9 +59,13 @@ export default function AdminLogin() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (isTurnstileConfigured && !captchaToken) {
+      setError('Please complete the security check.');
+      return;
+    }
     setSubmitting(true);
     try {
-      const ok = await signIn(email.trim(), password);
+      const ok = await signIn(email.trim(), password, captchaToken ?? undefined);
       if (ok) {
         navigate(
           state.from && state.from.startsWith('/admin') ? state.from : '/admin/resources',
@@ -73,6 +82,10 @@ export default function AdminLogin() {
       setError(formatAuthError(err));
     } finally {
       setSubmitting(false);
+      if (isTurnstileConfigured) {
+        setCaptchaToken(null);
+        setCaptchaGeneration((value) => value + 1);
+      }
     }
   }
 
@@ -81,12 +94,8 @@ export default function AdminLogin() {
     setDiagnostics(null);
     const report: DiagnosticsReport = {
       env: {
-        url: (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? null,
-        keyPrefix:
-          ((import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '').slice(
-            0,
-            12,
-          ) || null,
+        hasUrl: Boolean(import.meta.env.VITE_SUPABASE_URL),
+        hasAnonKey: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY),
       },
       steps: [],
     };
@@ -126,42 +135,14 @@ export default function AdminLogin() {
       }
     }
 
-    // 2. signInWithPassword — only if both fields filled in. This actually
-    //    creates a session if successful, which is fine: the auth listener
-    //    will pick it up.
-    if (email && password) {
-      const start = performance.now();
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        report.steps.push({
-          label: 'auth.signInWithPassword()',
-          elapsedMs: Math.round(performance.now() - start),
-          ok: !error,
-          detail: error
-            ? {
-                status: (error as { status?: number }).status,
-                code: (error as { code?: string }).code,
-                message: error.message,
-              }
-            : { userId: data.session?.user.id ?? null },
-        });
-      } catch (err) {
-        report.steps.push({
-          label: 'auth.signInWithPassword()',
-          elapsedMs: Math.round(performance.now() - start),
-          ok: false,
-          detail: serializeError(err),
-        });
-      }
-    } else {
+    // 2. Do not perform a second credential exchange here: Turnstile tokens
+    // are single-use, and the real form submission is the protected path.
+    {
       report.steps.push({
         label: 'auth.signInWithPassword()',
         elapsedMs: 0,
         ok: false,
-        detail: 'skipped — fill in email + password to test sign-in',
+        detail: 'skipped - use the protected sign-in form above to test credentials',
       });
     }
 
@@ -245,9 +226,16 @@ export default function AdminLogin() {
           </div>
         )}
 
+        <TurnstileChallenge
+          key={captchaGeneration}
+          action="admin_login"
+          onTokenChange={setCaptchaToken}
+          onProblem={() => setError('The security check could not load. Please try again.')}
+        />
+
         <button
           type="submit"
-          disabled={submitting || !configured}
+          disabled={submitting || !configured || (isTurnstileConfigured && !captchaToken)}
           className="w-full rounded-full bg-primary text-on-primary font-semibold text-sm px-5 py-2.5 hover:bg-primary-dim disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {submitting ? 'Signing in…' : 'Sign in'}

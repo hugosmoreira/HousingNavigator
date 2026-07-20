@@ -1,6 +1,6 @@
 import { Shield, Database, Cookie, KeyRound, Mail } from 'lucide-react';
 
-const LAST_UPDATED = 'May 2026';
+const LAST_UPDATED = 'July 2026';
 
 export default function Privacy() {
   return (
@@ -30,9 +30,11 @@ export default function Privacy() {
             resources or waitlists.
           </p>
           <p>
-            If you contact us by email or submit a resource correction, we keep
-            the message and any contact information you choose to share so we
-            can reply and follow up.
+            If you create an account, Supabase stores your email, login data,
+            optional display name and home county, saved resources, waitlist
+            follows, and notification preferences. If you contact us, we keep
+            the message and contact information you choose to share so we can
+            reply and follow up.
           </p>
         </Section>
 
@@ -47,25 +49,36 @@ export default function Privacy() {
             your browser.
           </p>
           <p>
-            We may use privacy-respecting analytics to understand which pages
-            people read so we can improve the directory. Analytics, when used,
-            are aggregate — we are not building a profile of you.
+            We use PostHog in cookieless mode to count visits to a short list of
+            public pages. We do not send full URLs, search terms, form values,
+            resource or waitlist selections, account pages, dashboard activity,
+            or admin activity. Automatic click tracking, user profiles, session
+            replay, heatmaps, and automatic error capture are disabled, and the
+            browser's Do Not Track setting is respected.
+          </p>
+          <p>
+            Cloudflare Turnstile helps protect sign-in, signup, password reset,
+            and admin login from automated abuse. Cloudflare processes browser,
+            device, and network signals needed to decide whether a request is
+            likely human; Housing Navigator receives a short-lived verification
+            token rather than a traditional puzzle response.
           </p>
         </Section>
 
         <Section
           icon={<KeyRound className="w-5 h-5" />}
-          title="Admin authentication"
+          title="Accounts and authentication"
         >
           <p>
-            Housing Navigator has a small admin area used by the volunteers who
-            keep the directory up to date. Admin sign-in is handled by Supabase
-            Auth. Only people listed in our admin allowlist can sign in, and
-            only the admin area touches that authentication.
+            Public accounts and the volunteer admin area use Supabase Auth.
+            Passwords are handled by Supabase rather than stored in the Housing
+            Navigator application database. Admin tools require both a valid
+            account and membership in our admin allowlist.
           </p>
           <p>
-            If you are a regular visitor, you will never see the admin login —
-            it is not part of the public directory experience.
+            You can browse the public directory without an account. An account
+            is needed only for personal features such as saving resources,
+            following waitlists, and managing notifications.
           </p>
         </Section>
 

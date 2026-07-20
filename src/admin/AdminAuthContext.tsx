@@ -19,6 +19,7 @@ import {
 } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { resetAnalytics } from '../lib/analytics';
 
 interface AdminAuthValue {
   session: Session | null;
@@ -31,7 +32,7 @@ interface AdminAuthValue {
    * `false` otherwise. Throws on auth failure (bad password, network,
    * timeout, etc.) with the original Supabase error preserved.
    */
-  signIn(email: string, password: string): Promise<boolean>;
+  signIn(email: string, password: string, captchaToken?: string): Promise<boolean>;
   signOut(): Promise<void>;
   refreshAdminFlag(): Promise<boolean>;
 }
@@ -182,12 +183,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, [refreshAdminFlag]);
 
   const signIn = useCallback(
-    async (email: string, password: string): Promise<boolean> => {
+    async (email: string, password: string, captchaToken?: string): Promise<boolean> => {
       if (!supabase) throw new Error('Supabase not configured');
       const start = performance.now();
       debug('signIn: signInWithPassword start', { email });
       const { data, error } = await withTimeout(
-        supabase.auth.signInWithPassword({ email, password }),
+        supabase.auth.signInWithPassword({
+          email,
+          password,
+          options: captchaToken ? { captchaToken } : undefined,
+        }),
         SIGN_IN_TIMEOUT_MS,
         'signInWithPassword',
       );
@@ -214,6 +219,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     // and reaffirm.
     setIsAdmin(false);
     setSession(null);
+    resetAnalytics();
     if (!supabase) return;
     try {
       await withTimeout(supabase.auth.signOut(), SIGN_OUT_TIMEOUT_MS, 'signOut');
