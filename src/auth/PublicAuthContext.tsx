@@ -8,8 +8,8 @@
  * Supabase has one auth session per browser tab — both this context and
  * `AdminAuthContext` subscribe to the same `supabase.auth` events. They do
  * not interfere: the admin context derives `isAdmin` from `admin_users`
- * and this context derives `profile` / `isAuthed` from `profiles`. A user
- * who is both will simply have rows in both tables.
+ * and this context loads optional public profile data. Authentication itself
+ * comes from the verified Supabase session, not from a secondary table row.
  */
 
 import {
@@ -36,7 +36,7 @@ export interface PublicProfile {
 interface PublicAuthValue {
   session: Session | null;
   profile: PublicProfile | null;
-  /** True when there is a session AND a `profiles` row for it. */
+  /** True when Supabase has established an authenticated session. */
   isAuthed: boolean;
   loading: boolean;
   configured: boolean;
@@ -279,7 +279,10 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     () => ({
       session,
       profile,
-      isAuthed: !!session && !!profile,
+      // A missing or temporarily unavailable profile must not strand a valid
+      // Supabase session on the login page. Database RLS still controls every
+      // authenticated data request, while `profile` remains optional app data.
+      isAuthed: !!session,
       loading,
       configured,
       signIn,
