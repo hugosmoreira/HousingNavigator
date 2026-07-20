@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   PUBLIC_ANALYTICS_PAGES,
+  classifyApplicationSurface,
+  normalizeApplicationErrorName,
+  sanitizeApplicationErrorProperties,
   sanitizeAnalyticsProperties,
 } from './analytics';
 
@@ -35,5 +38,44 @@ describe('privacy-limited analytics', () => {
     expect(routes['/dashboard']).toBeUndefined();
     expect(routes['/admin/login']).toBeUndefined();
     expect(routes['/resources/private-id']).toBeUndefined();
+  });
+
+  it('reports only coarse, redacted application error details', () => {
+    const result = sanitizeApplicationErrorProperties({
+      token: 'public-project-token',
+      distinct_id: 'anonymous-id',
+      error_name: 'TypeError',
+      error_source: 'window_error',
+      surface: 'auth',
+      message: 'Failed for person@example.test',
+      stack: 'https://housingnavigator.us/login?token=private',
+      $current_url: 'https://housingnavigator.us/login',
+      email: 'person@example.test',
+    });
+
+    expect(result).toEqual({
+      token: 'public-project-token',
+      distinct_id: 'anonymous-id',
+      error_name: 'TypeError',
+      error_source: 'window_error',
+      surface: 'auth',
+    });
+  });
+
+  it('uses coarse page groups and an allowlist of error names', () => {
+    expect(classifyApplicationSurface('/resources')).toBe('resources');
+    expect(classifyApplicationSurface('/login')).toBe('auth');
+    expect(classifyApplicationSurface('/admin/resources')).toBe('admin');
+    expect(classifyApplicationSurface('/private/value')).toBe('unknown');
+
+    expect(normalizeApplicationErrorName(new TypeError('private value'))).toBe(
+      'TypeError',
+    );
+    const customError = new Error('private value');
+    customError.name = 'ContainsPrivateDetails';
+    expect(normalizeApplicationErrorName(customError)).toBe('OtherError');
+    expect(normalizeApplicationErrorName('private rejection')).toBe(
+      'NonErrorRejection',
+    );
   });
 });
