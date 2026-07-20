@@ -1,7 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
+import { useAdminAuth } from '../admin/AdminAuthContext';
 import { usePublicAuth } from '../auth/PublicAuthContext';
+import {
+  resolvePostLoginDestination,
+  resolvePublicLoginTarget,
+} from '../auth/loginRouting';
 import TurnstileChallenge, {
   isTurnstileConfigured,
 } from '../components/TurnstileChallenge';
@@ -11,14 +16,12 @@ interface LocationState {
 }
 
 export default function Login() {
-  const { signIn, isAuthed, configured } = usePublicAuth();
+  const { session, isAuthed, configured } = usePublicAuth();
+  const { signIn, isAdmin, loading: adminLoading } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
-  const target =
-    state.from && state.from.startsWith('/') && !state.from.startsWith('/admin')
-      ? state.from
-      : '/dashboard';
+  const target = resolvePublicLoginTarget(state.from);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,11 +29,33 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaGeneration, setCaptchaGeneration] = useState(0);
+  const [postLoginDestination, setPostLoginDestination] = useState<string | null>(
+    null,
+  );
 
-  // Already signed in → bounce to wherever they were going.
+  // Wait for both the session and admin membership before choosing a route.
   useEffect(() => {
-    if (isAuthed) navigate(target, { replace: true });
-  }, [isAuthed, navigate, target]);
+    if (!isAuthed || submitting || adminLoading) return;
+
+    const destination =
+      postLoginDestination ??
+      resolvePostLoginDestination({
+        hasSession: Boolean(session),
+        isAdmin,
+        publicTarget: target,
+      });
+
+    if (destination) navigate(destination, { replace: true });
+  }, [
+    adminLoading,
+    isAdmin,
+    isAuthed,
+    navigate,
+    postLoginDestination,
+    session,
+    submitting,
+    target,
+  ]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,9 +66,18 @@ export default function Login() {
     }
     setSubmitting(true);
     try {
-      await signIn(email.trim(), password, captchaToken ?? undefined);
-      // The auth listener will populate session/profile; the effect above
-      // does the redirect once `isAuthed` flips true.
+      const adminAccount = await signIn(
+        email.trim(),
+        password,
+        captchaToken ?? undefined,
+      );
+      setPostLoginDestination(
+        resolvePostLoginDestination({
+          hasSession: true,
+          isAdmin: adminAccount,
+          publicTarget: target,
+        }),
+      );
     } catch (err) {
       const raw = err instanceof Error ? err.message : '';
       // Map internal/implementation messages to user-facing copy; let
