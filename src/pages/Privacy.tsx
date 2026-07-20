@@ -50,11 +50,14 @@ export default function Privacy() {
           </p>
           <p>
             We use PostHog in cookieless mode to count visits to a short list of
-            public pages. We do not send full URLs, search terms, form values,
-            resource or waitlist selections, account pages, dashboard activity,
-            or admin activity. Automatic click tracking, user profiles, session
-            replay, heatmaps, and automatic error capture are disabled, and the
-            browser's Do Not Track setting is respected.
+            public pages. Page-view events do not include full URLs, search
+            terms, form values, or resource or waitlist selections, and are not
+            sent from account, dashboard, or admin pages. Automatic click
+            tracking, user profiles, session replay, heatmaps, and vendor error
+            capture are disabled. If the app crashes, we send only a coarse
+            error category and page group — never the error message, stack
+            trace, full URL, form value, or account information. The browser's
+            Do Not Track setting is respected.
           </p>
           <p>
             Cloudflare Turnstile helps protect sign-in, signup, password reset,
