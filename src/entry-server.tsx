@@ -10,6 +10,10 @@ import {
   resolvePageMetadata,
   type ResolvedPageMetadata,
 } from './lib/pageMetadata';
+import {
+  resolveStructuredData,
+  type StructuredDataDocument,
+} from './lib/structuredData';
 
 export const prerenderRoutes = [
   ...Object.keys(INDEXABLE_PAGE_METADATA).map((path) =>
@@ -32,4 +36,8 @@ export function render(url: string): string {
 
 export function metadataFor(url: string): ResolvedPageMetadata {
   return resolvePageMetadata(url);
+}
+
+export function structuredDataFor(url: string): StructuredDataDocument | null {
+  return resolveStructuredData(url);
 }

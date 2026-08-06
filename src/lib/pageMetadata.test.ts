@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   INDEXABLE_PAGE_METADATA,
   resolvePageMetadata,
+  SOCIAL_IMAGE_ALT,
+  SOCIAL_IMAGE_URL,
   SITE_URL,
 } from './pageMetadata';
 
@@ -13,6 +15,9 @@ describe('page metadata', () => {
       index: true,
       canonicalUrl: `${SITE_URL}/resources/`,
       title: 'Find housing resources | Housing Navigator',
+      openGraphType: 'website',
+      socialImageUrl: SOCIAL_IMAGE_URL,
+      socialImageAlt: SOCIAL_IMAGE_ALT,
     });
   });
 

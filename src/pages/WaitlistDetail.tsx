@@ -7,6 +7,7 @@ import {
   Lock,
   MapPin,
   MinusCircle,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
@@ -48,6 +49,8 @@ export default function WaitlistDetail() {
   const presentation = STATUS_PRESENTATION[waitlist.status];
   const StatusIcon = presentation.Icon;
   const checked = formatDate(waitlist.last_checked);
+  const verificationSourceUrl =
+    waitlist.source_url || waitlist.application_link || waitlist.website;
 
   return (
     <div className="bg-surface min-h-[calc(100vh-80px)]">
@@ -109,6 +112,41 @@ export default function WaitlistDetail() {
             <CalendarCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             {checked ? `Checked ${checked}` : 'Verification date pending'}
           </p>
+
+          <section
+            aria-labelledby="waitlist-verification-heading"
+            className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4"
+          >
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div>
+                <h3 id="waitlist-verification-heading" className="font-semibold text-on-surface">
+                  How this status was checked
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">
+                  Housing Navigator reviewed the listed agency or provider source
+                  {checked ? ` on ${checked}` : ''}. Waitlist status can change without notice.
+                </p>
+              </div>
+            </div>
+            <dl className="mt-4 border-t border-primary/15 pt-3 text-sm">
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-on-surface-variant">Latest review</dt>
+                <dd className="text-right font-semibold text-on-surface">{checked || 'Pending'}</dd>
+              </div>
+            </dl>
+            {verificationSourceUrl && (
+              <a
+                href={verificationSourceUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dim"
+              >
+                Review the listed source <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            )}
+          </section>
+
           {waitlist.website && (
             <a
               href={waitlist.website}

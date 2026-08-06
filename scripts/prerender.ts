@@ -7,12 +7,21 @@ interface PageMetadata {
   description: string;
   index: boolean;
   canonicalUrl: string | null;
+  openGraphType: 'website';
+  socialImageUrl: string;
+  socialImageAlt: string;
+}
+
+interface StructuredDataDocument {
+  '@context': 'https://schema.org';
+  '@graph': Array<Record<string, unknown>>;
 }
 
 interface ServerEntry {
   prerenderRoutes: string[];
   render(url: string): string;
   metadataFor(url: string): PageMetadata;
+  structuredDataFor(url: string): StructuredDataDocument | null;
 }
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,8 +67,18 @@ function applyMetadata(html: string, metadata: PageMetadata): string {
   output = replaceMeta(output, 'property="og:title"', metadata.title);
   output = replaceMeta(output, 'property="og:description"', metadata.description);
   output = replaceMeta(output, 'property="og:url"', metadata.canonicalUrl ?? '');
+  output = replaceMeta(output, 'property="og:type"', metadata.openGraphType);
+  output = replaceMeta(output, 'property="og:image"', metadata.socialImageUrl);
+  output = replaceMeta(output, 'property="og:image:secure_url"', metadata.socialImageUrl);
+  output = replaceMeta(output, 'property="og:image:type"', 'image/png');
+  output = replaceMeta(output, 'property="og:image:width"', '1200');
+  output = replaceMeta(output, 'property="og:image:height"', '630');
+  output = replaceMeta(output, 'property="og:image:alt"', metadata.socialImageAlt);
+  output = replaceMeta(output, 'name="twitter:card"', 'summary_large_image');
   output = replaceMeta(output, 'name="twitter:title"', metadata.title);
   output = replaceMeta(output, 'name="twitter:description"', metadata.description);
+  output = replaceMeta(output, 'name="twitter:image"', metadata.socialImageUrl);
+  output = replaceMeta(output, 'name="twitter:image:alt"', metadata.socialImageAlt);
   output = output.replace(/\s*<link\s+rel="canonical"[^>]*>/gi, '');
   if (metadata.canonicalUrl) {
     output = output.replace(
@@ -68,6 +87,17 @@ function applyMetadata(html: string, metadata: PageMetadata): string {
     );
   }
   return output;
+}
+
+function injectStructuredData(
+  html: string,
+  structuredData: StructuredDataDocument,
+): string {
+  const serialized = JSON.stringify(structuredData).replace(/</g, '\\u003c');
+  return html.replace(
+    '</head>',
+    `    <script type="application/ld+json" data-housing-navigator-schema="true">${serialized}</script>\n  </head>`,
+  );
 }
 
 function outputPathFor(route: string): string {
@@ -88,8 +118,12 @@ writeFileSync(join(distDir, 'spa.html'), spaHtml, 'utf8');
 for (const route of routes) {
   const appHtml = serverEntry.render(route);
   const metadata = serverEntry.metadataFor(route);
+  const structuredData = serverEntry.structuredDataFor(route);
   if (!metadata.index || !metadata.canonicalUrl) {
     throw new Error(`Prerender route is not indexable: ${route}`);
+  }
+  if (!structuredData) {
+    throw new Error(`Prerender route is missing structured data: ${route}`);
   }
 
   let pageHtml = clientTemplate.replace(
@@ -97,6 +131,7 @@ for (const route of routes) {
     `<div id="root" data-ssr="true">${appHtml}</div>`,
   );
   pageHtml = applyMetadata(pageHtml, metadata);
+  pageHtml = injectStructuredData(pageHtml, structuredData);
 
   const outputPath = outputPathFor(route);
   mkdirSync(dirname(outputPath), { recursive: true });
