@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { usePublicAuth } from '../auth/PublicAuthContext';
+import { applyPageMetadata } from '../lib/pageMetadata';
 
 export default function Layout() {
   const location = useLocation();
@@ -12,6 +13,10 @@ export default function Layout() {
   // Close the mobile menu whenever the route changes.
   useEffect(() => {
     setMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    applyPageMetadata(location.pathname);
   }, [location.pathname]);
 
   async function handleSignOut() {
@@ -108,7 +113,7 @@ export default function Layout() {
               aria-expanded={mobileOpen}
               aria-controls="mobile-menu"
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>

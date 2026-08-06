@@ -17,8 +17,8 @@ export default function Home() {
     <>
       {/* Hero Section */}
       <section className="relative pt-16 lg:pt-20 pb-24 lg:pb-28 overflow-hidden bg-surface">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="max-w-2xl">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="max-w-2xl min-w-0">
             <h1 className="text-[2.5rem] lg:text-[2.75rem] leading-[1.1] font-headline font-bold text-on-surface mb-6 tracking-tight">
               Housing help, finally easy to search.
             </h1>
@@ -140,8 +140,8 @@ export default function Home() {
 
       {/* Waitlist tracker + notifications — the differentiator */}
       <section className="py-24 bg-surface">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="order-2 lg:order-1">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="order-2 lg:order-1 min-w-0">
             {/* Self-contained waitlist preview list */}
             <div className="bg-surface-container-lowest rounded-3xl border border-surface-container-highest shadow-[0px_12px_40px_rgba(45,51,55,0.06)] p-6 lg:p-8 space-y-3">
               <WaitlistPreviewRow agency="Washington County Housing Services" status="open" label="OPEN" checked="Apr 2026" />
@@ -150,7 +150,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="order-1 lg:order-2 max-w-xl">
+          <div className="order-1 lg:order-2 max-w-xl min-w-0">
             <p className="text-xs font-semibold tracking-[0.18em] uppercase text-primary mb-3">Waitlist tracker</p>
             <h2 className="text-3xl font-headline font-bold text-on-surface mb-4 tracking-tight">
               Track housing waitlists before you miss an opening.
