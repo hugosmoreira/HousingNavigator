@@ -62,6 +62,8 @@ export default function ResourceDetail() {
   const phoneHref = program.phone
     ? `tel:${program.phone.replace(/[^0-9+]/g, '')}`
     : null;
+  const verificationSourceUrl = program.source_url || program.website;
+  const verificationSourceType = program.source_type || 'Provider website';
   const location = [program.address, program.city, program.state]
     .filter(Boolean)
     .filter((value, index, values) => values.indexOf(value) === index)
@@ -156,6 +158,44 @@ export default function ResourceDetail() {
             </p>
           </div>
 
+          <section
+            aria-labelledby="resource-verification-heading"
+            className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4"
+          >
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div>
+                <h3 id="resource-verification-heading" className="font-semibold text-on-surface">
+                  How this listing was checked
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-on-surface-variant">
+                  Housing Navigator reviewed the listed source
+                  {verified ? ` on ${verified}` : ''}. Availability can change, so confirm directly before applying.
+                </p>
+              </div>
+            </div>
+            <dl className="mt-4 space-y-2 border-t border-primary/15 pt-3 text-sm">
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-on-surface-variant">Source type</dt>
+                <dd className="text-right font-semibold text-on-surface">{verificationSourceType}</dd>
+              </div>
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-on-surface-variant">Latest review</dt>
+                <dd className="text-right font-semibold text-on-surface">{verified || 'Pending'}</dd>
+              </div>
+            </dl>
+            {verificationSourceUrl && (
+              <a
+                href={verificationSourceUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dim"
+              >
+                Review the listed source <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            )}
+          </section>
+
           {program.website && (
             <a
               href={program.website}
@@ -164,16 +204,6 @@ export default function ResourceDetail() {
               className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary hover:bg-primary-dim"
             >
               Visit provider website <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-            </a>
-          )}
-          {program.source_url && program.source_url !== program.website && (
-            <a
-              href={program.source_url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dim"
-            >
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" /> View verification source
             </a>
           )}
         </aside>

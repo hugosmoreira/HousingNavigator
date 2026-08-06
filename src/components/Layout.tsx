@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { usePublicAuth } from '../auth/PublicAuthContext';
 import { applyPageMetadata } from '../lib/pageMetadata';
+import { applyStructuredData } from '../lib/structuredData';
 
 export default function Layout() {
   const location = useLocation();
@@ -17,6 +18,7 @@ export default function Layout() {
 
   useEffect(() => {
     applyPageMetadata(location.pathname);
+    applyStructuredData(location.pathname);
   }, [location.pathname]);
 
   async function handleSignOut() {

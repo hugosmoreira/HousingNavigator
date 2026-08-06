@@ -9,6 +9,9 @@ import {
 import type { Program, WaitlistEntry } from '../types';
 
 export const SITE_URL = 'https://housingnavigator.us';
+export const SOCIAL_IMAGE_URL = `${SITE_URL}/social-card.png`;
+export const SOCIAL_IMAGE_ALT =
+  'Housing Navigator — find housing help and track waitlists';
 
 const STATIC_PROGRAMS = catalogData as unknown as Program[];
 const STATIC_WAITLISTS = waitlistsData as unknown as WaitlistEntry[];
@@ -22,6 +25,9 @@ export interface PageMetadata {
 export interface ResolvedPageMetadata extends PageMetadata {
   canonicalUrl: string | null;
   path: string;
+  openGraphType: 'website';
+  socialImageUrl: string;
+  socialImageAlt: string;
 }
 
 export const INDEXABLE_PAGE_METADATA: Record<string, PageMetadata> = {
@@ -162,6 +168,9 @@ export function resolvePageMetadata(pathname: string): ResolvedPageMetadata {
   return {
     ...metadata,
     path,
+    openGraphType: 'website',
+    socialImageUrl: SOCIAL_IMAGE_URL,
+    socialImageAlt: SOCIAL_IMAGE_ALT,
     canonicalUrl: metadata.index
       ? `${SITE_URL}${path === '/' ? '/' : `${path}/`}`
       : null,
@@ -215,7 +224,17 @@ export function applyPageMetadata(pathname: string, documentRef: Document = docu
   upsertMeta(documentRef, 'property', 'og:title', metadata.title);
   upsertMeta(documentRef, 'property', 'og:description', metadata.description);
   upsertMeta(documentRef, 'property', 'og:url', pageUrl);
+  upsertMeta(documentRef, 'property', 'og:type', metadata.openGraphType);
+  upsertMeta(documentRef, 'property', 'og:image', metadata.socialImageUrl);
+  upsertMeta(documentRef, 'property', 'og:image:secure_url', metadata.socialImageUrl);
+  upsertMeta(documentRef, 'property', 'og:image:type', 'image/png');
+  upsertMeta(documentRef, 'property', 'og:image:width', '1200');
+  upsertMeta(documentRef, 'property', 'og:image:height', '630');
+  upsertMeta(documentRef, 'property', 'og:image:alt', metadata.socialImageAlt);
+  upsertMeta(documentRef, 'name', 'twitter:card', 'summary_large_image');
   upsertMeta(documentRef, 'name', 'twitter:title', metadata.title);
   upsertMeta(documentRef, 'name', 'twitter:description', metadata.description);
+  upsertMeta(documentRef, 'name', 'twitter:image', metadata.socialImageUrl);
+  upsertMeta(documentRef, 'name', 'twitter:image:alt', metadata.socialImageAlt);
   updateCanonical(documentRef, metadata.canonicalUrl);
 }
