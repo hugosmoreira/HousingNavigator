@@ -6,13 +6,121 @@
   # Pin Node so builds stay reproducible on Vite 6 (needs Node 18+).
   NODE_VERSION = "20"
 
-# SPA fallback. React Router uses BrowserRouter (path-based) routes such as
-# /resources, /waitlist, /admin/*, /login, /reset-password. Netlify serves
-# real files in `dist` first, then rewrites everything else to index.html
-# (status 200 = rewrite, not a 3xx redirect) so deep links, browser refreshes,
-# and Supabase PKCE email links resolve to the app instead of a 404.
+# React Router uses BrowserRouter, so every real application route needs a
+# 200 rewrite to index.html for deep links and browser refreshes. Keep this
+# allowlist in sync with src/App.tsx. Paths not listed here fall through to
+# public/404.html and Netlify returns a genuine HTTP 404 instead of a soft 404.
+
+# Public and account routes.
 [[redirects]]
-  from = "/*"
+  from = "/resources"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/waitlist"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/mission"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/privacy"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/terms"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/help"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/accessibility"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/signup"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/forgot-password"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/reset-password"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/index.html"
+  status = 200
+
+# Admin routes. Dynamic edit routes use one-segment placeholders so arbitrary
+# nested admin paths still receive a real 404.
+[[redirects]]
+  from = "/admin"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/login"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/resources"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/resources/new"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/resources/:id/edit"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/waitlists"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/waitlists/new"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/waitlists/:id/edit"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/alerts"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/review"
   to = "/index.html"
   status = 200
 
