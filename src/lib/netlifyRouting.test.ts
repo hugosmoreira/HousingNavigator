@@ -37,11 +37,11 @@ function redirectBlockFor(route: string): string | undefined {
 }
 
 describe('Netlify application routing', () => {
-  it.each(applicationRoutes)('rewrites %s to the SPA with HTTP 200', (route) => {
+  it.each(applicationRoutes)('rewrites %s to the clean SPA shell with HTTP 200', (route) => {
     const block = redirectBlockFor(route);
 
     expect(block).toBeDefined();
-    expect(block).toContain('to = "/index.html"');
+    expect(block).toContain('to = "/spa.html"');
     expect(block).toContain('status = 200');
   });
 
@@ -52,7 +52,7 @@ describe('Netlify application routing', () => {
   it('provides a non-indexable custom 404 document', () => {
     expect(notFoundPage).toContain('<title>Page not found | Housing Navigator</title>');
     expect(notFoundPage).toContain('name="robots" content="noindex,nofollow"');
-    expect(notFoundPage).toContain('href="/resources"');
-    expect(notFoundPage).toContain('href="/waitlist"');
+    expect(notFoundPage).toContain('href="/resources/"');
+    expect(notFoundPage).toContain('href="/waitlist/"');
   });
 });

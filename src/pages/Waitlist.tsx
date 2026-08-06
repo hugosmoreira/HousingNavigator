@@ -10,8 +10,10 @@ import {
   MinusCircle,
   type LucideIcon,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useWaitlists } from '../hooks/useWaitlists';
 import { useUserData } from '../auth/UserDataContext';
+import { waitlistPath } from '../lib/entityRoutes';
 import type { County, WaitlistStatus } from '../types';
 
 interface StatusPresentation {
@@ -60,7 +62,11 @@ function formatLastOpened(iso: string | undefined): string | null {
   if (!iso) return null;
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return null;
-  return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  return parsed.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
 }
 
 function formatLastChecked(iso: string): string | null {
@@ -69,7 +75,7 @@ function formatLastChecked(iso: string): string | null {
   if (Number.isNaN(parsed.getTime())) return iso;
   // Date-only strings (e.g. "2026-04-18") parse as UTC midnight. Format in
   // UTC too, otherwise US-timezone users see the day before.
-  return parsed.toLocaleDateString(undefined, {
+  return parsed.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -251,7 +257,9 @@ export default function Waitlist() {
                 <div className="flex justify-between items-start mb-4 gap-4">
                   <div className="min-w-0">
                     <h2 className="text-lg font-headline font-bold text-on-surface leading-tight">
-                      {wl.agency}
+                      <Link to={waitlistPath(wl)} className="hover:text-primary transition-colors">
+                        {wl.agency}
+                      </Link>
                     </h2>
                     {wl.program_name && (
                       <p className="text-sm text-on-surface-variant mt-0.5">{wl.program_name}</p>
@@ -287,19 +295,25 @@ export default function Waitlist() {
                   <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">{wl.notes}</p>
                 )}
 
-                <div className="flex justify-between items-center mt-auto pt-4 border-t border-surface-container-highest/60">
-                  {hasLink ? (
-                    <a
-                      href={wl.website}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="text-primary font-semibold text-sm hover:text-primary-dim flex items-center gap-1 transition-colors"
+                <div className="flex flex-wrap justify-between items-center gap-4 mt-auto pt-4 border-t border-surface-container-highest/60">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Link
+                      to={waitlistPath(wl)}
+                      className="text-primary font-semibold text-sm hover:text-primary-dim"
                     >
-                      Official source <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
-                    </a>
-                  ) : (
-                    <span className="text-xs text-on-surface-variant">No link available</span>
-                  )}
+                      View details
+                    </Link>
+                    {hasLink && (
+                      <a
+                        href={wl.website}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-primary font-semibold text-sm hover:text-primary-dim flex items-center gap-1 transition-colors"
+                      >
+                        Official source <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
+                      </a>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2.5">
                     <span className="text-sm font-medium text-on-surface-variant">Notify me</span>
                     <button

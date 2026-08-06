@@ -1,4 +1,17 @@
+import catalogData from '../data/catalog.json';
+import waitlistsData from '../data/waitlists.json';
+import {
+  findResourceBySlug,
+  findWaitlistBySlug,
+  resourcePath,
+  waitlistPath,
+} from './entityRoutes';
+import type { Program, WaitlistEntry } from '../types';
+
 export const SITE_URL = 'https://housingnavigator.us';
+
+const STATIC_PROGRAMS = catalogData as unknown as Program[];
+const STATIC_WAITLISTS = waitlistsData as unknown as WaitlistEntry[];
 
 export interface PageMetadata {
   title: string;
@@ -93,6 +106,45 @@ const NOT_FOUND_METADATA: PageMetadata = {
   index: false,
 };
 
+function shorten(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function resolveDetailMetadata(path: string): PageMetadata | null {
+  const resourceMatch = path.match(/^\/resources\/([^/]+)$/);
+  if (resourceMatch) {
+    const program = findResourceBySlug(STATIC_PROGRAMS, resourceMatch[1]);
+    if (!program || normalizePagePath(resourcePath(program)) !== path) return null;
+    const summary =
+      program.description ||
+      program.eligibility_summary ||
+      program.notes ||
+      `Housing assistance information for ${program.county} County.`;
+    return {
+      title: shorten(`${program.program_name} | Housing Navigator`, 65),
+      description: shorten(summary, 155),
+      index: true,
+    };
+  }
+
+  const waitlistMatch = path.match(/^\/waitlist\/([^/]+)$/);
+  if (waitlistMatch) {
+    const waitlist = findWaitlistBySlug(STATIC_WAITLISTS, waitlistMatch[1]);
+    if (!waitlist || normalizePagePath(waitlistPath(waitlist)) !== path) return null;
+    const summary = waitlist.notes ||
+      `Check the latest reported housing waitlist status for ${waitlist.agency} in ${waitlist.county} County.`;
+    return {
+      title: shorten(`${waitlist.agency} waitlist | Housing Navigator`, 65),
+      description: shorten(summary, 155),
+      index: true,
+    };
+  }
+
+  return null;
+}
+
 export function normalizePagePath(pathname: string): string {
   if (!pathname || pathname === '/') return '/';
   const normalized = pathname.replace(/\/+$/, '');
@@ -101,12 +153,18 @@ export function normalizePagePath(pathname: string): string {
 
 export function resolvePageMetadata(pathname: string): ResolvedPageMetadata {
   const path = normalizePagePath(pathname);
-  const metadata = INDEXABLE_PAGE_METADATA[path] ?? PRIVATE_PAGE_METADATA[path] ?? NOT_FOUND_METADATA;
+  const metadata =
+    INDEXABLE_PAGE_METADATA[path] ??
+    resolveDetailMetadata(path) ??
+    PRIVATE_PAGE_METADATA[path] ??
+    NOT_FOUND_METADATA;
 
   return {
     ...metadata,
     path,
-    canonicalUrl: metadata.index ? `${SITE_URL}${path === '/' ? '/' : path}` : null,
+    canonicalUrl: metadata.index
+      ? `${SITE_URL}${path === '/' ? '/' : `${path}/`}`
+      : null,
   };
 }
 
@@ -144,7 +202,9 @@ function updateCanonical(documentRef: Document, canonicalUrl: string | null) {
 
 export function applyPageMetadata(pathname: string, documentRef: Document = document) {
   const metadata = resolvePageMetadata(pathname);
-  const pageUrl = `${SITE_URL}${metadata.path === '/' ? '/' : metadata.path}`;
+  const pageUrl =
+    metadata.canonicalUrl ??
+    `${SITE_URL}${metadata.path === '/' ? '/' : metadata.path}`;
   const robots = metadata.index
     ? 'index,follow,max-image-preview:large'
     : 'noindex,nofollow';

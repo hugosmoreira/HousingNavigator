@@ -28,10 +28,10 @@ export default function Home() {
               Built for Portland and Vancouver, without the 211 runaround.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/resources" className="inline-flex items-center justify-center gap-2 bg-primary text-on-primary px-8 py-4 rounded-full font-semibold text-base shadow-[0px_8px_24px_rgba(0,83,221,0.15)] hover:bg-primary-dim hover:shadow-[0px_12px_32px_rgba(0,83,221,0.25)] transition-all duration-300 transform hover:-translate-y-0.5 text-center">
+              <Link to="/resources/" className="inline-flex items-center justify-center gap-2 bg-primary text-on-primary px-8 py-4 rounded-full font-semibold text-base shadow-[0px_8px_24px_rgba(0,83,221,0.15)] hover:bg-primary-dim hover:shadow-[0px_12px_32px_rgba(0,83,221,0.25)] transition-all duration-300 transform hover:-translate-y-0.5 text-center">
                 <Search className="w-5 h-5" aria-hidden="true" /> Find resources
               </Link>
-              <Link to="/waitlist" className="inline-flex items-center justify-center gap-2 bg-surface-container-highest text-surface-tint px-8 py-4 rounded-full font-semibold text-base hover:bg-surface-variant transition-colors text-center">
+              <Link to="/waitlist/" className="inline-flex items-center justify-center gap-2 bg-surface-container-highest text-surface-tint px-8 py-4 rounded-full font-semibold text-base hover:bg-surface-variant transition-colors text-center">
                 <ListChecks className="w-5 h-5" aria-hidden="true" /> Track waitlists
               </Link>
             </div>
@@ -175,7 +175,7 @@ export default function Home() {
               </li>
             </ul>
             <Link
-              to="/waitlist"
+              to="/waitlist/"
               className="inline-flex items-center gap-2 bg-primary text-on-primary px-7 py-3.5 rounded-full font-semibold text-base shadow-sm hover:bg-primary-dim transition-colors"
             >
               Open the waitlist tracker <ArrowRight className="w-5 h-5" aria-hidden="true" />

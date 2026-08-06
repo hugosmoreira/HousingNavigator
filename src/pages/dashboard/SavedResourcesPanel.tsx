@@ -94,7 +94,7 @@ export default function SavedResourcesPanel() {
         <EmptyState
           message="You haven't saved any resources yet."
           ctaLabel="Browse the directory"
-          ctaTo="/resources"
+          ctaTo="/resources/"
         />
       ) : rows.length === 0 ? (
         <p className="text-sm text-on-surface-variant">

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { ArrowUpRight, Bookmark, BookmarkCheck, MapPin, Phone, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   DIRECTORY_CATEGORY_LABELS,
   legacyToDirectoryCategory,
 } from '../data/categoryMap';
 import { useUserData } from '../auth/UserDataContext';
+import { resourcePath } from '../lib/entityRoutes';
 import type { ApplicationMethod, Program } from '../types';
 
 interface DirectoryCardProps {
@@ -27,10 +29,11 @@ function formatLastVerified(iso: string): string | null {
   if (!iso) return null;
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return iso;
-  return parsed.toLocaleDateString(undefined, {
+  return parsed.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
@@ -102,7 +105,9 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
       </header>
 
       <h3 className="text-lg font-headline font-bold text-on-surface mb-2 tracking-tight">
-        {program.program_name}
+        <Link to={resourcePath(program)} className="hover:text-primary transition-colors">
+          {program.program_name}
+        </Link>
       </h3>
 
       {summary && (
@@ -142,20 +147,28 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
         </div>
       </dl>
 
-      <footer className="mt-auto pt-4 border-t border-surface-container-highest/60 flex items-center justify-between gap-4">
+      <footer className="mt-auto pt-4 border-t border-surface-container-highest/60 flex flex-wrap items-center justify-between gap-4">
         <span className="text-xs text-on-surface-variant">
           {verified ? `Last verified ${verified}` : 'Verification pending'}
         </span>
-        {program.website && (
-          <a
-            href={program.website}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dim"
+        <div className="flex items-center gap-3">
+          <Link
+            to={resourcePath(program)}
+            className="text-sm font-semibold text-primary hover:text-primary-dim"
           >
-            Visit site <ArrowUpRight className="w-4 h-4" />
-          </a>
-        )}
+            View details
+          </Link>
+          {program.website && (
+            <a
+              href={program.website}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dim"
+            >
+              Visit site <ArrowUpRight className="w-4 h-4" />
+            </a>
+          )}
+        </div>
       </footer>
 
       {saveError && (

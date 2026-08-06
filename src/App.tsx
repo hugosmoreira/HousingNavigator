@@ -2,7 +2,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Resources from './pages/Resources';
+import ResourceDetail from './pages/ResourceDetail';
 import Waitlist from './pages/Waitlist';
+import WaitlistDetail from './pages/WaitlistDetail';
 import Mission from './pages/Mission';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -112,7 +114,9 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="resources" element={<Resources />} />
+          <Route path="resources/:slug" element={<ResourceDetail />} />
           <Route path="waitlist" element={<Waitlist />} />
+          <Route path="waitlist/:slug" element={<WaitlistDetail />} />
           <Route path="mission" element={<Mission />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="terms" element={<Terms />} />

@@ -187,11 +187,11 @@ export default function Signup() {
 
           <p className="text-xs text-on-surface-variant leading-relaxed">
             By creating an account you agree to our{' '}
-            <Link to="/terms" className="text-primary font-medium hover:underline">
+              <Link to="/terms/" className="text-primary font-medium hover:underline">
               Terms
             </Link>{' '}
             and{' '}
-            <Link to="/privacy" className="text-primary font-medium hover:underline">
+              <Link to="/privacy/" className="text-primary font-medium hover:underline">
               Privacy Policy
             </Link>
             .

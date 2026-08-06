@@ -37,20 +37,20 @@ function ensureDirectoryCategory(programs: Program[]): Program[] {
   );
 }
 
-const PROGRAMS = ensureDirectoryCategory(
+export const STATIC_PROGRAMS = ensureDirectoryCategory(
   Array.isArray(RAW_CATALOG) && RAW_CATALOG.length > 0 ? RAW_CATALOG : FALLBACK,
 );
 const RULES = rulesData as unknown as DecisionRule[];
-const WAITLISTS = waitlistsData as unknown as WaitlistEntry[];
+export const STATIC_WAITLISTS = waitlistsData as unknown as WaitlistEntry[];
 
 export const staticDataService: DataService = {
   async getPrograms() {
-    return PROGRAMS;
+    return STATIC_PROGRAMS;
   },
   async getDecisionRules() {
     return RULES;
   },
   async getWaitlists() {
-    return WAITLISTS;
+    return STATIC_WAITLISTS;
   },
 };

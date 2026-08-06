@@ -18,7 +18,12 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 let client: SupabaseClient | null = null;
 
-if (url && anonKey) {
+// The prerender bundle runs in Node and must stay deterministic: it renders
+// the public bundled snapshot and never needs auth, realtime, or a WebSocket.
+// Vite replaces import.meta.env.SSR at build time, so the browser bundle keeps
+// the existing Supabase behavior while the server bundle avoids initializing
+// browser-only transports.
+if (!import.meta.env.SSR && url && anonKey) {
   client = createClient(url, anonKey, {
     auth: {
       persistSession: true,
@@ -47,5 +52,8 @@ export function requireSupabase(): SupabaseClient {
 }
 
 export function isSupabaseConfigured(): boolean {
-  return supabase !== null;
+  // Configuration state must be identical during prerendering and the first
+  // browser render so auth-aware navigation hydrates without changing shape.
+  // The actual client remains browser-only above.
+  return Boolean(url && anonKey);
 }
