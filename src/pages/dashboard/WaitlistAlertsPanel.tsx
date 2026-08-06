@@ -131,7 +131,7 @@ export default function WaitlistAlertsPanel() {
             You're not following any waitlists yet.
           </p>
           <Link
-            to="/waitlist"
+            to="/waitlist/"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dim"
           >
             Browse waitlists

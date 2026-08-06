@@ -20,13 +20,13 @@ export default function NotFound() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
-            to="/resources"
+            to="/resources/"
             className="inline-flex items-center justify-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-full font-semibold text-sm shadow-sm hover:bg-primary-dim transition-colors"
           >
             <Search className="w-4 h-4" aria-hidden="true" /> Find resources
           </Link>
           <Link
-            to="/waitlist"
+            to="/waitlist/"
             className="inline-flex items-center justify-center gap-2 bg-surface-container-highest text-surface-tint px-6 py-3 rounded-full font-semibold text-sm hover:bg-surface-variant transition-colors"
           >
             <ListChecks className="w-4 h-4" aria-hidden="true" /> Track waitlists

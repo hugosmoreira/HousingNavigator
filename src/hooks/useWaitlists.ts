@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { dataService } from '../services/data';
+import { STATIC_WAITLISTS } from '../services/data/staticDataService';
 import type { WaitlistEntry } from '../types';
 
 interface WaitlistsState {
@@ -10,8 +11,8 @@ interface WaitlistsState {
 
 export function useWaitlists(): WaitlistsState {
   const [state, setState] = useState<WaitlistsState>({
-    waitlists: [],
-    loading: true,
+    waitlists: STATIC_WAITLISTS,
+    loading: false,
     error: null,
   });
 
@@ -23,7 +24,9 @@ export function useWaitlists(): WaitlistsState {
         if (!cancelled) setState({ waitlists, loading: false, error: null });
       })
       .catch((error: Error) => {
-        if (!cancelled) setState({ waitlists: [], loading: false, error });
+        if (!cancelled) {
+          setState((current) => ({ ...current, loading: false, error }));
+        }
       });
     return () => {
       cancelled = true;

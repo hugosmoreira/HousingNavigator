@@ -31,9 +31,9 @@ export default function Layout() {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'Find resources', path: '/resources' },
-    { name: 'Waitlists', path: '/waitlist' },
-    { name: 'About', path: '/mission' },
+    { name: 'Find resources', path: '/resources/' },
+    { name: 'Waitlists', path: '/waitlist/' },
+    { name: 'About', path: '/mission/' },
   ];
 
   function isActive(path: string) {
@@ -100,7 +100,7 @@ export default function Layout() {
               </Link>
             ))}
             <Link
-              to="/resources"
+              to="/resources/"
               className="hidden sm:inline-flex transition-colors px-5 py-2.5 rounded-full font-semibold text-sm shadow-sm hover:shadow bg-primary text-on-primary hover:bg-primary-dim"
             >
               Find resources
@@ -169,7 +169,7 @@ export default function Layout() {
               ))}
 
               <Link
-                to="/resources"
+                to="/resources/"
                 className="mt-2 px-3 py-3 rounded-full font-semibold text-sm text-center bg-primary text-on-primary hover:bg-primary-dim transition-colors"
               >
                 Find resources
@@ -193,10 +193,10 @@ export default function Layout() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
-            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/privacy">Privacy Policy</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/terms">Terms of Service</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/help">Help Center</Link>
-            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/accessibility">Accessibility</Link>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/privacy/">Privacy Policy</Link>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/terms/">Terms of Service</Link>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/help/">Help Center</Link>
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/accessibility/">Accessibility</Link>
           </div>
         </div>
       </footer>

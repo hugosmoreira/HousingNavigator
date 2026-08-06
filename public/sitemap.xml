@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://housingnavigator.us/</loc></url>
-  <url><loc>https://housingnavigator.us/resources</loc></url>
-  <url><loc>https://housingnavigator.us/waitlist</loc></url>
-  <url><loc>https://housingnavigator.us/mission</loc></url>
-  <url><loc>https://housingnavigator.us/help</loc></url>
-  <url><loc>https://housingnavigator.us/accessibility</loc></url>
-  <url><loc>https://housingnavigator.us/privacy</loc></url>
-  <url><loc>https://housingnavigator.us/terms</loc></url>
+  <url><loc>https://housingnavigator.us/resources/</loc></url>
+  <url><loc>https://housingnavigator.us/waitlist/</loc></url>
+  <url><loc>https://housingnavigator.us/mission/</loc></url>
+  <url><loc>https://housingnavigator.us/help/</loc></url>
+  <url><loc>https://housingnavigator.us/accessibility/</loc></url>
+  <url><loc>https://housingnavigator.us/privacy/</loc></url>
+  <url><loc>https://housingnavigator.us/terms/</loc></url>
 </urlset>

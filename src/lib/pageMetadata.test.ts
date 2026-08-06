@@ -11,7 +11,7 @@ describe('page metadata', () => {
     expect(resolvePageMetadata('/resources/')).toMatchObject({
       path: '/resources',
       index: true,
-      canonicalUrl: `${SITE_URL}/resources`,
+      canonicalUrl: `${SITE_URL}/resources/`,
       title: 'Find housing resources | Housing Navigator',
     });
   });
@@ -35,7 +35,7 @@ describe('page metadata', () => {
   it('lists every indexable route in the sitemap', () => {
     const sitemap = readFileSync(new URL('../../public/sitemap.xml', import.meta.url), 'utf8');
     for (const path of Object.keys(INDEXABLE_PAGE_METADATA)) {
-      const url = `${SITE_URL}${path === '/' ? '/' : path}`;
+      const url = `${SITE_URL}${path === '/' ? '/' : `${path}/`}`;
       expect(sitemap).toContain(`<loc>${url}</loc>`);
     }
   });
