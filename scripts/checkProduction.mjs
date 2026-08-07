@@ -7,6 +7,7 @@ const requiredHeaders = {
   'strict-transport-security': ['max-age=31536000'],
   'x-content-type-options': ['nosniff'],
 };
+const indexNowKey = 'e060bb774e804994906a00517eb1de56';
 
 async function checkRoute(pathname) {
   const url = `${baseUrl}${pathname}`;
@@ -45,6 +46,22 @@ async function checkRoute(pathname) {
   console.log(`OK ${pathname} ${response.status}`);
 }
 
+async function checkTextAsset(pathname, expectedPattern) {
+  const response = await fetch(`${baseUrl}${pathname}`, {
+    headers: {
+      Accept: 'text/plain',
+      'User-Agent': 'HousingNavigator-Uptime/1.0',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = (await response.text()).trim();
+  if (!response.ok || !expectedPattern.test(body)) {
+    throw new Error(`${pathname} did not return the expected production marker`);
+  }
+  console.log(`OK ${pathname} ${response.status}`);
+}
+
 const failures = [];
 for (const route of routes) {
   try {
@@ -52,6 +69,16 @@ for (const route of routes) {
   } catch (error) {
     failures.push(error instanceof Error ? error.message : String(error));
   }
+}
+
+try {
+  await checkTextAsset(`/${indexNowKey}.txt`, new RegExp(`^${indexNowKey}$`));
+  await checkTextAsset(
+    '/.well-known/housing-navigator-deploy.txt',
+    /^[0-9a-f]{40}$/i,
+  );
+} catch (error) {
+  failures.push(error instanceof Error ? error.message : String(error));
 }
 
 if (failures.length > 0) {

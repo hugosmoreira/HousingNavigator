@@ -12,6 +12,7 @@
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir .prerender",
     "prerender": "tsx scripts/prerender.ts",
     "performance:check": "tsx scripts/checkBundleBudget.ts",
+    "indexnow": "node scripts/indexNow.mjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",

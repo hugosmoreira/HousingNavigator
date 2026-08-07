@@ -146,6 +146,21 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Strict-Transport-Security = "max-age=31536000"
 
+# Deployment marker used by the IndexNow workflow. It must never be served
+# stale, otherwise a notification could race ahead of the matching deploy.
+[[headers]]
+  for = "/.well-known/housing-navigator-deploy.txt"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
+    X-Robots-Tag = "noindex, nofollow"
+
+# IndexNow ownership key. The value is intentionally public by protocol.
+[[headers]]
+  for = "/e060bb774e804994906a00517eb1de56.txt"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+    X-Robots-Tag = "noindex, nofollow"
+
 # Keep account, dashboard, and admin surfaces out of search results. These
 # headers remain visible to crawlers, unlike a robots.txt Disallow rule.
 [[headers]]
