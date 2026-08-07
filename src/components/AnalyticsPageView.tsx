@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  PUBLIC_ANALYTICS_PAGES,
+  analyticsPageForPath,
   capturePublicPageView,
 } from '../lib/analytics';
 import { scheduleIdleWork } from '../lib/scheduleIdleWork';
@@ -11,7 +11,7 @@ export default function AnalyticsPageView() {
   const lastPage = useRef<string | null>(null);
 
   useEffect(() => {
-    const page = PUBLIC_ANALYTICS_PAGES[pathname as keyof typeof PUBLIC_ANALYTICS_PAGES];
+    const page = analyticsPageForPath(pathname);
     if (!page || lastPage.current === pathname) return;
     lastPage.current = pathname;
     return scheduleIdleWork(() => capturePublicPageView(page), {

@@ -1,3 +1,5 @@
+import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
+
 type PostHogClient =
   (typeof import('posthog-js/dist/module.slim.no-external'))['default'];
 
@@ -13,10 +15,21 @@ export const PUBLIC_ANALYTICS_PAGES = {
   '/terms': 'terms',
   '/help': 'help',
   '/accessibility': 'accessibility',
+  ...Object.fromEntries(
+    LOCAL_LANDING_PAGES.map((page) => [
+      page.path,
+      `housing_help_${page.county.toLowerCase()}_${page.service ?? 'all'}`,
+    ]),
+  ),
 } as const;
 
 export type PublicAnalyticsPage =
   (typeof PUBLIC_ANALYTICS_PAGES)[keyof typeof PUBLIC_ANALYTICS_PAGES];
+
+export function analyticsPageForPath(pathname: string): PublicAnalyticsPage | null {
+  const normalizedPath = pathname === '/' ? '/' : pathname.replace(/\/+$/, '');
+  return PUBLIC_ANALYTICS_PAGES[normalizedPath] ?? null;
+}
 
 let client: PostHogClient | null = null;
 let clientPromise: Promise<PostHogClient | null> | null = null;

@@ -45,8 +45,9 @@ describe('page metadata', () => {
       canonicalUrl: `${SITE_URL}/housing-help/multnomah-county/rent-assistance/`,
     });
     expect(resolvePageMetadata('/housing-help/clark-county/rent-assistance')).toMatchObject({
-      index: false,
-      canonicalUrl: null,
+      title: 'Rent assistance in Clark County, WA | Housing Navigator',
+      index: true,
+      canonicalUrl: `${SITE_URL}/housing-help/clark-county/rent-assistance/`,
     });
   });
 
