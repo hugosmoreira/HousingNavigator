@@ -10,6 +10,7 @@ import RouteLoading from './components/RouteLoading';
 export interface PublicPageComponents {
   Home: ComponentType;
   Resources: ComponentType;
+  LocalHousingLanding: ComponentType;
   ResourceDetail: ComponentType;
   Waitlist: ComponentType;
   WaitlistDetail: ComponentType;
@@ -53,6 +54,7 @@ export default function AppRoutes({
   const {
     Home,
     Resources,
+    LocalHousingLanding,
     ResourceDetail,
     Waitlist,
     WaitlistDetail,
@@ -80,6 +82,8 @@ export default function AppRoutes({
           <Route index element={<DeferredRoute><Home /></DeferredRoute>} />
           <Route path="resources" element={<DeferredRoute><Resources /></DeferredRoute>} />
           <Route path="resources/:slug" element={<DeferredRoute><ResourceDetail /></DeferredRoute>} />
+          <Route path="housing-help/:countySlug" element={<DeferredRoute><LocalHousingLanding /></DeferredRoute>} />
+          <Route path="housing-help/:countySlug/:serviceSlug" element={<DeferredRoute><LocalHousingLanding /></DeferredRoute>} />
           <Route path="waitlist" element={<DeferredRoute><Waitlist /></DeferredRoute>} />
           <Route path="waitlist/:slug" element={<DeferredRoute><WaitlistDetail /></DeferredRoute>} />
           <Route path="mission" element={<DeferredRoute><Mission /></DeferredRoute>} />

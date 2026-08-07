@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Info, ListFilter, Search, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { usePrograms } from '../hooks/usePrograms';
 import {
   DIRECTORY_CATEGORIES,
@@ -9,6 +10,7 @@ import {
 } from '../data/categoryMap';
 import { searchPrograms } from '../utils/resourceSearch';
 import DirectoryCard from '../components/DirectoryCard';
+import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
 import type {
   County,
   DirectoryCategory,
@@ -194,6 +196,23 @@ export default function Resources() {
               </button>
             )}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-surface border-b border-surface-container-highest" aria-labelledby="browse-by-area-heading">
+        <div className="max-w-6xl mx-auto px-6 lg:px-12 py-4 flex flex-wrap items-center gap-3">
+          <h2 id="browse-by-area-heading" className="text-sm font-semibold text-on-surface mr-1">
+            Browse by area
+          </h2>
+          {LOCAL_LANDING_PAGES.filter((page) => !page.service).map((page) => (
+            <Link
+              key={page.path}
+              to={`${page.path}/`}
+              className="rounded-full border border-surface-container-highest bg-surface-container-lowest px-3.5 py-1.5 text-sm font-medium text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors"
+            >
+              {page.county} County
+            </Link>
+          ))}
         </div>
       </section>
 

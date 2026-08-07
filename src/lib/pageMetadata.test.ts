@@ -25,6 +25,18 @@ describe('page metadata', () => {
     expect(resolvePageMetadata('/').canonicalUrl).toBe(`${SITE_URL}/`);
   });
 
+  it('publishes canonical metadata for supported local housing pages', () => {
+    expect(resolvePageMetadata('/housing-help/multnomah-county/rent-assistance/')).toMatchObject({
+      title: 'Rent assistance in Multnomah County | Housing Navigator',
+      index: true,
+      canonicalUrl: `${SITE_URL}/housing-help/multnomah-county/rent-assistance/`,
+    });
+    expect(resolvePageMetadata('/housing-help/clark-county/rent-assistance')).toMatchObject({
+      index: false,
+      canonicalUrl: null,
+    });
+  });
+
   it('marks private and unknown routes noindex without a canonical', () => {
     expect(resolvePageMetadata('/dashboard')).toMatchObject({
       index: false,
