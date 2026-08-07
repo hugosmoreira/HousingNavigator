@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { BellRing, ClipboardCheck, Home, ListChecks, LogOut, Sparkles } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { getSupabaseClient } from '../lib/supabaseClient';
 import { useAdminAuth } from './AdminAuthContext';
 
 export default function AdminLayout() {
@@ -16,11 +16,11 @@ export default function AdminLayout() {
   // refreshed on navigation so approvals/rejections update it promptly.
   useEffect(() => {
     if (!session || !isAdmin) return;
-    const client = supabase;
-    if (!client) return;
     let active = true;
     (async () => {
       try {
+        const client = await getSupabaseClient();
+        if (!client) return;
         const { count } = await client
           .from('waitlist_status_suggestions')
           .select('id', { count: 'exact', head: true })

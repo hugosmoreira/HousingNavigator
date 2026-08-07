@@ -11,38 +11,51 @@
  * Supabase project.
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 let client: SupabaseClient | null = null;
+let clientPromise: Promise<SupabaseClient> | null = null;
 
-// The prerender bundle runs in Node and must stay deterministic: it renders
-// the public bundled snapshot and never needs auth, realtime, or a WebSocket.
-// Vite replaces import.meta.env.SSR at build time, so the browser bundle keeps
-// the existing Supabase behavior while the server bundle avoids initializing
-// browser-only transports.
-if (!import.meta.env.SSR && url && anonKey) {
-  client = createClient(url, anonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-      // PKCE instead of the implicit flow: auth links carry a one-time
-      // ?code= that only completes with the code_verifier this browser
-      // stored when the flow started. A crafted URL pasted to a victim can
-      // no longer install an attacker's session (login-CSRF / session
-      // fixation — Codex finding 4). Trade-off: email links (confirm,
-      // recovery) must be opened in the browser that requested them.
-      flowType: 'pkce',
-    },
-  });
+/**
+ * Load the browser client only when an authenticated/data feature needs it.
+ * Public prerendered pages can hydrate without downloading Supabase first.
+ */
+export async function getSupabaseClient(): Promise<SupabaseClient | null> {
+  if (import.meta.env.SSR || !url || !anonKey) return null;
+  if (client) return client;
+  if (clientPromise) return clientPromise;
+
+  clientPromise = import('@supabase/supabase-js')
+    .then(({ createClient }) => {
+      client = createClient(url, anonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          // PKCE instead of the implicit flow: auth links carry a one-time
+          // ?code= that only completes with the code_verifier this browser
+          // stored when the flow started. A crafted URL pasted to a victim can
+          // no longer install an attacker's session (login-CSRF / session
+          // fixation). Email links must be opened in the requesting browser.
+          flowType: 'pkce',
+        },
+      });
+      return client;
+    })
+    .catch((error) => {
+      // Permit a later retry after a transient chunk/network failure.
+      clientPromise = null;
+      throw error;
+    });
+
+  return clientPromise;
 }
 
-export const supabase = client;
-
-export function requireSupabase(): SupabaseClient {
+export async function requireSupabase(): Promise<SupabaseClient> {
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     throw new Error(
       'Supabase client not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',

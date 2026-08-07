@@ -49,7 +49,7 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
     let active = true;
     (async () => {
       try {
-        const client = requireSupabase();
+        const client = await requireSupabase();
         // Read via waitlists_admin (migration 0010): internal_notes is no
         // longer selectable from the base table by the authenticated role.
         // Writes below still target the base table (unchanged grants + RLS).
@@ -97,7 +97,7 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
     setError(null);
     setSaving(true);
     try {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       const payload = sanitize(draft);
       if (mode === 'new') {
         const insertPayload = { ...payload, id: slugify(payload.housing_authority, payload.program_name) };
@@ -135,7 +135,7 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
     if (!window.confirm('Delete this waitlist? This cannot be undone.')) return;
     setSaving(true);
     try {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       const { error: err } = await client.from('waitlists').delete().eq('id', waitlistId);
       if (err) throw err;
       navigate('/admin/waitlists');

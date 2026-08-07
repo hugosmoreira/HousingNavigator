@@ -68,6 +68,8 @@ export interface IntakeState {
 
 export interface Program {
   id: string;
+  /** Stable catalog identity used in public URLs when the backing row has a database UUID. */
+  route_id?: string;
   program_name: string;
   county: County;
   category: ProgramCategory;
@@ -119,6 +121,8 @@ export interface RecommendationResult {
 
 export interface WaitlistEntry {
   id: string;
+  /** Stable catalog identity used in public URLs when the backing row has a database UUID. */
+  route_id?: string;
   agency: string;
   county: County;
   status: WaitlistStatus;

@@ -74,7 +74,7 @@ export function isSkipped(r: NotifyAlertResponse): r is NotifyAlertSkipped {
 export async function notifyWaitlistAlert(
   body: NotifyAlertRequest,
 ): Promise<NotifyAlertResponse> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { data, error } = await client.functions.invoke<NotifyAlertResponse>(
     'send-waitlist-alert',
     { body },

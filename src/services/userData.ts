@@ -40,7 +40,7 @@ export interface ProfilePatch {
 // ---------------------------------------------------------------------------
 
 export async function listSavedResources(): Promise<SavedResourceRow[]> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { data, error } = await client
     .from('saved_resources')
     .select('id, resource_id, created_at')
@@ -50,7 +50,7 @@ export async function listSavedResources(): Promise<SavedResourceRow[]> {
 }
 
 export async function saveResource(userId: string, resourceId: string): Promise<void> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { error } = await client
     .from('saved_resources')
     .insert({ user_id: userId, resource_id: resourceId });
@@ -58,7 +58,7 @@ export async function saveResource(userId: string, resourceId: string): Promise<
 }
 
 export async function unsaveResource(resourceId: string): Promise<void> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { error } = await client
     .from('saved_resources')
     .delete()
@@ -71,7 +71,7 @@ export async function unsaveResource(resourceId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function listWaitlistAlerts(): Promise<WaitlistAlertRow[]> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { data, error } = await client
     .from('waitlist_alerts')
     .select('id, waitlist_id, notify_on_open, notify_on_status_change, created_at, updated_at')
@@ -85,7 +85,7 @@ export async function followWaitlist(
   waitlistId: string,
   prefs: { notify_on_open?: boolean; notify_on_status_change?: boolean } = {},
 ): Promise<WaitlistAlertRow> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { data, error } = await client
     .from('waitlist_alerts')
     .insert({
@@ -101,7 +101,7 @@ export async function followWaitlist(
 }
 
 export async function unfollowWaitlist(waitlistId: string): Promise<void> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { error } = await client
     .from('waitlist_alerts')
     .delete()
@@ -113,7 +113,7 @@ export async function updateWaitlistAlertPrefs(
   waitlistId: string,
   prefs: { notify_on_open?: boolean; notify_on_status_change?: boolean },
 ): Promise<void> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { error } = await client
     .from('waitlist_alerts')
     .update(prefs)
@@ -126,7 +126,7 @@ export async function updateWaitlistAlertPrefs(
 // ---------------------------------------------------------------------------
 
 export async function updateProfile(userId: string, patch: ProfilePatch): Promise<void> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { error } = await client
     .from('profiles')
     .update(patch)
@@ -149,7 +149,7 @@ export async function updateProfile(userId: string, patch: ProfilePatch): Promis
 
 export async function fetchResourcesByIds(ids: string[]): Promise<ResourceRow[]> {
   if (ids.length === 0) return [];
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { data, error } = await client
     .from('resources_public')
     .select('*')
@@ -160,7 +160,7 @@ export async function fetchResourcesByIds(ids: string[]): Promise<ResourceRow[]>
 
 export async function fetchWaitlistsByIds(ids: string[]): Promise<WaitlistRow[]> {
   if (ids.length === 0) return [];
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { data, error } = await client
     .from('waitlists_public')
     .select('*')
@@ -189,7 +189,7 @@ export interface NotificationEventRow {
 }
 
 export async function listNotificationEvents(): Promise<NotificationEventRow[]> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   // Newest 50 is plenty for the dashboard panel; older history stays
   // queryable but never inflates this payload.
   const { data, error } = await client
@@ -202,7 +202,7 @@ export async function listNotificationEvents(): Promise<NotificationEventRow[]> 
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { error } = await client
     .from('notification_events')
     .update({ read: true })
@@ -211,7 +211,7 @@ export async function markNotificationRead(id: string): Promise<void> {
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   // RLS scopes the update to the caller's own rows.
   const { error } = await client
     .from('notification_events')
