@@ -22,8 +22,13 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import {
+  getSupabaseClient,
+  isSupabaseConfigured,
+  requireSupabase,
+} from '../lib/supabaseClient';
 import { resetAnalytics } from '../lib/analytics';
+import { scheduleIdleWork } from '../lib/scheduleIdleWork';
 
 export interface PublicProfile {
   id: string;
@@ -104,6 +109,7 @@ function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T
 }
 
 async function fetchProfile(userId: string): Promise<PublicProfile | null> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return null;
   try {
     const { data, error } = await withTimeout(
@@ -146,12 +152,14 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   }, [session]);
 
   useEffect(() => {
-    if (!supabase) {
+    if (!configured) {
       setLoading(false);
       return;
     }
 
     let active = true;
+    let unsubscribe: (() => void) | null = null;
+    let cancelScheduledInitialization = () => {};
 
     // supabase-js holds an internal auth lock while it dispatches
     // `onAuthStateChange` events, and a PostgREST query needs that same
@@ -168,40 +176,69 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       }, 0);
     };
 
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (!active) return;
-        setSession(data.session);
-        if (data.session) loadProfile(data.session.user.id);
-      })
-      .catch((err) => {
-        debug('getSession failed', err);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const initialize = async () => {
+      try {
+        const supabase = await getSupabaseClient();
+        if (!active || !supabase) return;
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        if (!active) return;
-        setSession(nextSession);
-        if (nextSession) {
-          loadProfile(nextSession.user.id);
-        } else {
-          setProfile(null);
-        }
-      },
-    );
+        supabase.auth
+          .getSession()
+          .then(({ data }) => {
+            if (!active) return;
+            setSession(data.session);
+            if (data.session) loadProfile(data.session.user.id);
+          })
+          .catch((err) => {
+            debug('getSession failed', err);
+          })
+          .finally(() => {
+            if (active) setLoading(false);
+          });
+
+        const { data: subscription } = supabase.auth.onAuthStateChange(
+          (_event, nextSession) => {
+            if (!active) return;
+            setSession(nextSession);
+            if (nextSession) {
+              loadProfile(nextSession.user.id);
+            } else {
+              setProfile(null);
+            }
+          },
+        );
+        unsubscribe = () => subscription.subscription.unsubscribe();
+      } catch (err) {
+        debug('client initialization failed', err);
+        if (active) setLoading(false);
+      }
+    };
+
+    const pathname = typeof window === 'undefined' ? '/' : window.location.pathname;
+    const authSensitiveRoute =
+      pathname === '/login' ||
+      pathname === '/signup' ||
+      pathname === '/forgot-password' ||
+      pathname === '/reset-password' ||
+      pathname.startsWith('/dashboard');
+
+    if (authSensitiveRoute || typeof window === 'undefined') {
+      void initialize();
+    } else {
+      cancelScheduledInitialization = scheduleIdleWork(
+        () => void initialize(),
+        { timeout: 1_500, fallbackDelay: 400 },
+      );
+    }
 
     return () => {
       active = false;
-      subscription.subscription.unsubscribe();
+      unsubscribe?.();
+      cancelScheduledInitialization();
     };
-  }, []);
+  }, [configured]);
 
   const signIn = useCallback(async (email: string, password: string, captchaToken?: string) => {
-    if (!supabase) throw new Error('Supabase not configured');
+    const supabase = await requireSupabase();
     const { error } = await withTimeout(
       supabase.auth.signInWithPassword({
         email,
@@ -216,7 +253,7 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback<PublicAuthValue['signUp']>(
     async (email, password, metadata, captchaToken) => {
-      if (!supabase) throw new Error('Supabase not configured');
+      const supabase = await requireSupabase();
       const { data, error } = await withTimeout(
         supabase.auth.signUp({
           email,
@@ -243,8 +280,9 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setSession(null);
     resetAnalytics();
-    if (!supabase) return;
     try {
+      const supabase = await getSupabaseClient();
+      if (!supabase) return;
       await withTimeout(supabase.auth.signOut(), SIGN_OUT_TIMEOUT_MS, 'signOut');
     } catch (err) {
       // Local state is already cleared; surface the failure but don't
@@ -255,7 +293,7 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const requestPasswordReset = useCallback(async (email: string, captchaToken?: string) => {
-    if (!supabase) throw new Error('Supabase not configured');
+    const supabase = await requireSupabase();
     const redirectTo = `${window.location.origin}/reset-password`;
     const { error } = await withTimeout(
       supabase.auth.resetPasswordForEmail(email, { redirectTo, captchaToken }),
@@ -266,7 +304,7 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updatePassword = useCallback(async (newPassword: string) => {
-    if (!supabase) throw new Error('Supabase not configured');
+    const supabase = await requireSupabase();
     const { error } = await withTimeout(
       supabase.auth.updateUser({ password: newPassword }),
       SIGN_IN_TIMEOUT_MS,

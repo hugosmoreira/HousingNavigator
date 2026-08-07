@@ -67,7 +67,7 @@ export default function AdminReviewQueue() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       const [sugRes, probRes] = await Promise.all([
         client
           .from('waitlist_status_suggestions')
@@ -125,7 +125,7 @@ export default function AdminReviewQueue() {
     setError(null);
     setNotice(null);
     try {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       const { error: rpcErr } = await client.rpc('review_waitlist_suggestion', {
         p_suggestion_id: id,
         p_approve: approve,
@@ -149,7 +149,7 @@ export default function AdminReviewQueue() {
     setError(null);
     setNotice(null);
     try {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       const { data, error: fnErr } = await client.functions.invoke('check-waitlist-status', {
         body: {},
       });

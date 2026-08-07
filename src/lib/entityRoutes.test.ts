@@ -11,6 +11,17 @@ import {
 import { resolvePageMetadata, SITE_URL } from './pageMetadata';
 
 describe('indexable entity routes', () => {
+  it('keeps a stable public slug without replacing the database id', () => {
+    const liveProgram = {
+      ...STATIC_PROGRAMS[0],
+      id: '55333fb9-7b50-42bd-b755-6a921c0673bd',
+      route_id: STATIC_PROGRAMS[0].route_id ?? STATIC_PROGRAMS[0].id,
+    };
+
+    expect(resourceSlug(liveProgram)).toBe(resourceSlug(STATIC_PROGRAMS[0]));
+    expect(liveProgram.id).toBe('55333fb9-7b50-42bd-b755-6a921c0673bd');
+  });
+
   it('creates unique, reversible resource slugs', () => {
     const slugs = STATIC_PROGRAMS.map(resourceSlug);
     expect(new Set(slugs).size).toBe(STATIC_PROGRAMS.length);

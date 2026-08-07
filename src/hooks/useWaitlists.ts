@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { dataService } from '../services/data';
 import { STATIC_WAITLISTS } from '../services/data/staticDataService';
+import { scheduleIdleWork } from '../lib/scheduleIdleWork';
 import type { WaitlistEntry } from '../types';
 
 interface WaitlistsState {
@@ -18,18 +19,21 @@ export function useWaitlists(): WaitlistsState {
 
   useEffect(() => {
     let cancelled = false;
-    dataService
-      .getWaitlists()
-      .then((waitlists) => {
-        if (!cancelled) setState({ waitlists, loading: false, error: null });
-      })
-      .catch((error: Error) => {
-        if (!cancelled) {
-          setState((current) => ({ ...current, loading: false, error }));
-        }
-      });
+    const cancelIdleWork = scheduleIdleWork(() => {
+      dataService
+        .getWaitlists()
+        .then((waitlists) => {
+          if (!cancelled) setState({ waitlists, loading: false, error: null });
+        })
+        .catch((error: Error) => {
+          if (!cancelled) {
+            setState((current) => ({ ...current, loading: false, error }));
+          }
+        });
+    });
     return () => {
       cancelled = true;
+      cancelIdleWork();
     };
   }, []);
 

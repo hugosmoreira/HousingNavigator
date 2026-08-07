@@ -17,6 +17,7 @@
  */
 
 import rulesData from '../../data/decisionRules.json';
+import { createEntitySlug } from '../../lib/entityRoutes';
 import { requireSupabase } from '../../lib/supabaseClient';
 import {
   programFromResourceRow,
@@ -25,18 +26,33 @@ import {
 import type { ResourceRow, WaitlistRow } from './dbTypes';
 import type { DataService } from './types';
 import type { DecisionRule } from '../../types';
+import { STATIC_PROGRAMS } from './staticDataService';
 
 const RULES = rulesData as unknown as DecisionRule[];
+const STATIC_RESOURCE_ROUTE_IDS = new Map(
+  STATIC_PROGRAMS.map((program) => [
+    createEntitySlug(program.program_name, program.county),
+    program.route_id ?? program.id,
+  ]),
+);
+
+function attachStableResourceRoute(row: ResourceRow) {
+  const program = programFromResourceRow(row);
+  const routeId = STATIC_RESOURCE_ROUTE_IDS.get(
+    createEntitySlug(program.program_name, program.county),
+  );
+  return routeId ? { ...program, route_id: routeId } : program;
+}
 
 export const supabaseDataService: DataService = {
   async getPrograms() {
-    const client = requireSupabase();
+    const client = await requireSupabase();
     const { data, error } = await client
       .from('resources_public')
       .select('*')
       .eq('published', true);
     if (error) throw error;
-    return ((data ?? []) as ResourceRow[]).map(programFromResourceRow);
+    return ((data ?? []) as ResourceRow[]).map(attachStableResourceRoute);
   },
 
   async getDecisionRules() {
@@ -44,7 +60,7 @@ export const supabaseDataService: DataService = {
   },
 
   async getWaitlists() {
-    const client = requireSupabase();
+    const client = await requireSupabase();
     const { data, error } = await client
       .from('waitlists_public')
       .select('*')

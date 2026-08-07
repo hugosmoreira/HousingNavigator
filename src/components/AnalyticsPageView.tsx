@@ -4,6 +4,7 @@ import {
   PUBLIC_ANALYTICS_PAGES,
   capturePublicPageView,
 } from '../lib/analytics';
+import { scheduleIdleWork } from '../lib/scheduleIdleWork';
 
 export default function AnalyticsPageView() {
   const { pathname } = useLocation();
@@ -13,7 +14,10 @@ export default function AnalyticsPageView() {
     const page = PUBLIC_ANALYTICS_PAGES[pathname as keyof typeof PUBLIC_ANALYTICS_PAGES];
     if (!page || lastPage.current === pathname) return;
     lastPage.current = pathname;
-    capturePublicPageView(page);
+    return scheduleIdleWork(() => capturePublicPageView(page), {
+      timeout: 2_000,
+      fallbackDelay: 750,
+    });
   }, [pathname]);
 
   return null;

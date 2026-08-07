@@ -22,7 +22,7 @@ export function usePagedAdminRows<T>(view: 'resources_admin' | 'waitlists_admin'
 
   const fetchPage = useCallback(
     async (offset: number) => {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       // The *_admin views (migration 0010) are the only read surface that
       // still includes internal_notes; they return zero rows for non-admins.
       const { data, error: err, count } = await client

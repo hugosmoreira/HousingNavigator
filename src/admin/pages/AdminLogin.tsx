@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../AdminAuthContext';
-import { supabase } from '../../lib/supabaseClient';
+import { getSupabaseClient } from '../../lib/supabaseClient';
 import TurnstileChallenge, {
   isTurnstileConfigured,
 } from '../../components/TurnstileChallenge';
@@ -100,6 +100,7 @@ export default function AdminLogin() {
       steps: [],
     };
 
+    const supabase = await getSupabaseClient();
     if (!supabase) {
       report.steps.push({
         label: 'supabase client',

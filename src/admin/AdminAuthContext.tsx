@@ -18,7 +18,11 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import {
+  getSupabaseClient,
+  isSupabaseConfigured,
+  requireSupabase,
+} from '../lib/supabaseClient';
 import { resetAnalytics } from '../lib/analytics';
 
 interface AdminAuthValue {
@@ -72,6 +76,7 @@ function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Pro
 }
 
 async function checkIsAdmin(): Promise<boolean> {
+  const supabase = await getSupabaseClient();
   if (!supabase) return false;
   const start = performance.now();
   debug('checkIsAdmin: querying admin_users');
@@ -103,7 +108,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(configured);
 
   const refreshAdminFlag = useCallback(async (): Promise<boolean> => {
-    if (!supabase) {
+    if (!configured) {
       setIsAdmin(false);
       return false;
     }
@@ -121,70 +126,78 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       debug('refreshAdminFlag error — preserving previous isAdmin', err);
       throw err;
     }
-  }, []);
+  }, [configured]);
 
   useEffect(() => {
-    if (!supabase) {
+    if (!configured) {
       setLoading(false);
       return;
     }
 
     let active = true;
+    let unsubscribe: (() => void) | null = null;
 
-    supabase.auth
-      .getSession()
-      .then(async ({ data }) => {
-        if (!active) return;
-        setSession(data.session);
-        if (data.session) {
-          try {
-            await refreshAdminFlag();
-          } catch (err) {
-            debug('initial refreshAdminFlag failed', err);
-          }
-        }
-      })
-      .catch((err) => {
-        debug('getSession failed', err);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const initialize = async () => {
+      try {
+        const supabase = await getSupabaseClient();
+        if (!active || !supabase) return;
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      (event, nextSession) => {
-        debug('auth state change', event, { hasSession: !!nextSession });
-        setSession(nextSession);
-        // Demote `isAdmin` only when the session actually ended. Silent
-        // token refreshes (`TOKEN_REFRESHED`) and metadata updates
-        // (`USER_UPDATED`) must NOT flip an existing admin to false —
-        // doing so caused mid-navigation bounces back to /admin/login
-        // with a "not admin" error during routine refreshes.
-        if (event === 'SIGNED_OUT' || !nextSession) {
-          setIsAdmin(false);
-          return;
-        }
-        // Deferred to a macrotask: supabase-js holds its auth lock while
-        // dispatching this callback, and the admin_users query needs the
-        // same lock to attach the JWT — awaiting it here deadlocks until
-        // the lookup times out (see PublicAuthContext for the long form).
-        setTimeout(() => {
-          void refreshAdminFlag().catch((err) => {
-            debug('refreshAdminFlag (listener) failed — keeping previous isAdmin', err);
+        supabase.auth
+          .getSession()
+          .then(async ({ data }) => {
+            if (!active) return;
+            setSession(data.session);
+            if (data.session) {
+              try {
+                await refreshAdminFlag();
+              } catch (err) {
+                debug('initial refreshAdminFlag failed', err);
+              }
+            }
+          })
+          .catch((err) => {
+            debug('getSession failed', err);
+          })
+          .finally(() => {
+            if (active) setLoading(false);
           });
-        }, 0);
-      },
-    );
+
+        const { data: subscription } = supabase.auth.onAuthStateChange(
+          (event, nextSession) => {
+            debug('auth state change', event, { hasSession: !!nextSession });
+            setSession(nextSession);
+            // Demote `isAdmin` only when the session actually ended. Silent
+            // token refreshes and metadata updates keep the last-known flag.
+            if (event === 'SIGNED_OUT' || !nextSession) {
+              setIsAdmin(false);
+              return;
+            }
+            // Defer the RLS query until Supabase releases its auth lock.
+            setTimeout(() => {
+              void refreshAdminFlag().catch((err) => {
+                debug('refreshAdminFlag (listener) failed — keeping previous isAdmin', err);
+              });
+            }, 0);
+          },
+        );
+        unsubscribe = () => subscription.subscription.unsubscribe();
+      } catch (err) {
+        debug('client initialization failed', err);
+        if (active) setLoading(false);
+      }
+    };
+
+    void initialize();
 
     return () => {
       active = false;
-      subscription.subscription.unsubscribe();
+      unsubscribe?.();
     };
-  }, [refreshAdminFlag]);
+  }, [configured, refreshAdminFlag]);
 
   const signIn = useCallback(
     async (email: string, password: string, captchaToken?: string): Promise<boolean> => {
-      if (!supabase) throw new Error('Supabase not configured');
+      const supabase = await requireSupabase();
       const start = performance.now();
       debug('signIn: signInWithPassword start', { email });
       const { data, error } = await withTimeout(
@@ -220,8 +233,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
     setSession(null);
     resetAnalytics();
-    if (!supabase) return;
     try {
+      const supabase = await getSupabaseClient();
+      if (!supabase) return;
       await withTimeout(supabase.auth.signOut(), SIGN_OUT_TIMEOUT_MS, 'signOut');
       debug('signOut: success');
     } catch (err) {

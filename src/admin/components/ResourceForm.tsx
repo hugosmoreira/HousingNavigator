@@ -57,7 +57,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
     let active = true;
     (async () => {
       try {
-        const client = requireSupabase();
+        const client = await requireSupabase();
         // Read via resources_admin (migration 0010): internal_notes is no
         // longer selectable from the base table by the authenticated role.
         // Writes below still target the base table (unchanged grants + RLS).
@@ -112,7 +112,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
     setError(null);
     setSaving(true);
     try {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       const payload = sanitize(draft);
       if (mode === 'new') {
         const { data, error: err } = await client
@@ -142,7 +142,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
     if (!window.confirm('Delete this resource? This cannot be undone.')) return;
     setSaving(true);
     try {
-      const client = requireSupabase();
+      const client = await requireSupabase();
       const { error: err } = await client.from('resources').delete().eq('id', resourceId);
       if (err) throw err;
       navigate('/admin/resources');

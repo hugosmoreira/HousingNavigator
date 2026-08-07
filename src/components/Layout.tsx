@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { usePublicAuth } from '../auth/PublicAuthContext';
-import { applyPageMetadata } from '../lib/pageMetadata';
-import { applyStructuredData } from '../lib/structuredData';
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthed, signOut, configured: publicAuthConfigured } = usePublicAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const skipInitialHeadUpdate = useRef(
+    typeof document !== 'undefined' &&
+      document.getElementById('root')?.dataset.ssr === 'true',
+  );
 
   // Close the mobile menu whenever the route changes.
   useEffect(() => {
@@ -17,8 +19,32 @@ export default function Layout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    applyPageMetadata(location.pathname);
-    applyStructuredData(location.pathname);
+    if (skipInitialHeadUpdate.current) {
+      skipInitialHeadUpdate.current = false;
+      return;
+    }
+
+    let active = true;
+
+    // Prerendering already places the correct metadata and JSON-LD in the
+    // document. Load the catalog-backed resolvers only when the browser needs
+    // to maintain the head during client-side navigation.
+    void Promise.all([
+      import('../lib/pageMetadata'),
+      import('../lib/structuredData'),
+    ])
+      .then(([metadata, structuredData]) => {
+        if (!active) return;
+        metadata.applyPageMetadata(location.pathname);
+        structuredData.applyStructuredData(location.pathname);
+      })
+      .catch(() => {
+        // A blocked route chunk must not break navigation or hydration.
+      });
+
+    return () => {
+      active = false;
+    };
   }, [location.pathname]);
 
   async function handleSignOut() {

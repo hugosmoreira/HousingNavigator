@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router';
-import App from './App';
+import AppServer from './AppServer';
 import AnalyticsPageView from './components/AnalyticsPageView';
 import { STATIC_PROGRAMS, STATIC_WAITLISTS } from './services/data/staticDataService';
 import { resourcePath, waitlistPath } from './lib/entityRoutes';
@@ -28,7 +28,7 @@ export function render(url: string): string {
     <StrictMode>
       <StaticRouter location={url}>
         <AnalyticsPageView />
-        <App />
+        <AppServer />
       </StaticRouter>
     </StrictMode>,
   );

@@ -42,7 +42,7 @@ export default function AdminAlertsLog() {
     let active = true;
     (async () => {
       try {
-        const client = requireSupabase();
+        const client = await requireSupabase();
         const { data, error: err } = await client
           .from('alert_send_log_admin')
           .select('*')

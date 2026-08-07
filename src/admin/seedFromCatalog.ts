@@ -97,7 +97,7 @@ export interface SeedResult {
 }
 
 export async function seedResourcesFromCatalog(): Promise<SeedResult> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const rows = bundledPrograms().map(programToResource);
   if (rows.length === 0) return { inserted: 0 };
   const { error } = await client.from('resources').insert(rows);
@@ -106,7 +106,7 @@ export async function seedResourcesFromCatalog(): Promise<SeedResult> {
 }
 
 export async function seedWaitlistsFromCatalog(): Promise<SeedResult> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const rows = WAITLISTS.map(waitlistToInsert);
   if (rows.length === 0) return { inserted: 0 };
   // Upsert on `id` so re-runs won't duplicate the seeded waitlists.

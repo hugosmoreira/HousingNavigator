@@ -17,7 +17,7 @@ export function createEntitySlug(label: string, id: string): string {
 }
 
 export function resourceSlug(program: Program): string {
-  return createEntitySlug(program.program_name, program.id);
+  return createEntitySlug(program.program_name, program.route_id ?? program.id);
 }
 
 export function resourcePath(program: Program): string {
@@ -25,7 +25,7 @@ export function resourcePath(program: Program): string {
 }
 
 export function waitlistSlug(waitlist: WaitlistEntry): string {
-  return createEntitySlug(waitlist.agency, waitlist.id);
+  return createEntitySlug(waitlist.agency, waitlist.route_id ?? waitlist.id);
 }
 
 export function waitlistPath(waitlist: WaitlistEntry): string {

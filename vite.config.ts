@@ -30,6 +30,11 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      // The manifest lets the budget check distinguish render-blocking entry
+      // imports from account/admin chunks that are loaded only on demand.
+      manifest: true,
+    },
     server: {
       // HMR can be disabled via the DISABLE_HMR env var (used by some
       // hosted editors to prevent flicker during automated edits).
