@@ -25,6 +25,19 @@ describe('page metadata', () => {
     expect(resolvePageMetadata('/').canonicalUrl).toBe(`${SITE_URL}/`);
   });
 
+  it('keeps indexable titles within Bing\'s 70-character recommendation', () => {
+    for (const metadata of Object.values(INDEXABLE_PAGE_METADATA)) {
+      expect(metadata.title.length).toBeLessThanOrEqual(70);
+    }
+  });
+
+  it('keeps the non-JavaScript shell title within the same limit', () => {
+    const source = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+    const title = source.match(/<title>(.*?)<\/title>/)?.[1];
+    expect(title).toBeTruthy();
+    expect(title?.length).toBeLessThanOrEqual(70);
+  });
+
   it('publishes canonical metadata for supported local housing pages', () => {
     expect(resolvePageMetadata('/housing-help/multnomah-county/rent-assistance/')).toMatchObject({
       title: 'Rent assistance in Multnomah County | Housing Navigator',

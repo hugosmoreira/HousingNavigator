@@ -33,7 +33,7 @@ export interface ResolvedPageMetadata extends PageMetadata {
 
 export const INDEXABLE_PAGE_METADATA: Record<string, PageMetadata> = {
   '/': {
-    title: 'Housing Navigator — Find housing help & track waitlists in Portland & Vancouver',
+    title: 'Housing Help & Waitlists in Portland & Vancouver | Housing Navigator',
     description:
       'Search a verified directory of rent assistance, shelter, legal aid, and housing waitlists across the Portland–Vancouver metro.',
     index: true,

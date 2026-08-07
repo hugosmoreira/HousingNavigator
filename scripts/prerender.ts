@@ -112,7 +112,23 @@ function outputPathFor(route: string): string {
 
 // Private/admin routes still need a clean SPA shell. Netlify rewrites those
 // routes to this file while public routes are shadowed by their generated HTML.
-const spaHtml = clientTemplate.replace('<!--ssr-outlet-->', '');
+// Give non-JavaScript crawlers truthful noindex metadata and a semantic heading;
+// createRoot replaces this fallback as soon as the client application starts.
+const loginMetadata = serverEntry.metadataFor('/login');
+const spaMetadata: PageMetadata = {
+  ...loginMetadata,
+  title: 'Housing Navigator account',
+  description: 'Sign in or create an account to save resources and follow housing waitlists.',
+  index: false,
+  canonicalUrl: null,
+};
+const spaHtml = applyMetadata(
+  clientTemplate.replace(
+    '<div id="root"><!--ssr-outlet--></div>',
+    '<div id="root"><h1 class="sr-only">Housing Navigator account</h1></div>',
+  ),
+  spaMetadata,
+);
 writeFileSync(join(distDir, 'spa.html'), spaHtml, 'utf8');
 
 for (const route of routes) {
