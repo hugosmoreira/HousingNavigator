@@ -126,6 +126,20 @@ export const LOCAL_LANDING_PAGES: LocalLandingPage[] = [
     checklist: GENERIC_CHECKLIST,
   },
   {
+    path: '/housing-help/clark-county/rent-assistance',
+    county: 'Clark',
+    stateName: 'Washington',
+    service: 'rent_assistance',
+    serviceLabel: 'Rent assistance',
+    title: 'Rent assistance in Clark County, WA | Housing Navigator',
+    heading: 'Rent assistance in Clark County, Washington',
+    description:
+      'Find verified Clark County rent, utility, and housing-stability assistance with current application and service-area guidance.',
+    introduction:
+      'These Clark County programs may help with rent, utilities, or short-term housing stability. Some programs accept applications only on specific days or within geographic service areas, and funding can run out quickly. Review each listing and call before traveling or submitting documents.',
+    checklist: RENT_CHECKLIST,
+  },
+  {
     path: '/housing-help/clark-county/emergency-shelter',
     county: 'Clark',
     stateName: 'Washington',

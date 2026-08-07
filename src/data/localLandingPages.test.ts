@@ -31,6 +31,5 @@ describe('local housing landing pages', () => {
   it('keeps unsupported thin county combinations out of the indexable set', () => {
     expect(findLocalLandingPage('/housing-help/washington-county')).toBeNull();
     expect(findLocalLandingPage('/housing-help/clackamas-county')).toBeNull();
-    expect(findLocalLandingPage('/housing-help/clark-county/rent-assistance')).toBeNull();
   });
 });

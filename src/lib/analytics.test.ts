@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  analyticsPageForPath,
   PUBLIC_ANALYTICS_PAGES,
   classifyApplicationSurface,
   normalizeApplicationErrorName,
@@ -38,6 +39,14 @@ describe('privacy-limited analytics', () => {
     expect(routes['/dashboard']).toBeUndefined();
     expect(routes['/admin/login']).toBeUndefined();
     expect(routes['/resources/private-id']).toBeUndefined();
+  });
+
+  it('tracks canonical trailing-slash and local SEO pages without query data', () => {
+    expect(analyticsPageForPath('/resources/')).toBe('resources');
+    expect(analyticsPageForPath('/housing-help/clark-county/rent-assistance/')).toBe(
+      'housing_help_clark_rent_assistance',
+    );
+    expect(analyticsPageForPath('/resources/private-id/')).toBeNull();
   });
 
   it('reports only coarse, redacted application error details', () => {
