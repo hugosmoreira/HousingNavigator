@@ -131,6 +131,23 @@ const spaHtml = applyMetadata(
 );
 writeFileSync(join(distDir, 'spa.html'), spaHtml, 'utf8');
 
+// Netlify exposes COMMIT_REF during production builds. The IndexNow workflow
+// polls this uncached marker so it never notifies search engines before the
+// matching deployment is live. Local builds use a non-production sentinel.
+const deployReferenceCandidate = (
+  process.env.COMMIT_REF ?? process.env.GITHUB_SHA ?? ''
+).trim();
+const deployReference = /^[0-9a-f]{40}$/i.test(deployReferenceCandidate)
+  ? deployReferenceCandidate
+  : 'local';
+const deployMarkerDir = join(distDir, '.well-known');
+mkdirSync(deployMarkerDir, { recursive: true });
+writeFileSync(
+  join(deployMarkerDir, 'housing-navigator-deploy.txt'),
+  `${deployReference}\n`,
+  'utf8',
+);
+
 for (const route of routes) {
   const appHtml = serverEntry.render(route);
   const metadata = serverEntry.metadataFor(route);

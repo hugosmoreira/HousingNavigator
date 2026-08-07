@@ -1,0 +1,81 @@
+name: Notify IndexNow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: Optional canonical housingnavigator.us URLs, one per line
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow-production
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Notify search engines after production deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the deployed commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Save the currently deployed sitemap
+        env:
+          PREVIOUS_SITEMAP: ${{ runner.temp }}/previous-sitemap.xml
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            https://housingnavigator.us/sitemap.xml \
+            --output "$PREVIOUS_SITEMAP"
+
+      - name: Build the complete production sitemap
+        run: |
+          npm ci
+          npm run build
+
+      - name: Select changed public URLs
+        id: urls
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          MANUAL_URLS: ${{ inputs.urls }}
+          URL_FILE: ${{ runner.temp }}/indexnow-urls.txt
+          PREVIOUS_SITEMAP: ${{ runner.temp }}/previous-sitemap.xml
+        run: |
+          node scripts/indexNow.mjs collect \
+            --before "$BEFORE_SHA" \
+            --after "$AFTER_SHA" \
+            --sitemap dist/sitemap.xml \
+            --previous-sitemap "$PREVIOUS_SITEMAP" \
+            --manual "$MANUAL_URLS" \
+            --output "$URL_FILE"
+          if [ -s "$URL_FILE" ]; then
+            echo "has_urls=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_urls=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for the matching Netlify deployment
+        if: steps.urls.outputs.has_urls == 'true'
+        run: node scripts/indexNow.mjs wait --sha "$GITHUB_SHA"
+
+      - name: Submit changed URLs to IndexNow
+        if: steps.urls.outputs.has_urls == 'true'
+        env:
+          URL_FILE: ${{ runner.temp }}/indexnow-urls.txt
+        run: node scripts/indexNow.mjs submit --file "$URL_FILE"
