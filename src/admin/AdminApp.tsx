@@ -24,7 +24,7 @@ export default function AdminApp() {
     <AdminAuthProvider>
       <Suspense fallback={<RouteLoading />}>
         <Routes>
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin/*" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/resources" replace />} />
             <Route path="login" element={<AdminLogin />} />
             <Route
