@@ -18,7 +18,6 @@ const catalogPath = join(repoRoot, 'src', 'data', 'catalog.json');
 const waitlistsPath = join(repoRoot, 'src', 'data', 'waitlists.json');
 const supabaseUrl = process.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, '');
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY?.trim();
-const useSupabase = process.env.VITE_USE_SUPABASE === 'true';
 
 const RESOURCE_COLUMNS = [
   'id',
@@ -130,8 +129,8 @@ function attachExistingResourceRoutes(
 }
 
 async function main(): Promise<void> {
-  if (!useSupabase || !supabaseUrl || !anonKey) {
-    console.log('Skipped public snapshot sync; Supabase-backed data is not configured.');
+  if (!supabaseUrl || !anonKey) {
+    console.log('Skipped public snapshot sync; public Supabase credentials are unavailable.');
     return;
   }
 
