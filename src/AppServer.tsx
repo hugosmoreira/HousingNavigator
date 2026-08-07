@@ -1,6 +1,7 @@
 import AppRoutes, { type PublicPageComponents } from './AppRoutes';
 import Home from './pages/Home';
 import Resources from './pages/Resources';
+import LocalHousingLanding from './pages/LocalHousingLanding';
 import ResourceDetail from './pages/ResourceDetail';
 import Waitlist from './pages/Waitlist';
 import WaitlistDetail from './pages/WaitlistDetail';
@@ -14,6 +15,7 @@ import NotFound from './pages/NotFound';
 const publicPages: PublicPageComponents = {
   Home,
   Resources,
+  LocalHousingLanding,
   ResourceDetail,
   Waitlist,
   WaitlistDetail,

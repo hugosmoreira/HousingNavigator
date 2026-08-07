@@ -7,6 +7,7 @@ import AppRoutes, { type PublicPageComponents } from './AppRoutes';
 const publicPages: PublicPageComponents = {
   Home: lazy(() => import('./pages/Home')),
   Resources: lazy(() => import('./pages/Resources')),
+  LocalHousingLanding: lazy(() => import('./pages/LocalHousingLanding')),
   ResourceDetail: lazy(() => import('./pages/ResourceDetail')),
   Waitlist: lazy(() => import('./pages/Waitlist')),
   WaitlistDetail: lazy(() => import('./pages/WaitlistDetail')),

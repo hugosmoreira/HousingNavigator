@@ -85,6 +85,30 @@ describe('structured data', () => {
     });
   });
 
+  it('describes a local landing page as a filtered resource collection', () => {
+    const path = '/housing-help/multnomah-county/rent-assistance/';
+    const document = resolveStructuredData(path);
+    const page = nodeByType(document!, 'CollectionPage');
+    const list = nodeByType(document!, 'ItemList');
+    const breadcrumb = nodeByType(document!, 'BreadcrumbList');
+    const expectedPrograms = STATIC_PROGRAMS.filter(
+      (program) =>
+        program.county === 'Multnomah' &&
+        program.directory_category === 'rent_assistance',
+    );
+
+    expect(page.mainEntity).toEqual({
+      '@id': 'https://housingnavigator.us/housing-help/multnomah-county/rent-assistance/#item-list',
+    });
+    expect(list.numberOfItems).toBe(expectedPrograms.length);
+    expect(list.itemListElement).toHaveLength(expectedPrograms.length);
+    expect(breadcrumb.itemListElement).toHaveLength(4);
+    expect((breadcrumb.itemListElement as StructuredDataNode[])[2]).toMatchObject({
+      name: 'Multnomah County',
+      item: 'https://housingnavigator.us/housing-help/multnomah-county/',
+    });
+  });
+
   it('describes a waitlist page with its source review date and hierarchy', () => {
     const waitlist = STATIC_WAITLISTS[0];
     const document = resolveStructuredData(waitlistPath(waitlist));

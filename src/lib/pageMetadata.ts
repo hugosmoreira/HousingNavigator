@@ -1,5 +1,6 @@
 import catalogData from '../data/catalog.json';
 import waitlistsData from '../data/waitlists.json';
+import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
 import {
   findResourceBySlug,
   findWaitlistBySlug,
@@ -76,6 +77,16 @@ export const INDEXABLE_PAGE_METADATA: Record<string, PageMetadata> = {
     description: 'Read the plain-language terms for using Housing Navigator.',
     index: true,
   },
+  ...Object.fromEntries(
+    LOCAL_LANDING_PAGES.map((page) => [
+      page.path,
+      {
+        title: page.title,
+        description: page.description,
+        index: true,
+      },
+    ]),
+  ),
 };
 
 const PRIVATE_PAGE_METADATA: Record<string, PageMetadata> = {

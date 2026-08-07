@@ -2,6 +2,11 @@ import {
   DIRECTORY_CATEGORY_LABELS,
   legacyToDirectoryCategory,
 } from '../data/categoryMap';
+import {
+  countyLandingPage,
+  findLocalLandingPage,
+  localLandingPrograms,
+} from '../data/localLandingPages';
 import { resourcePath, waitlistPath } from './entityRoutes';
 import { resolvePageMetadata, SITE_URL } from './pageMetadata';
 import {
@@ -276,8 +281,36 @@ export function resolveStructuredData(
 
   const resourcePathMatch = metadata.path.match(/^\/resources\/([^/]+)$/);
   const waitlistPathMatch = metadata.path.match(/^\/waitlist\/([^/]+)$/);
+  const localLandingPage = findLocalLandingPage(metadata.path);
 
-  if (resourcePathMatch) {
+  if (localLandingPage) {
+    const programs = localLandingPrograms(localLandingPage, STATIC_PROGRAMS);
+    const countyPage = countyLandingPage(localLandingPage.county);
+    pageType = 'CollectionPage';
+    dateModified = programs
+      .map((program) => program.last_verified)
+      .filter(Boolean)
+      .sort()
+      .slice(-1)[0];
+    breadcrumb = breadcrumbNode(canonicalUrl, [
+      { name: 'Home', url: `${SITE_URL}/` },
+      { name: 'Housing resources', url: `${SITE_URL}/resources/` },
+      ...(localLandingPage.service
+        ? [{
+            name: `${localLandingPage.county} County`,
+            url: `${SITE_URL}${countyPage.path}/`,
+          }]
+        : []),
+      { name: localLandingPage.heading, url: canonicalUrl },
+    ]);
+    mainEntity = collectionItemList(
+      canonicalUrl,
+      programs.map((program) => ({
+        name: program.program_name,
+        path: resourcePath(program),
+      })),
+    );
+  } else if (resourcePathMatch) {
     const program = STATIC_PROGRAMS.find(
       (candidate) => resourcePath(candidate) === `${metadata.path}/`,
     );
