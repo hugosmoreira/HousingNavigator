@@ -1,5 +1,8 @@
 # Housing Navigator
 
+Development notes for the admin-triggered, existing-resource curation workflow
+are in [`docs/RESOURCE_CURATION.md`](docs/RESOURCE_CURATION.md).
+
 Housing Navigator is a web application focused on the **Portland–Vancouver metro**: a searchable directory of housing-related programs (rent help, shelter, legal aid, vouchers, and more), plus tools to **track waitlists** and **save** programs for later.
 
 The goal is to make it easier for people to find relevant resources without wading through static PDFs or generic 211-style menus—plain-language search, structured program data, and waitlist tracking with email alerts when a list opens.
