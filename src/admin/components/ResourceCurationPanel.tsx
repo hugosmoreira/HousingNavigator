@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { requireSupabase } from '../../lib/supabaseClient';
 import {
   curateResourceBatch,
+  partitionResourceCurationChecks,
   type ResourceCurationCheck,
   type ResourceCurationRun,
 } from '../curateResources';
@@ -53,13 +54,10 @@ export default function ResourceCurationPanel({ onResourcesChanged }: Props) {
         .limit(100);
       if (checkError) throw checkError;
       const allChecks = (checkData ?? []) as ResourceCurationCheck[];
-      recentChecks = allChecks
-        .filter((check) => check.action !== 'updated' || Boolean(check.notes))
-        .slice(0, 8);
+      const partitioned = partitionResourceCurationChecks(allChecks);
+      recentChecks = partitioned.unresolved;
       if (mounted.current) {
-        setUpdatedChecks(
-          allChecks.filter((check) => check.action === 'updated').slice(0, 8),
-        );
+        setUpdatedChecks(partitioned.updated);
       }
     } else if (mounted.current) {
       setUpdatedChecks([]);
@@ -98,7 +96,7 @@ export default function ResourceCurationPanel({ onResourcesChanged }: Props) {
       !window.confirm(
         resuming
           ? 'Resume the unfinished resource curation run?'
-          : 'Curate published resources that are missing core information? Existing content will not be overwritten.',
+          : 'Curate published resources that are missing required public information? Completed records will be skipped and existing content will not be overwritten.',
       )
     ) {
       return;
@@ -156,9 +154,9 @@ export default function ResourceCurationPanel({ onResourcesChanged }: Props) {
             <h2 className="font-headline font-bold text-lg">Resource curation</h2>
           </div>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Checks existing published resources with missing information against their
-            official pages. It fills supported blank fields only; it does not add new
-            resources or run automatically.
+            Checks published resources missing a description, required eligibility, or
+            a usable official page. It fills supported blank fields only; completed
+            records are skipped and nothing runs automatically.
           </p>
         </div>
         <button
@@ -236,7 +234,7 @@ export default function ResourceCurationPanel({ onResourcesChanged }: Props) {
         <div className="mt-4 border-t border-surface-container-highest pt-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-on-surface">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
-            Items that need attention
+            Unresolved items from the last run
           </div>
           <ul className="space-y-2 text-sm">
             {checks.map((check) => (
@@ -244,7 +242,9 @@ export default function ResourceCurationPanel({ onResourcesChanged }: Props) {
                 <div>
                   <span className="font-medium text-on-surface">{check.resource_name}</span>
                   <span className="ml-2 text-on-surface-variant">
-                    {check.error || check.notes || check.action.replaceAll('_', ' ')}
+                    {check.action === 'updated' && check.applied_fields.length > 0
+                      ? `Filled ${check.applied_fields.map((field) => field.replaceAll('_', ' ')).join(', ')}; ${check.notes || 'still requires review'}`
+                      : check.error || check.notes || check.action.replaceAll('_', ' ')}
                   </span>
                 </div>
                 <Link

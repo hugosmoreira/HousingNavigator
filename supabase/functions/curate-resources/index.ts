@@ -134,7 +134,7 @@ const EXTRACTION_SCHEMA = {
     },
     identity_evidence: {
       type: 'string',
-      description: 'A short verbatim page quote identifying the resource or provider.',
+      description: 'A short consecutive quote copied from the page that names the resource, program, or provider. Do not combine separate phrases.',
     },
     description: {
       type: 'object',
@@ -203,7 +203,8 @@ async function extractResourceDetails(
       'Use only facts explicitly present in the page text. Do not infer income limits, residency, immigration status, availability, or household groups. ' +
       'The page must match the specific named resource. A generic organization page is acceptable only when the resource record itself names that organization rather than a distinct program. ' +
       'Write concise plain language a person seeking help can understand; never mention website platforms such as RentCafe. ' +
-      'Each populated field must include a short VERBATIM quote from the supplied page that supports the entire value. ' +
+      'Each populated field must include a short VERBATIM quote copied as consecutive text from the supplied page that supports the entire value. ' +
+      'For identity_evidence, copy a distinctive phrase that contains the provider or program name; do not reconstruct a page title or join separate text. ' +
       'Return null and an empty evidence string when the page does not support a field.',
     messages: [
       {
@@ -349,18 +350,22 @@ async function processOne(
 async function refreshRunSummary(admin: ReturnType<typeof createClient>, run: RunRow) {
   const { data: checks, error } = await admin
     .from('resource_curation_checks')
-    .select('action')
+    .select('action,notes')
     .eq('run_id', run.id);
   if (error) throw new Error(`could not summarize curation run: ${error.message}`);
 
-  const actions = (checks ?? []).map((row: { action: CurationAction }) => row.action);
+  const checkRows = (checks ?? []) as Array<{ action: CurationAction; notes: string | null }>;
+  const actions = checkRows.map((row) => row.action);
   const processed = actions.length;
   const completed = processed >= run.target_count;
   const summary = {
     processed_count: processed,
-    updated_count: actions.filter((action) => action === 'updated').length,
-    needs_review_count: actions.filter(
-      (action) => action === 'needs_review' || action === 'edit_conflict',
+    updated_count: checkRows.filter((row) => row.action === 'updated' && !row.notes).length,
+    needs_review_count: checkRows.filter(
+      (row) =>
+        row.action === 'needs_review' ||
+        row.action === 'edit_conflict' ||
+        (row.action === 'updated' && Boolean(row.notes)),
     ).length,
     failed_count: actions.filter(
       (action) =>
