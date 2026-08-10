@@ -68,7 +68,7 @@ function edgeFunctionError(error: unknown): Promise<Error> | Error {
 export async function curateResourceBatch(
   runId?: string,
 ): Promise<ResourceCurationResponse> {
-  const client = requireSupabase();
+  const client = await requireSupabase();
   const { data, error } = await client.functions.invoke<ResourceCurationResponse>(
     'curate-resources',
     { body: { run_id: runId, batch_size: 3 } },

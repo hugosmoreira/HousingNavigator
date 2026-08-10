@@ -31,7 +31,7 @@ export default function ResourceCurationPanel({ onResourcesChanged }: Props) {
   const mounted = useRef(true);
 
   const loadHistory = useCallback(async () => {
-    const client = requireSupabase();
+    const client = await requireSupabase();
     const { data: runData, error: runError } = await client
       .from('resource_curation_runs')
       .select(
