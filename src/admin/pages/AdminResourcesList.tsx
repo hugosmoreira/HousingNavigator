@@ -4,6 +4,7 @@ import { Database, Plus, Search } from 'lucide-react';
 import { DIRECTORY_CATEGORY_LABELS } from '../../data/categoryMap';
 import type { ResourceRow } from '../../services/data/dbTypes';
 import type { DirectoryCategory } from '../../types';
+import ResourceCurationPanel from '../components/ResourceCurationPanel';
 import { usePagedAdminRows } from '../usePagedAdminRows';
 import {
   BUNDLED_RESOURCE_COUNT,
@@ -81,6 +82,8 @@ export default function AdminResourcesList() {
           <Plus className="w-4 h-4" /> New resource
         </Link>
       </div>
+
+      <ResourceCurationPanel onResourcesChanged={reload} />
 
       <div className="max-w-sm mb-5">
         <div className="relative">
