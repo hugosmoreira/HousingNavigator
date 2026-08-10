@@ -11,6 +11,7 @@ export type CurationHouseholdType = (typeof CURATION_HOUSEHOLD_TYPES)[number];
 export interface CuratableResource {
   id: string;
   name: string;
+  category: string;
   description: string | null;
   who_qualifies: string | null;
   who_it_helps: string[] | null;
@@ -45,6 +46,16 @@ export interface CurationPlan {
 
 const MIN_CONFIDENCE = 0.75;
 
+const ELIGIBILITY_REQUIRED_CATEGORIES = new Set([
+  'rent_assistance',
+  'eviction_prevention',
+  'emergency_shelter',
+  'rapid_rehousing',
+  'public_housing',
+  'section8_waitlist',
+  'legal_aid',
+]);
+
 function isBlank(value: string | null | undefined): boolean {
   return !value || value.trim().length === 0;
 }
@@ -57,8 +68,46 @@ function cleanGeneratedText(value: string, maxLength: number): string {
     .slice(0, maxLength);
 }
 
+function decodeHtmlEntities(value: string): string {
+  const namedEntities: Record<string, string> = {
+    amp: '&',
+    apos: "'",
+    hellip: '...',
+    laquo: '«',
+    ldquo: '"',
+    lsquo: "'",
+    mdash: '—',
+    nbsp: ' ',
+    ndash: '–',
+    quot: '"',
+    raquo: '»',
+    rdquo: '"',
+    rsquo: "'",
+  };
+
+  return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (entity, key: string) => {
+    const normalized = key.toLowerCase();
+    if (normalized.startsWith('#')) {
+      const hexadecimal = normalized.startsWith('#x');
+      const codePoint = Number.parseInt(normalized.slice(hexadecimal ? 2 : 1), hexadecimal ? 16 : 10);
+      if (Number.isFinite(codePoint) && codePoint > 0 && codePoint <= 0x10ffff) {
+        return String.fromCodePoint(codePoint);
+      }
+      return entity;
+    }
+    return namedEntities[normalized] ?? entity;
+  });
+}
+
 function normalizeEvidence(value: string): string {
-  return value.normalize('NFKC').replace(/\s+/g, ' ').trim().toLocaleLowerCase('en-US');
+  return decodeHtmlEntities(value)
+    .normalize('NFKC')
+    .replace(/[‘’‚‛`´]/g, "'")
+    .replace(/[‐‑‒–—―−]/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleLowerCase('en-US');
 }
 
 /** Return the original quote only when its normalized text is present in the page. */
@@ -71,14 +120,14 @@ export function verifiedCurationEvidence(pageText: string, candidate: string): s
 }
 
 export function resourceNeedsCuration(resource: CuratableResource): boolean {
+  const hasUsableSource = !isBlank(resource.source_url) || !isBlank(resource.website);
+  const eligibilityRequired = ELIGIBILITY_REQUIRED_CATEGORIES.has(resource.category);
+
   return (
     resource.published &&
     (isBlank(resource.description) ||
-      isBlank(resource.who_qualifies) ||
-      !Array.isArray(resource.who_it_helps) ||
-      resource.who_it_helps.length === 0 ||
-      isBlank(resource.source_url) ||
-      isBlank(resource.last_verified))
+      (eligibilityRequired && isBlank(resource.who_qualifies)) ||
+      !hasUsableSource)
   );
 }
 
@@ -150,7 +199,10 @@ export function buildResourceCurationPlan(
     evidence.who_qualifies = eligibilityEvidence;
     supportedClaims += 1;
     if (isBlank(resource.who_qualifies)) patch.who_qualifies = eligibility;
-  } else if (isBlank(resource.who_qualifies)) {
+  } else if (
+    isBlank(resource.who_qualifies) &&
+    ELIGIBILITY_REQUIRED_CATEGORIES.has(resource.category)
+  ) {
     reasons.push('the page did not state who qualifies');
   }
 
@@ -169,8 +221,6 @@ export function buildResourceCurationPlan(
     if (!resource.who_it_helps || resource.who_it_helps.length === 0) {
       patch.who_it_helps = householdValues;
     }
-  } else if (!resource.who_it_helps || resource.who_it_helps.length === 0) {
-    reasons.push('the page did not support a household-type classification');
   }
 
   // The fetched URL has already passed the outbound HTTP safety checks and
@@ -183,10 +233,10 @@ export function buildResourceCurationPlan(
 
   // Freshness means the official page actually supported at least one useful
   // claim. Successfully downloading a generic homepage is not verification.
-  if (supportedClaims > 0) {
+  if (supportedClaims > 0 && resource.last_verified !== verifiedOn) {
     patch.last_verified = verifiedOn;
     proposedFields.last_verified = verifiedOn;
-  } else {
+  } else if (supportedClaims === 0) {
     reasons.push('no evidence-backed resource details were found');
   }
 
@@ -195,7 +245,7 @@ export function buildResourceCurationPlan(
 
 /** Dependency-free HTML-to-text conversion for the edge runtime. */
 export function resourceHtmlToText(html: string): string {
-  return html
+  return decodeHtmlEntities(html
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
@@ -203,12 +253,8 @@ export function resourceHtmlToText(html: string): string {
     .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/tr)[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#0?39;/g, "'")
+    .replace(/&gt;/gi, '>'))
     .replace(/[ \t]+/g, ' ')
     .replace(/\s*\n\s*/g, '\n')
     .trim();

@@ -4,6 +4,7 @@ import {
   resourceHtmlToText,
   resourceNeedsCuration,
   resourceSourceUrl,
+  verifiedCurationEvidence,
   type CuratableResource,
   type ResourceExtraction,
 } from '../../supabase/functions/_shared/resourceCuration.ts';
@@ -12,6 +13,7 @@ function resource(overrides: Partial<CuratableResource> = {}): CuratableResource
   return {
     id: 'resource-1',
     name: 'Community Housing Program',
+    category: 'public_housing',
     description: null,
     who_qualifies: null,
     who_it_helps: [],
@@ -68,6 +70,51 @@ describe('resource curation safety contract', () => {
         }),
       ),
     ).toBe(false);
+  });
+
+  it('does not repeat completed records for optional tags, a missing duplicate source, or freshness alone', () => {
+    expect(
+      resourceNeedsCuration(
+        resource({
+          category: 'supportive_services',
+          description: 'Existing description',
+          who_qualifies: null,
+          who_it_helps: [],
+          website: 'https://agency.example/housing',
+          source_url: null,
+          last_verified: null,
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it('accepts the official website as provenance without requiring a duplicate source URL', () => {
+    expect(
+      resourceNeedsCuration(
+        resource({
+          description: 'Affordable apartment community.',
+          who_qualifies: 'Households within the published income limits.',
+          who_it_helps: [],
+          website: 'https://agency.example/housing',
+          source_url: null,
+          last_verified: null,
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it('still requires eligibility for programs where eligibility controls access', () => {
+    expect(
+      resourceNeedsCuration(
+        resource({
+          description: 'Affordable apartment community.',
+          who_qualifies: null,
+          who_it_helps: [],
+          source_url: 'https://agency.example/housing',
+          last_verified: '2026-08-10',
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('fills blank fields from evidence without replacing curator-written copy', () => {
@@ -128,6 +175,25 @@ describe('resource curation safety contract', () => {
     expect(plan.patch.who_it_helps).toEqual(['family']);
   });
 
+  it('does not report a same-day verification date as another update', () => {
+    const plan = buildResourceCurationPlan(
+      resource({ last_verified: '2026-08-10' }),
+      extraction(),
+      pageText,
+      'https://agency.example/housing',
+      '2026-08-10',
+    );
+
+    expect(plan.patch).not.toHaveProperty('last_verified');
+  });
+
+  it('matches verbatim evidence across HTML entities and punctuation variants', () => {
+    const page = 'SHARE House &mdash; Shelter for Single Men';
+    expect(
+      verifiedCurationEvidence(page, 'SHARE House — Shelter for Single Men'),
+    ).toBe('SHARE House — Shelter for Single Men');
+  });
+
   it('uses the stored source first and removes scripts from fetched HTML', () => {
     expect(
       resourceSourceUrl(
@@ -137,7 +203,10 @@ describe('resource curation safety contract', () => {
         }),
       ),
     ).toBe('https://official.example/program');
-    expect(resourceHtmlToText('<script>ignore me</script><h1>Useful</h1><p>Housing help</p>'))
-      .toBe('Useful\nHousing help');
+    expect(
+      resourceHtmlToText(
+        '<script>ignore me</script><h1>Useful &amp; Current</h1><p>Housing &mdash; help</p>',
+      ),
+    ).toBe('Useful & Current\nHousing — help');
   });
 });

@@ -47,6 +47,16 @@ export interface ResourceCurationResponse {
   outcomes: ResourceCurationOutcome[];
 }
 
+export function partitionResourceCurationChecks(checks: ResourceCurationCheck[]): {
+  updated: ResourceCurationCheck[];
+  unresolved: ResourceCurationCheck[];
+} {
+  return {
+    updated: checks.filter((check) => check.action === 'updated' && !check.notes),
+    unresolved: checks.filter((check) => check.action !== 'updated' || Boolean(check.notes)),
+  };
+}
+
 function edgeFunctionError(error: unknown): Promise<Error> | Error {
   const context = (error as { context?: unknown })?.context;
   if (context instanceof Response) {

@@ -1,6 +1,6 @@
 # Existing resource curation
 
-Status: first implementation, admin-triggered only
+Status: admin-triggered, idempotent workflow
 Last updated: 2026-08-10
 
 ## Purpose
@@ -10,13 +10,16 @@ Navigator. It is intentionally separate from resource discovery and from the
 waitlist status checker.
 
 An administrator starts it from **Admin → Resources → Curate resources**. The
-workflow checks resources that are missing at least one core field:
+workflow checks resources that are missing required public information:
 
 - description;
-- who qualifies;
-- internal household tags (`who_it_helps`);
-- official source URL; or
-- verification date.
+- who qualifies for categories where eligibility controls access, such as rent
+  assistance, shelters, public housing, waitlists, and legal aid; or
+- a usable official page in either `source_url` or `website`.
+
+Internal household tags (`who_it_helps`) and verification dates are enrichment
+fields. The workflow may fill them while it is already checking a resource, but
+their absence alone never causes a completed record to be processed again.
 
 It does not search for or create new resources.
 
@@ -27,6 +30,10 @@ It does not search for or create new resources.
   current server request can finish, but no later batch is requested.
 - **Existing writing wins.** Curation fills blank fields; it does not replace a
   description or eligibility text already written by an administrator.
+- **Reruns are idempotent.** A completed resource is not targeted because an
+  optional tag is blank, because the official page is stored in `website`
+  instead of `source_url`, or because its verification date is blank. A
+  same-day verification date is not written or counted twice.
 - **Official pages only.** A record's `source_url` is used first, with its
   existing `website` as a fallback. The first version does not crawl the web for
   new organizations.
@@ -36,9 +43,12 @@ It does not search for or create new resources.
 - **Plain language.** The extraction prompt asks for short, user-facing copy and
   excludes website-platform jargon such as RentCafe.
 - **Failures are visible.** Blocked, JavaScript-only, ambiguous, low-confidence,
-  concurrently edited, and internal-error records appear under “Items that need
-  attention.” A no-progress guard stops the browser from repeating a broken
-  batch indefinitely.
+  concurrently edited, and internal-error records appear under “Unresolved
+  items from the last run.” A partial update that still lacks required
+  information appears only in the unresolved section and is counted as needing
+  review, while its applied fields remain visible. The panel does not truncate
+  the unresolved list. A no-progress guard stops the browser from repeating a
+  broken batch indefinitely.
 - **Auditability.** Each run keeps its original target IDs, progress totals,
   proposed values, evidence, applied field names, and errors.
 
@@ -70,7 +80,7 @@ redirects, and response-size limits before curation reads a page.
 | `who_it_helps` | Fill only when empty; values are restricted to the existing taxonomy. |
 | `source_url` | Fill only when blank, after page identity is verified. |
 | `source_type` | Fill only when blank; value is `agency_website`. |
-| `last_verified` | Set when the official page supports at least one resource claim. |
+| `last_verified` | Set when the official page supports a resource claim and the stored date is not already today's date. |
 
 It never changes the resource name, category, county, phone, application method,
 referral setting, publication status, public notes, or internal notes.
@@ -121,9 +131,11 @@ the same default model used by the current waitlist checker.
 3. Confirm the progress count advances and the final summary appears.
 4. Open two or three updated resources and compare the filled fields with the
    official source URL.
-5. Review every item shown under “Items that need attention.”
+5. Review every item shown under “Unresolved items from the last run.”
 6. Confirm existing nonblank descriptions were not rewritten.
-7. Re-run the unit tests and production build before deployment.
+7. Run curation again without editing any resources. Confirm it reports no
+   duplicate updates and does not re-list manually completed records.
+8. Re-run the unit tests and production build before deployment.
 
 ## Deliberately deferred
 
