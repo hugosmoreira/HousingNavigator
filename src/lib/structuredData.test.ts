@@ -76,7 +76,7 @@ describe('structured data', () => {
     expect(service).toMatchObject({
       name: program.program_name,
       url: program.website,
-      areaServed: { name: `${program.county} County` },
+      areaServed: { name: `${program.county} County, Washington` },
     });
     expect(breadcrumb.itemListElement).toHaveLength(3);
     expect((breadcrumb.itemListElement as StructuredDataNode[])[1]).toMatchObject({

@@ -18,6 +18,7 @@ import {
   DIRECTORY_CATEGORIES,
   legacyToDirectoryCategory,
 } from '../../data/categoryMap';
+import { normalizeServiceAreas } from '../../data/serviceAreas';
 import type {
   DecisionRuleRow,
   ProgramRow,
@@ -64,6 +65,10 @@ export function programFromRow(row: ProgramRow): Program {
     address: row.address ?? undefined,
     source_url: row.source_url ?? undefined,
     source_type: row.source_type ?? undefined,
+    service_areas: normalizeServiceAreas(undefined, {
+      state: row.state,
+      county: row.county,
+    }),
   };
 }
 
@@ -164,5 +169,9 @@ export function programFromResourceRow(row: ResourceRow): Program {
     source_type: row.source_type ?? undefined,
     directory_category: directory,
     raw_category: row.category,
+    service_areas: normalizeServiceAreas(row.service_areas, {
+      state: row.state,
+      county: row.county,
+    }),
   };
 }

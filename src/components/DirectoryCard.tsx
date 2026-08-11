@@ -7,6 +7,7 @@ import {
 } from '../data/categoryMap';
 import { useUserData } from '../auth/UserDataContext';
 import { resourcePath } from '../lib/entityRoutes';
+import { serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
 import type { ApplicationMethod, Program } from '../types';
 
 interface DirectoryCardProps {
@@ -42,7 +43,7 @@ function formatLocation(program: Program): string {
   // city/state here to avoid duplicating "Multnomah County · Multnomah County".
   const cityState = [program.city, program.state].filter(Boolean).join(', ');
   if (cityState) return cityState;
-  return `${program.county} County`;
+  return serviceAreaSummary(serviceAreasForProgram(program));
 }
 
 export default function DirectoryCard({ program }: DirectoryCardProps) {
@@ -50,6 +51,7 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
     program.directory_category ?? legacyToDirectoryCategory(program.category);
   const categoryLabel = DIRECTORY_CATEGORY_LABELS[directoryCategory];
   const summary = program.description || program.notes || '';
+  const areaSummary = serviceAreaSummary(serviceAreasForProgram(program));
   const verified = formatLastVerified(program.last_verified);
   const phoneHref = program.phone
     ? `tel:${program.phone.replace(/[^0-9+]/g, '')}`
@@ -80,7 +82,7 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
             {categoryLabel}
           </span>
           <span className="px-2.5 py-1 rounded-full text-xs font-medium border border-surface-container-highest text-on-surface-variant">
-            {program.county} County
+            {areaSummary}
           </span>
         </div>
         <button

@@ -15,6 +15,7 @@
  */
 
 import { directoryCategoryLabel } from '../data/categoryMap';
+import { serviceAreaLabel, serviceAreasForProgram } from '../data/serviceAreas';
 import type { Program } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -166,7 +167,13 @@ function buildFieldBag(program: Program): FieldBag {
     notes: program.notes ?? '',
     eligibility: program.eligibility_summary ?? '',
     whoItHelps: program.who_it_helps.map((h) => h.replace(/_/g, ' ')).join(' '),
-    location: [program.city, program.state, program.county, program.address]
+    location: [
+      program.city,
+      program.state,
+      program.county,
+      program.address,
+      ...serviceAreasForProgram(program).map(serviceAreaLabel),
+    ]
       .filter(Boolean)
       .join(' '),
     rawCategory: program.raw_category ?? '',

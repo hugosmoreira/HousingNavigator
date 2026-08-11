@@ -8,6 +8,14 @@
 
 export type County = 'Multnomah' | 'Clark' | 'Washington' | 'Clackamas' | 'Other';
 
+export type SupportedState = 'OR' | 'WA';
+
+/** A null county means the resource serves the entire state. */
+export interface ServiceArea {
+  state: SupportedState;
+  county: string | null;
+}
+
 export type IntakeSituation = 'homeless' | 'eviction_notice' | 'at_risk';
 
 export type Goal = 'shelter' | 'stay_housed' | 'long_term_housing';
@@ -71,7 +79,8 @@ export interface Program {
   /** Stable catalog identity used in public URLs when the backing row has a database UUID. */
   route_id?: string;
   program_name: string;
-  county: County;
+  /** Primary compatibility county. Use service_areas for coverage decisions. */
+  county: string;
   category: ProgramCategory;
   who_it_helps: HouseholdType[];
   application_method: ApplicationMethod;
@@ -91,6 +100,8 @@ export interface Program {
   address?: string;
   source_url?: string;
   source_type?: string;
+  /** Counties actually served; a null county represents statewide coverage. */
+  service_areas?: ServiceArea[];
   /** Directory-facing taxonomy (set by the merge pipeline). */
   directory_category?: DirectoryCategory;
   /** Free-text category from the source dataset, kept for transparency / search. */

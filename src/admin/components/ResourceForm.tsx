@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
 import { DIRECTORY_CATEGORIES, DIRECTORY_CATEGORY_LABELS } from '../../data/categoryMap';
+import { normalizeServiceAreas } from '../../data/serviceAreas';
 import type { ResourceRow } from '../../services/data/dbTypes';
-import type { ApplicationMethod, County, DirectoryCategory } from '../../types';
+import type { ApplicationMethod, DirectoryCategory, ServiceArea } from '../../types';
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
+import ServiceAreaPicker from './ServiceAreaPicker';
 
-const COUNTIES: County[] = ['Multnomah', 'Clark', 'Washington', 'Clackamas', 'Other'];
 const APPLICATION_METHODS: Array<{ value: ApplicationMethod; label: string }> = [
   { value: 'walk_in', label: 'Walk-in' },
   { value: 'phone', label: 'Phone' },
@@ -15,14 +16,19 @@ const APPLICATION_METHODS: Array<{ value: ApplicationMethod; label: string }> = 
   { value: 'referral', label: 'Referral required' },
 ];
 
-type ResourceDraft = Omit<ResourceRow, 'id' | 'created_at' | 'updated_at'>;
+type ResourceBaseDraft = Omit<
+  ResourceRow,
+  'id' | 'created_at' | 'updated_at' | 'service_areas'
+>;
+type ResourceDraft = ResourceBaseDraft & { service_areas: ServiceArea[] };
 
 const EMPTY: ResourceDraft = {
   name: '',
   category: 'rent_assistance' as DirectoryCategory,
   county: 'Multnomah',
   city: '',
-  state: '',
+  state: 'OR',
+  service_areas: [{ state: 'OR', county: 'Multnomah' }],
   description: '',
   who_qualifies: '',
   who_it_helps: [],
@@ -76,6 +82,10 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
           county: row.county,
           city: row.city ?? '',
           state: row.state ?? '',
+          service_areas: normalizeServiceAreas(row.service_areas, {
+            state: row.state,
+            county: row.county,
+          }),
           description: row.description ?? '',
           who_qualifies: row.who_qualifies ?? '',
           who_it_helps: row.who_it_helps ?? [],
@@ -110,24 +120,48 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (draft.service_areas.length === 0) {
+      setError('Add at least one county or statewide service area.');
+      return;
+    }
     setSaving(true);
     try {
       const client = await requireSupabase();
       const payload = sanitize(draft);
       if (mode === 'new') {
+        const publishAfterAreaSave = payload.published;
         const { data, error: err } = await client
           .from('resources')
-          .insert(payload)
+          // Keep a partially created row private if the service-area RPC fails.
+          .insert({ ...payload, published: false })
           .select('id')
           .single();
         if (err) throw err;
-        navigate(`/admin/resources/${(data as { id: string }).id}/edit`, { replace: true });
+        const id = (data as { id: string }).id;
+        const { error: areaError } = await client.rpc('replace_resource_service_areas', {
+          p_resource_id: id,
+          p_service_areas: draft.service_areas,
+        });
+        if (areaError) throw areaError;
+        if (publishAfterAreaSave) {
+          const { error: publishError } = await client
+            .from('resources')
+            .update({ published: true })
+            .eq('id', id);
+          if (publishError) throw publishError;
+        }
+        navigate(`/admin/resources/${id}/edit`, { replace: true });
       } else if (resourceId) {
         const { error: err } = await client
           .from('resources')
           .update(payload)
           .eq('id', resourceId);
         if (err) throw err;
+        const { error: areaError } = await client.rpc('replace_resource_service_areas', {
+          p_resource_id: resourceId,
+          p_service_areas: draft.service_areas,
+        });
+        if (areaError) throw areaError;
         navigate('/admin/resources');
       }
     } catch (err) {
@@ -238,40 +272,26 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
           </Field>
         </Section>
 
-        <Section title="Location">
-          <div className="grid sm:grid-cols-3 gap-4">
-            <Field label="County" required>
-              <Select
-                value={draft.county}
-                onChange={(e) => update('county', e.target.value as County)}
-              >
-                {COUNTIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+        <Section title="Service area and location">
+          <ServiceAreaPicker
+            value={draft.service_areas}
+            onChange={(value) => update('service_areas', value)}
+            disabled={saving}
+          />
+          <div className="grid sm:grid-cols-2 gap-4">
             <Field label="City">
               <TextInput
                 value={draft.city ?? ''}
                 onChange={(e) => update('city', e.target.value)}
               />
             </Field>
-            <Field label="State">
+            <Field label="Street address" hint="Provider office or intake location, if applicable.">
               <TextInput
-                value={draft.state ?? ''}
-                maxLength={2}
-                onChange={(e) => update('state', e.target.value.toUpperCase())}
+                value={draft.address ?? ''}
+                onChange={(e) => update('address', e.target.value)}
               />
             </Field>
           </div>
-          <Field label="Street address">
-            <TextInput
-              value={draft.address ?? ''}
-              onChange={(e) => update('address', e.target.value)}
-            />
-          </Field>
         </Section>
 
         <Section title="Apply">
@@ -409,14 +429,19 @@ function emptyToNull(value: string | null | undefined): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
-function sanitize(draft: ResourceDraft): ResourceDraft {
+function sanitize(draft: ResourceDraft): ResourceBaseDraft {
+  const primaryArea = draft.service_areas[0];
   return {
-    ...draft,
     name: draft.name.trim(),
+    category: draft.category,
+    county: primaryArea?.county ?? 'Other',
+    state: primaryArea?.state ?? null,
     city: emptyToNull(draft.city),
-    state: emptyToNull(draft.state),
     description: emptyToNull(draft.description),
     who_qualifies: emptyToNull(draft.who_qualifies),
+    who_it_helps: draft.who_it_helps,
+    application_method: draft.application_method,
+    referral_required: draft.referral_required,
     phone: emptyToNull(draft.phone),
     website: emptyToNull(draft.website),
     address: emptyToNull(draft.address),
@@ -425,5 +450,7 @@ function sanitize(draft: ResourceDraft): ResourceDraft {
     public_notes: emptyToNull(draft.public_notes),
     internal_notes: emptyToNull(draft.internal_notes),
     last_verified: draft.last_verified || null,
+    priority_score: draft.priority_score,
+    published: draft.published,
   };
 }

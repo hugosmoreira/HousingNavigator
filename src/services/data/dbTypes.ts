@@ -15,6 +15,7 @@ import type {
   IntakeSituation,
   ProgramCategory,
   ProgramStatus,
+  ServiceArea,
   StatusConfidence,
   WaitlistStatus,
 } from '../../types';
@@ -36,7 +37,7 @@ export interface ProgramRow {
   id: string;
   name: string;
   category: ProgramCategory;
-  county: County;
+  county: string;
   city: string | null;
   state: string | null;
   description: string | null;
@@ -106,7 +107,7 @@ export interface ResourceRow {
   id: string;
   name: string;
   category: string;
-  county: County;
+  county: string;
   city: string | null;
   state: string | null;
   description: string | null;
@@ -126,6 +127,8 @@ export interface ResourceRow {
   published: boolean;
   created_at?: string;
   updated_at?: string;
+  /** Aggregated by resources_public/resources_admin in migration 0019. */
+  service_areas?: ServiceArea[];
 }
 
 export interface ResourceSubmissionRow {
