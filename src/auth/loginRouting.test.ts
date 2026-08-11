@@ -25,6 +25,7 @@ describe('post-login routing', () => {
         publicTarget: '/dashboard',
       }),
     ).toBe(ADMIN_LOGIN_DESTINATION);
+    expect(ADMIN_LOGIN_DESTINATION).toBe('/admin/dashboard');
   });
 
   it('preserves the requested public destination for a non-admin session', () => {

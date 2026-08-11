@@ -1,4 +1,4 @@
-export const ADMIN_LOGIN_DESTINATION = '/admin/resources';
+export const ADMIN_LOGIN_DESTINATION = '/admin/dashboard';
 export const DEFAULT_PUBLIC_LOGIN_DESTINATION = '/dashboard';
 
 export function resolvePublicLoginTarget(from?: string): string {
