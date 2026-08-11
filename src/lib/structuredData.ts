@@ -7,6 +7,7 @@ import {
   findLocalLandingPage,
   localLandingPrograms,
 } from '../data/localLandingPages';
+import { STATE_NAMES, serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
 import { resourcePath, waitlistPath } from './entityRoutes';
 import { resolvePageMetadata, SITE_URL } from './pageMetadata';
 import {
@@ -70,7 +71,7 @@ function organizationNode(): StructuredDataNode {
     name: 'Housing Navigator',
     url: `${SITE_URL}/`,
     description:
-      'A public-interest directory of housing resources and affordable housing waitlist information for the Portland–Vancouver metro.',
+      'A public-interest directory of housing resources and affordable housing waitlist information for Oregon and Washington.',
     logo: {
       '@type': 'ImageObject',
       '@id': `${SITE_URL}/#logo`,
@@ -81,10 +82,8 @@ function organizationNode(): StructuredDataNode {
       caption: 'Housing Navigator',
     },
     areaServed: [
-      { '@type': 'AdministrativeArea', name: 'Multnomah County, Oregon' },
-      { '@type': 'AdministrativeArea', name: 'Washington County, Oregon' },
-      { '@type': 'AdministrativeArea', name: 'Clackamas County, Oregon' },
-      { '@type': 'AdministrativeArea', name: 'Clark County, Washington' },
+      { '@type': 'State', name: 'Oregon' },
+      { '@type': 'State', name: 'Washington' },
     ],
   };
 }
@@ -97,7 +96,7 @@ function websiteNode(): StructuredDataNode {
     name: 'Housing Navigator',
     alternateName: 'HousingNavigator.us',
     description:
-      'Find housing help and track affordable housing waitlists in the Portland–Vancouver metro.',
+      'Find housing help and track affordable housing waitlists in Oregon and Washington.',
     publisher: { '@id': ORGANIZATION_ID },
     inLanguage: 'en-US',
   };
@@ -188,6 +187,13 @@ function programServiceNode(
         }
       : undefined,
   });
+  const serviceAreas = serviceAreasForProgram(program);
+  const servedAreas = serviceAreas.map((area) => ({
+    '@type': 'AdministrativeArea',
+    name: area.county
+      ? `${area.county} County, ${STATE_NAMES[area.state]}`
+      : STATE_NAMES[area.state],
+  }));
 
   return compact({
     '@type': 'Service',
@@ -197,14 +203,16 @@ function programServiceNode(
       program.description ||
       program.eligibility_summary ||
       program.notes ||
-      `Housing assistance information for ${program.county} County.`,
+      `Housing assistance information for ${serviceAreaSummary(serviceAreas)}.`,
     serviceType: DIRECTORY_CATEGORY_LABELS[directoryCategory],
     url: program.website || canonicalUrl,
     mainEntityOfPage: { '@id': pageId(canonicalUrl) },
-    areaServed: {
-      '@type': 'AdministrativeArea',
-      name: `${program.county} County`,
-    },
+    areaServed:
+      servedAreas.length === 1
+        ? servedAreas[0]
+        : servedAreas.length > 1
+          ? servedAreas
+          : undefined,
     audience: audiences,
     availableChannel:
       serviceChannel.serviceUrl || serviceChannel.servicePhone

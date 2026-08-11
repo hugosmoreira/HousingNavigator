@@ -14,7 +14,7 @@ describe('page metadata', () => {
       path: '/resources',
       index: true,
       canonicalUrl: `${SITE_URL}/resources/`,
-      title: 'Find housing resources | Housing Navigator',
+      title: 'Find Oregon & Washington housing resources | Housing Navigator',
       openGraphType: 'website',
       socialImageUrl: SOCIAL_IMAGE_URL,
       socialImageAlt: SOCIAL_IMAGE_ALT,

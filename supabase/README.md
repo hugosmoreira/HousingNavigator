@@ -103,6 +103,19 @@ Policies live in `migrations/0002_admin_catalog.sql`:
 `is_admin()` is a `security definer` helper used by every admin policy
 so RLS checks against `admin_users` cannot recurse.
 
+## Statewide resource service areas
+
+Migration `0019_resource_service_areas.sql` adds normalized, multi-county
+coverage for Oregon and Washington resources. It backfills the existing
+catalog, keeps the legacy primary `state`/`county` fields compatible, and adds
+the aggregated `service_areas` field to `resources_public` and
+`resources_admin`.
+
+Administrators replace a resource's complete area list through the validated
+`replace_resource_service_areas` RPC. Public callers can read areas only for
+published resources; all area mutations remain admin-only. See
+[`docs/RESOURCE_SERVICE_AREAS.md`](../docs/RESOURCE_SERVICE_AREAS.md).
+
 ## Re-running the static seed (optional)
 
 The legacy `programs` table still exists. If you want to keep it in

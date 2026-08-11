@@ -1,4 +1,5 @@
 import { legacyToDirectoryCategory } from './categoryMap';
+import { programServesArea } from './serviceAreas';
 import type { County, DirectoryCategory, Program } from '../types';
 
 export interface LocalLandingPage {
@@ -185,7 +186,8 @@ export function localLandingPrograms(
 ): Program[] {
   return programs
     .filter((program) => {
-      if (program.county !== page.county) return false;
+      const state = page.stateName === 'Oregon' ? 'OR' : 'WA';
+      if (!programServesArea(program, state, page.county)) return false;
       if (!page.service) return true;
       const category =
         program.directory_category ?? legacyToDirectoryCategory(program.category);

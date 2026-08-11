@@ -9,6 +9,7 @@ import {
 } from '../../data/categoryMap';
 import type { ResourceRow } from '../../services/data/dbTypes';
 import type { DirectoryCategory } from '../../types';
+import { normalizeServiceAreas, serviceAreaSummary } from '../../data/serviceAreas';
 
 function categoryLabel(category: string): string {
   if (category in DIRECTORY_CATEGORY_LABELS) {
@@ -20,8 +21,12 @@ function categoryLabel(category: string): string {
 }
 
 function formatLocation(row: ResourceRow): string {
-  const cityState = [row.city, row.state].filter(Boolean).join(', ');
-  return cityState ? `${cityState} · ${row.county} County` : `${row.county} County`;
+  return serviceAreaSummary(
+    normalizeServiceAreas(row.service_areas, {
+      state: row.state,
+      county: row.county,
+    }),
+  );
 }
 
 export default function SavedResourcesPanel() {

@@ -41,7 +41,7 @@ interface ResourceInsert {
   id?: string;
   name: string;
   category: DirectoryCategory;
-  county: County;
+  county: string;
   city: string | null;
   state: string | null;
   description: string | null;

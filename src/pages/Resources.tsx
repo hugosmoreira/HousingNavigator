@@ -11,11 +11,17 @@ import {
 import { searchPrograms } from '../utils/resourceSearch';
 import DirectoryCard from '../components/DirectoryCard';
 import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
+import {
+  STATE_NAMES,
+  SUPPORTED_STATES,
+  availableCounties,
+  programServesArea,
+} from '../data/serviceAreas';
 import type {
-  County,
   DirectoryCategory,
   HouseholdType,
   Program,
+  SupportedState,
 } from '../types';
 
 // NOTE: program.status is intentionally not surfaced or filtered on the
@@ -24,9 +30,6 @@ import type {
 // internal use (waitlist tracker, future admin tools, analytics). The
 // sort selector deliberately omits an "Open now" option for the same
 // reason.
-
-const PRIMARY_COUNTIES: County[] = ['Multnomah', 'Clark'];
-const SECONDARY_COUNTIES: County[] = ['Washington', 'Clackamas'];
 
 type SortKey = 'relevance' | 'recent' | 'alpha';
 
@@ -74,8 +77,8 @@ export default function Resources() {
   const { programs, loading, error } = usePrograms();
   const [selectedCategories, setSelectedCategories] = useState<DirectoryCategory[]>([]);
   const [householdFilter, setHouseholdFilter] = useState<HouseholdType | null>(null);
-  const [county, setCounty] = useState<County | 'All'>('All');
-  const [showAllCounties, setShowAllCounties] = useState(false);
+  const [state, setState] = useState<SupportedState | 'All'>('All');
+  const [county, setCounty] = useState<string | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('relevance');
   const [showMoreCategories, setShowMoreCategories] = useState(false);
@@ -83,6 +86,7 @@ export default function Resources() {
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     householdFilter !== null ||
+    state !== 'All' ||
     county !== 'All' ||
     searchQuery.trim().length > 0;
 
@@ -103,6 +107,7 @@ export default function Resources() {
 
   function resetFilters() {
     clearTaxonomyFilters();
+    setState('All');
     setCounty('All');
     setSearchQuery('');
   }
@@ -117,7 +122,12 @@ export default function Resources() {
       if (householdFilter && !program.who_it_helps.includes(householdFilter)) {
         return false;
       }
-      if (county !== 'All' && program.county !== county) return false;
+      if (
+        state !== 'All' &&
+        !programServesArea(program, state, county === 'All' ? null : county)
+      ) {
+        return false;
+      }
       return true;
     });
     if (sort === 'recent') {
@@ -146,13 +156,9 @@ export default function Resources() {
       });
     }
     return ranked;
-  }, [programs, selectedCategories, householdFilter, county, searchQuery, sort]);
+  }, [programs, selectedCategories, householdFilter, state, county, searchQuery, sort]);
 
-  const visibleCounties: Array<County | 'All'> = [
-    'All',
-    ...PRIMARY_COUNTIES,
-    ...(showAllCounties ? SECONDARY_COUNTIES : []),
-  ];
+  const visibleCounties = state === 'All' ? [] : availableCounties(programs, state);
 
   const noTaxonomyActive =
     selectedCategories.length === 0 && householdFilter === null;
@@ -166,7 +172,7 @@ export default function Resources() {
             Resource directory
           </p>
           <h1 className="text-2xl lg:text-3xl font-headline font-bold text-on-surface tracking-tight mb-2">
-            Find housing help in Portland and Vancouver.
+            Find housing help across Oregon and Washington.
           </h1>
           <p className="text-on-surface-variant text-sm lg:text-base max-w-2xl mb-5">
             Search by need or program. Every listing shows when it was last verified.
@@ -178,7 +184,7 @@ export default function Resources() {
             </div>
             <input
               type="text"
-              placeholder="Try “rent help in Multnomah”, “section 8”, or “eviction notice”"
+              placeholder="Try “rent help in Spokane”, “section 8”, or “eviction notice”"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-surface-container-lowest rounded-2xl pl-12 pr-12 py-3 shadow-sm border border-surface-container-highest focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base"
@@ -295,16 +301,19 @@ export default function Resources() {
         <aside className="space-y-5">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">
-              County
+              State
             </h3>
             <div className="flex flex-col gap-1">
-              {visibleCounties.map((c) => {
-                const active = county === c;
+              {(['All', ...SUPPORTED_STATES] as const).map((option) => {
+                const active = state === option;
                 return (
                   <button
-                    key={c}
+                    key={option}
                     type="button"
-                    onClick={() => setCounty(c)}
+                    onClick={() => {
+                      setState(option);
+                      setCounty('All');
+                    }}
                     aria-pressed={active}
                     className={`text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       active
@@ -312,21 +321,32 @@ export default function Resources() {
                         : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
                     }`}
                   >
-                    {c === 'All' ? 'All counties' : `${c} County`}
+                    {option === 'All' ? 'Oregon and Washington' : STATE_NAMES[option]}
                   </button>
                 );
               })}
             </div>
-            {!showAllCounties && (
-              <button
-                type="button"
-                onClick={() => setShowAllCounties(true)}
-                className="mt-1 text-xs text-primary font-semibold hover:underline"
-              >
-                Show more counties
-              </button>
-            )}
           </div>
+
+          {state !== 'All' && (
+            <label className="block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                County
+              </span>
+              <select
+                value={county}
+                onChange={(event) => setCounty(event.target.value)}
+                className="w-full rounded-lg border border-surface-container-highest bg-surface-container-lowest px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="All">All {STATE_NAMES[state]} counties</option>
+                {visibleCounties.map((option) => (
+                  <option key={option} value={option}>
+                    {option} County
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           {hasActiveFilters && (
             <button

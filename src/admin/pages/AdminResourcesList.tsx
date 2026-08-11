@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Database, Plus, Search } from 'lucide-react';
 import { DIRECTORY_CATEGORY_LABELS } from '../../data/categoryMap';
+import { normalizeServiceAreas, serviceAreaSummary } from '../../data/serviceAreas';
 import type { ResourceRow } from '../../services/data/dbTypes';
 import type { DirectoryCategory } from '../../types';
 import ResourceCurationPanel from '../components/ResourceCurationPanel';
@@ -58,12 +59,22 @@ export default function AdminResourcesList() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return rows;
-    return rows.filter(
-      (r) =>
+    return rows.filter((r) => {
+      const areas = normalizeServiceAreas(r.service_areas, {
+        state: r.state,
+        county: r.county,
+      });
+      return (
         r.name.toLowerCase().includes(q) ||
-        r.county.toLowerCase().includes(q) ||
-        (r.city ?? '').toLowerCase().includes(q),
-    );
+        serviceAreaSummary(areas).toLowerCase().includes(q) ||
+        areas.some(
+          (area) =>
+            area.state.toLowerCase().includes(q) ||
+            (area.county ?? '').toLowerCase().includes(q),
+        ) ||
+        (r.city ?? '').toLowerCase().includes(q)
+      );
+    });
   }, [rows, query]);
 
   return (
@@ -174,7 +185,12 @@ export default function AdminResourcesList() {
                     {categoryLabel(row.category)}
                   </td>
                   <td className="px-4 py-3 text-on-surface-variant">
-                    {[row.city, row.county].filter(Boolean).join(', ')}
+                    {serviceAreaSummary(
+                      normalizeServiceAreas(row.service_areas, {
+                        state: row.state,
+                        county: row.county,
+                      }),
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span

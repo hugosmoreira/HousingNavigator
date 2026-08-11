@@ -14,6 +14,7 @@ import {
 } from '../data/categoryMap';
 import { usePrograms } from '../hooks/usePrograms';
 import { findResourceBySlug } from '../lib/entityRoutes';
+import { serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
 import type { ApplicationMethod, Program } from '../types';
 import NotFound from './NotFound';
 
@@ -64,6 +65,8 @@ export default function ResourceDetail() {
     : null;
   const verificationSourceUrl = program.source_url || program.website;
   const verificationSourceType = program.source_type || 'Provider website';
+  const serviceAreas = serviceAreasForProgram(program);
+  const areaSummary = serviceAreaSummary(serviceAreas);
   const location = [program.address, program.city, program.state]
     .filter(Boolean)
     .filter((value, index, values) => values.indexOf(value) === index)
@@ -84,7 +87,7 @@ export default function ResourceDetail() {
               {categoryLabel}
             </span>
             <span className="rounded-full border border-surface-container-highest px-3 py-1 text-xs font-medium text-on-surface-variant">
-              {program.county} County
+              {areaSummary}
             </span>
           </div>
           <h1 className="max-w-4xl text-3xl font-headline font-bold tracking-tight text-on-surface lg:text-5xl">
@@ -115,7 +118,8 @@ export default function ResourceDetail() {
             <dl className="grid gap-4 sm:grid-cols-2">
               <Detail label="How to apply" value={APPLICATION_METHOD_LABEL[program.application_method]} />
               <Detail label="Referral" value={program.referral_required ? 'Required' : 'Not listed as required'} />
-              <Detail label="Location" value={location || `${program.county} County`} />
+              <Detail label="Areas served" value={areaSummary} />
+              {location && <Detail label="Provider location" value={location} />}
               <Detail
                 label="People served"
                 value={program.who_it_helps.map((group) => HOUSEHOLD_LABEL[group]).join(', ')}

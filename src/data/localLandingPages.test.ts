@@ -5,6 +5,7 @@ import {
   LOCAL_LANDING_PAGES,
   localLandingPrograms,
 } from './localLandingPages';
+import { programServesArea } from './serviceAreas';
 
 describe('local housing landing pages', () => {
   it('uses unique, stable paths with concise search metadata', () => {
@@ -24,7 +25,10 @@ describe('local housing landing pages', () => {
       const programs = localLandingPrograms(page, STATIC_PROGRAMS);
 
       expect(programs.length, page.path).toBeGreaterThanOrEqual(3);
-      expect(programs.every((program) => program.county === page.county)).toBe(true);
+      const state = page.stateName === 'Oregon' ? 'OR' : 'WA';
+      expect(
+        programs.every((program) => programServesArea(program, state, page.county)),
+      ).toBe(true);
     }
   });
 

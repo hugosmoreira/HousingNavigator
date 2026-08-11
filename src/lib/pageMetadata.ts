@@ -1,6 +1,7 @@
 import catalogData from '../data/catalog.json';
 import waitlistsData from '../data/waitlists.json';
 import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
+import { serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
 import {
   findResourceBySlug,
   findWaitlistBySlug,
@@ -39,9 +40,9 @@ export const INDEXABLE_PAGE_METADATA: Record<string, PageMetadata> = {
     index: true,
   },
   '/resources': {
-    title: 'Find housing resources | Housing Navigator',
+    title: 'Find Oregon & Washington housing resources | Housing Navigator',
     description:
-      'Search local rent assistance, shelter, eviction prevention, legal aid, and affordable housing resources.',
+      'Search rent assistance, shelter, eviction prevention, legal aid, and affordable housing resources across Oregon and Washington.',
     index: true,
   },
   '/waitlist': {
@@ -138,7 +139,7 @@ function resolveDetailMetadata(path: string): PageMetadata | null {
       program.description ||
       program.eligibility_summary ||
       program.notes ||
-      `Housing assistance information for ${program.county} County.`;
+      `Housing assistance information for ${serviceAreaSummary(serviceAreasForProgram(program))}.`;
     return {
       title: shorten(`${program.program_name} | Housing Navigator`, 65),
       description: shorten(summary, 155),
