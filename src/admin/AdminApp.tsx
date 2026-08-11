@@ -14,6 +14,8 @@ const AdminWaitlistNew = lazy(() => import('./pages/AdminWaitlistNew'));
 const AdminWaitlistEdit = lazy(() => import('./pages/AdminWaitlistEdit'));
 const AdminAlertsLog = lazy(() => import('./pages/AdminAlertsLog'));
 const AdminReviewQueue = lazy(() => import('./pages/AdminReviewQueue'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminUsers = lazy(() => import('./pages/AdminUsers'));
 
 function ProtectedAdminRoute({ children }: { children: ReactNode }) {
   return <RequireAdmin>{children}</RequireAdmin>;
@@ -25,8 +27,16 @@ export default function AdminApp() {
       <Suspense fallback={<RouteLoading />}>
         <Routes>
           <Route element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/resources" replace />} />
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="login" element={<AdminLogin />} />
+            <Route
+              path="dashboard"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              }
+            />
             <Route
               path="resources"
               element={
@@ -91,7 +101,15 @@ export default function AdminApp() {
                 </ProtectedAdminRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/admin/resources" replace />} />
+            <Route
+              path="users"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminUsers />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
         </Routes>
       </Suspense>

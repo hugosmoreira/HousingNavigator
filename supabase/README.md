@@ -68,6 +68,23 @@ account once it exists in Supabase Auth:
 To revoke admin access, `delete from public.admin_users where user_id = '<uuid>';`
 (the auth user remains and can be removed separately).
 
+## Admin dashboard user management
+
+Migration `0018_admin_user_management.sql` and the `admin-users` Edge Function
+power `/admin/users`. The browser sends the signed-in administrator JWT; the
+function verifies both the token and `admin_users` membership before using the
+server-only Auth Admin API. Never put the service-role or secret key in a
+`VITE_` environment variable.
+
+```bash
+supabase db push
+supabase functions deploy admin-users --no-verify-jwt
+```
+
+Successful invitations, blocks, unblocks, and deletions are recorded in
+`admin_user_actions`. Administrator accounts are protected from block/delete
+operations in this interface.
+
 ## Row level security
 
 Policies live in `migrations/0002_admin_catalog.sql`:
