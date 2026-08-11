@@ -21,6 +21,7 @@ const applicationRoutes = [
   '/dashboard',
   '/admin',
   '/admin/login',
+  '/admin/dashboard',
   '/admin/resources',
   '/admin/resources/new',
   '/admin/resources/:id/edit',
@@ -29,6 +30,7 @@ const applicationRoutes = [
   '/admin/waitlists/:id/edit',
   '/admin/alerts',
   '/admin/review',
+  '/admin/users',
 ];
 
 function redirectBlockFor(route: string): string | undefined {

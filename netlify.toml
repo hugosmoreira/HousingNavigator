@@ -8,7 +8,7 @@
 
 # Public routes are generated as static HTML and shadow these fallback rules.
 # Account/admin routes use the clean SPA shell in spa.html. Keep this allowlist
-# in sync with src/App.tsx; unknown paths fall through to the custom 404 page.
+# in sync with src/admin/AdminApp.tsx; unknown paths fall through to the custom 404 page.
 
 # Public and account routes.
 [[redirects]]
@@ -84,6 +84,11 @@
   status = 200
 
 [[redirects]]
+  from = "/admin/dashboard"
+  to = "/spa.html"
+  status = 200
+
+[[redirects]]
   from = "/admin/resources"
   to = "/spa.html"
   status = 200
@@ -120,6 +125,11 @@
 
 [[redirects]]
   from = "/admin/review"
+  to = "/spa.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/users"
   to = "/spa.html"
   status = 200
 
