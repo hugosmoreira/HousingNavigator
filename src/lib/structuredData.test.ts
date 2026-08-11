@@ -76,7 +76,9 @@ describe('structured data', () => {
     expect(service).toMatchObject({
       name: program.program_name,
       url: program.website,
-      areaServed: { name: `${program.county} County, Washington` },
+      areaServed: {
+        name: `${program.county} County, ${program.state === 'WA' ? 'Washington' : 'Oregon'}`,
+      },
     });
     expect(breadcrumb.itemListElement).toHaveLength(3);
     expect((breadcrumb.itemListElement as StructuredDataNode[])[1]).toMatchObject({
@@ -121,7 +123,7 @@ describe('structured data', () => {
       reviewedBy: { '@id': 'https://housingnavigator.us/#organization' },
     });
     expect(service).toMatchObject({
-      name: waitlist.agency,
+      name: waitlist.program_name || waitlist.agency,
       serviceType: 'Affordable housing waitlist',
       url: waitlist.website,
     });

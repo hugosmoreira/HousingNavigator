@@ -1,5 +1,36 @@
 [
   {
+    "id": "def57983-86cb-4148-82d2-62ceafeaf519",
+    "program_name": "Clackamas County Coordinated Housing Access",
+    "county": "Clackamas",
+    "category": "comprehensive_support",
+    "who_it_helps": [],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "503-655-8575",
+    "website": "https://www.clackamas.us/cha",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 90,
+    "notes": "Program availability can change, and calling does not guarantee immediate housing or an opening.",
+    "last_verified": "2026-08-11",
+    "description": "Clackamas County's central access point for people experiencing a housing crisis. Staff screen the situation, connect callers with housing or homelessness services, and explain possible next steps.",
+    "eligibility_summary": "People in Clackamas County who are homeless or facing a housing crisis. Program availability and individual eligibility vary.",
+    "city": "Oregon City",
+    "state": "OR",
+    "address": "2051 Kaen Road, Oregon City, OR 97045",
+    "source_url": "https://www.clackamas.us/cha",
+    "source_type": "Government",
+    "directory_category": "supportive_services",
+    "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Clackamas"
+      }
+    ]
+  },
+  {
     "id": "fe85ec80-7e0f-42d8-93a6-a973d3105b66",
     "program_name": "Area Agency on Aging and Disabilities of SW WA - Housing Info",
     "county": "Clark",
@@ -26,6 +57,12 @@
     "source_type": "Government",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
     "route_id": "csv-1y8fvkh"
   },
   {
@@ -54,6 +91,12 @@
     "source_type": "Nonprofit",
     "directory_category": "outreach",
     "raw_category": "outreach",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
     "route_id": "csv-1gz5eqt"
   },
   {
@@ -83,6 +126,12 @@
     "source_type": "Government",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
     "route_id": "csv-eq0l00"
   },
   {
@@ -112,6 +161,12 @@
     "source_type": "Nonprofit",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
     "route_id": "csv-1adub5p"
   },
   {
@@ -128,7 +183,7 @@
     "status_confidence": "low",
     "priority_score": 10,
     "notes": "Primary entry point for all Clark County shelter and housing programs. · How to apply: Call 360-695-9677 (M-F 9am-8pm, Weekends 11am-5pm).",
-    "last_verified": "2026-05-12",
+    "last_verified": "2026-08-10",
     "description": "Centralized intake for emergency shelter and housing assistance in Clark County.",
     "eligibility_summary": "Clark County residents experiencing or at risk of homelessness.",
     "city": "Vancouver",
@@ -137,35 +192,17 @@
     "source_url": "https://www.councilforthehomeless.org/find-help/",
     "source_type": "Nonprofit",
     "directory_category": "supportive_services",
-    "raw_category": "supportive_services"
-  },
-  {
-    "id": "efb0452f-c6fe-4e93-8bad-eb98f716b4e7",
-    "program_name": "Council for the Homeless Rent Assistance",
-    "county": "Clark",
-    "category": "rental_assistance",
-    "who_it_helps": [
-      "family",
-      "single_adult",
-      "senior",
-      "disability"
-    ],
-    "application_method": "phone",
-    "referral_required": false,
-    "phone": "(360) 695-9677",
-    "website": "https://www.councilforthehomeless.org/rent-assistance",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 75,
-    "notes": "Short-term rental assistance for Clark County residents at risk of homelessness.",
-    "last_verified": "2026-04-14",
-    "directory_category": "rent_assistance",
-    "raw_category": "rent_assistance",
-    "route_id": "clark-council-rent"
+    "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ]
   },
   {
     "id": "4704d9c6-9fcb-4197-98ad-48276339c21f",
-    "program_name": "Interfaith Treasure House Rent and Utility Assistance",
+    "program_name": "Inter-Faith Treasure House – Rent and Utility Assistance",
     "county": "Clark",
     "category": "rental_assistance",
     "who_it_helps": [],
@@ -178,8 +215,8 @@
     "priority_score": 8,
     "notes": "Funding and geographic eligibility can change; call before visiting or submitting documents. · How to apply: Call the Interfaith Treasure House office at 360-834-4181 to ask whether assistance is currently available.",
     "last_verified": "2026-08-07",
-    "description": "Limited rent and utility assistance for eligible households in east Clark County.",
-    "eligibility_summary": "Primarily serves residents east of 164th Avenue through the Skamania County line, including Camas and Washougal.",
+    "description": "Provides limited emergency assistance with rent and utility payments when funding is available. Inter-Faith Treasure House also operates a food bank and offers household goods and other basic-needs support for residents of the Camas and Washougal area. Call to confirm available assistance and current hours.",
+    "eligibility_summary": "Residents of Camas, Washougal, and eastern Clark County, generally including ZIP codes 98607, 98671, and the eastern portion of 98683. Assistance depends on the household’s need and available funding.",
     "city": "Washougal",
     "state": "WA",
     "address": "91 C Street, Washougal, WA 98671",
@@ -187,32 +224,12 @@
     "source_type": "Official county resource guide",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
-    "route_id": "csv-1rjc3u1"
-  },
-  {
-    "id": "b2e7e1dc-5001-4776-b3fd-f213d9686680",
-    "program_name": "Northwest Justice Project Tenant Defense",
-    "county": "Clark",
-    "category": "legal_aid",
-    "who_it_helps": [
-      "family",
-      "single_adult",
-      "senior",
-      "veteran",
-      "disability"
-    ],
-    "application_method": "phone",
-    "referral_required": false,
-    "phone": "(360) 693-6130",
-    "website": "https://nwjustice.org",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 86,
-    "notes": "Free civil legal aid for low-income Washington residents, including eviction defense.",
-    "last_verified": "2026-04-18",
-    "directory_category": "legal_aid",
-    "raw_category": "legal_aid",
-    "route_id": "clark-nw-justice"
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ]
   },
   {
     "id": "0bcf394e-ce8f-4c64-9e51-78082f572d35",
@@ -231,8 +248,15 @@
     "priority_score": 70,
     "notes": "Long-term family shelter with education and employment programs.",
     "last_verified": "2026-04-11",
+    "state": "WA",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
     "route_id": "clark-open-house-ministries"
   },
   {
@@ -259,59 +283,17 @@
     "source_type": "Official provider and city resource guide",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
     "route_id": "csv-7w5inc"
   },
   {
-    "id": "6fbdb565-05f5-4696-9b58-aea8ab765bf6",
-    "program_name": "Share House Men's Shelter",
-    "county": "Clark",
-    "category": "emergency_shelter",
-    "who_it_helps": [
-      "single_adult",
-      "veteran"
-    ],
-    "application_method": "walk_in",
-    "referral_required": false,
-    "phone": "(360) 695-7658",
-    "website": "https://sharevancouver.org",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 83,
-    "notes": "Emergency shelter for single men in Vancouver, WA.",
-    "last_verified": "2026-04-17",
-    "directory_category": "emergency_shelter",
-    "raw_category": "emergency_shelter",
-    "route_id": "clark-share-shelter"
-  },
-  {
-    "id": "4234c725-cf58-4186-b98b-a63348aa3980",
-    "program_name": "Share Housing and Essential Needs (HEN)",
-    "county": "Clark",
-    "category": "rental_assistance",
-    "who_it_helps": [],
-    "application_method": "phone",
-    "referral_required": true,
-    "phone": "360-695-9677",
-    "website": "https://sharevancouver.org/programs/share-housing-essential-needs-program/",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 10,
-    "notes": "Program entry requires a Housing Solutions Center referral; assistance depends on eligibility and current capacity. · How to apply: Call the Housing Solutions Center at 360-695-9677 to ask about eligibility and coordinated entry.",
-    "last_verified": "2026-08-07",
-    "description": "Rental assistance and crisis management for households experiencing homelessness who have temporary disability-related HEN eligibility.",
-    "eligibility_summary": "Households found eligible for Housing and Essential Needs by Washington DSHS and referred through the Housing Solutions Center.",
-    "city": "Vancouver",
-    "state": "WA",
-    "address": "2306 NE Andresen Road, Vancouver, WA 98661",
-    "source_url": "https://sharevancouver.org/programs/share-housing-essential-needs-program/",
-    "source_type": "Official provider",
-    "directory_category": "rent_assistance",
-    "raw_category": "rent_assistance",
-    "route_id": "csv-1mde4z4"
-  },
-  {
     "id": "a6e16cb0-9392-4408-9ef6-a4bd4db851db",
-    "program_name": "Share Transitional Housing",
+    "program_name": "SHARE Affordable Housing & Stability Program",
     "county": "Clark",
     "category": "comprehensive_support",
     "who_it_helps": [
@@ -320,67 +302,124 @@
     ],
     "application_method": "referral",
     "referral_required": true,
-    "phone": "(360) 448-2121",
-    "website": "https://sharevancouver.org/housing",
+    "phone": "360-952-8214",
+    "website": "https://sharevancouver.org/programs/share-housing-programs/",
     "status": "unknown",
     "status_confidence": "low",
     "priority_score": 74,
-    "notes": "6-24 month transitional housing with case management.",
+    "notes": "How to Apply:\nCall the Housing Solutions Center at 360-695-9677. SHARE does not accept direct applications for this program.",
     "last_verified": "2026-04-12",
+    "description": "Provides housing assistance, case management, and connections to supportive services for individuals and families experiencing homelessness or at risk of losing their housing. Support may include housing planning, employment resources, budgeting, mental health services, domestic violence resources, childcare, and transportation. Applications must go through the Housing Solutions Center.",
+    "eligibility_summary": "Individuals and families who are homeless or at risk of homelessness and have significant barriers to obtaining housing, such as illness, disability, or insufficient financial resources. Participants must be referred through the Housing Solutions Center.",
+    "city": "Clark County",
+    "state": "WA",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
-    "route_id": "clark-share-transitional"
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ]
   },
   {
-    "id": "a6537abc-9523-443f-9ff9-2dd60399f12a",
-    "program_name": "St. Vincent de Paul at St. John Rent and Utility Assistance",
+    "id": "6fbdb565-05f5-4696-9b58-aea8ab765bf6",
+    "program_name": "SHARE House – Shelter for Single Men",
     "county": "Clark",
-    "category": "rental_assistance",
-    "who_it_helps": [],
-    "application_method": "phone",
+    "category": "emergency_shelter",
+    "who_it_helps": [
+      "single_adult",
+      "veteran"
+    ],
+    "application_method": "walk_in",
     "referral_required": false,
-    "phone": "360-573-7199",
-    "website": "https://svdpstjohn.org/need-help/",
+    "phone": "360-695-9677",
+    "website": "https://sharevancouver.org/programs/share-shelter-system/",
     "status": "unknown",
     "status_confidence": "low",
-    "priority_score": 9,
-    "notes": "Service area and funding availability must be confirmed with the provider before applying. · How to apply: Call 360-573-7199 during the hours listed on the provider website to ask whether funds are available.",
-    "last_verified": "2026-08-07",
-    "description": "Rent or utility payment assistance when funds are available for households in central and north Clark County service areas.",
-    "eligibility_summary": "Serves Brush Prairie, north Orchards, north Hazel Dell, Salmon Creek, Hockinson, and nearby central Clark County areas.",
-    "city": "Vancouver",
+    "priority_score": 83,
+    "notes": "Emergency shelter for single men in Vancouver, WA.\nCall the Council for the Homeless Housing Solutions Center at 360-695-9677.",
+    "last_verified": "2026-04-17",
+    "description": "Emergency shelter in Vancouver for single men experiencing homelessness. SHARE House provides shelter with no stated limit on length of stay. Staff and housing navigators help residents address housing barriers, find permanent housing, and connect with employment, healthcare, education, and other community resources. Call the Housing Solutions Center for shelter access.",
+    "eligibility_summary": "Single men experiencing homelessness. Eligibility and shelter placement are determined by the Council for the Homeless Housing Solutions Center.",
+    "city": "Clark County",
     "state": "WA",
-    "address": "11607 NE 87th Avenue, Vancouver, WA 98662",
-    "source_url": "https://svdpstjohn.org/need-help/",
-    "source_type": "Official provider",
-    "directory_category": "rent_assistance",
-    "raw_category": "rent_assistance",
-    "route_id": "csv-ps0vug"
+    "address": "1115 W 13th Street, Vancouver, WA",
+    "directory_category": "emergency_shelter",
+    "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ]
   },
   {
-    "id": "e4a77ea7-534e-4db8-8cb7-7126c302bdf4",
-    "program_name": "St. Vincent de Paul Vancouver Rent Assistance",
+    "id": "4234c725-cf58-4186-b98b-a63348aa3980",
+    "program_name": "Share Housing and Essential Needs (HEN)",
     "county": "Clark",
     "category": "rental_assistance",
-    "who_it_helps": [],
+    "who_it_helps": [
+      "family"
+    ],
     "application_method": "phone",
-    "referral_required": false,
-    "phone": "360-694-5388",
-    "website": "https://www.svdpvancouverusa.org/rent-assistance",
+    "referral_required": true,
+    "phone": "360-695-9677",
+    "website": "https://sharevancouver.org/programs/share-housing-essential-needs-program/",
     "status": "unknown",
     "status_confidence": "low",
     "priority_score": 10,
-    "notes": "Funds are limited and assistance is not guaranteed. Do not visit the office to apply for rent or utility assistance. · How to apply: Check the provider website for the next application date, then call 360-694-5388 at the posted time. This is a call-in-only program.",
-    "last_verified": "2026-08-07",
-    "description": "Limited rent assistance for households within the Vancouver conference service boundary.",
-    "eligibility_summary": "Applicant must be within the service boundary and named on the lease; additional limits are published on the provider website.",
-    "city": "Vancouver",
+    "notes": "First apply for HEN through DSHS. After receiving a HEN referral, contact the Housing Solutions Center at 360-695-9677 for coordinated entry and assessment. A referral does not guarantee assistance because services depend on available funding.",
+    "last_verified": "2026-08-10",
+    "description": "Rapid-rehousing assistance for Clark County households experiencing homelessness who have been approved for Washington’s Housing and Essential Needs program. SHARE may provide emergency rental assistance, crisis management, hygiene and cleaning supplies, and transportation passes while the participant remains eligible and funding is available.",
+    "eligibility_summary": "Washington residents experiencing homelessness who have a HEN referral from DSHS. DSHS generally requires applicants to be unable to work for at least 90 days because of a physical or mental condition, meet income and resource limits, and be at least 18, legally emancipated, or married. Final eligibility and referral are determined by DSHS.",
+    "city": "Clark County",
     "state": "WA",
-    "source_url": "https://www.svdpvancouverusa.org/rent-assistance",
+    "source_url": "https://sharevancouver.org/programs/share-housing-essential-needs-program/",
     "source_type": "Official provider",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
-    "route_id": "csv-1q7gihr"
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
+    "route_id": "csv-1mde4z4"
+  },
+  {
+    "id": "a6537abc-9523-443f-9ff9-2dd60399f12a",
+    "program_name": "St. Vincent de Paul at St. John – Rent and Utility Assistance",
+    "county": "Clark",
+    "category": "rental_assistance",
+    "who_it_helps": [
+      "family"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "360-573-7199",
+    "website": "https://www.stjohnvancouver.org/service-organizations",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 9,
+    "notes": "Call Monday, Wednesday, or Friday from 9:30 AM–12:30 PM. Funding may not always be available.",
+    "last_verified": "2026-08-10",
+    "description": "Provides limited help with rent or utility payments when funding is available. Assistance is intended for residents of the St. John service area in central and northern Clark County. Call during assistance hours to ask about current funding and apply.",
+    "eligibility_summary": "People living in Brush Prairie, north Orchards, north Hazel Dell, Salmon Creek, Hockinson, and other parts of central Clark County who need help paying rent or utilities. Assistance depends on available funding.",
+    "city": "Clark County",
+    "state": "WA",
+    "address": "11607 NE 87th Avenue, Vancouver, WA 98662",
+    "source_url": "https://www.stjohnvancouver.org/service-organizations",
+    "source_type": "Official provider",
+    "directory_category": "rent_assistance",
+    "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
+    "route_id": "csv-ps0vug"
   },
   {
     "id": "55333fb9-7b50-42bd-b755-6a921c0673bd",
@@ -402,33 +441,20 @@
     "status_confidence": "low",
     "priority_score": 92,
     "notes": "Section 8 and public housing waitlist. Currently closed; check site for reopen dates.",
-    "last_verified": "2026-04-18",
+    "last_verified": "2026-08-10",
+    "description": "The Vancouver Housing Authority provides subsidized housing and Section 8 voucher assistance to people in Clark County, Washington who face housing barriers.",
+    "state": "WA",
+    "source_url": "https://vhausa.org/",
+    "source_type": "agency_website",
     "directory_category": "section8_waitlist",
     "raw_category": "section8_waitlist",
-    "route_id": "clark-vha-waitlist"
-  },
-  {
-    "id": "44d079d7-2806-4a1f-b005-e1670f81dec2",
-    "program_name": "Washington Tenants Union Eviction Prevention",
-    "county": "Clark",
-    "category": "eviction_prevention",
-    "who_it_helps": [
-      "family",
-      "single_adult",
-      "senior"
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
     ],
-    "application_method": "phone",
-    "referral_required": false,
-    "phone": "(206) 723-0500",
-    "website": "https://tenantsunion.org",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 72,
-    "notes": "Statewide tenant hotline for rights information and eviction prevention steps.",
-    "last_verified": "2026-04-10",
-    "directory_category": "eviction_prevention",
-    "raw_category": "eviction_prevention",
-    "route_id": "clark-tenant-union"
+    "route_id": "clark-vha-waitlist"
   },
   {
     "id": "4b41cf43-3a67-49f3-a19b-049144b61af4",
@@ -457,6 +483,12 @@
     "source_type": "Nonprofit",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Clark"
+      }
+    ],
     "route_id": "csv-1gzk02i"
   },
   {
@@ -479,9 +511,19 @@
     "status_confidence": "low",
     "priority_score": 90,
     "notes": "Single point of entry for shelter placement, rent assistance referrals, and 24/7 information.",
-    "last_verified": "2026-04-18",
+    "last_verified": "2026-08-10",
+    "description": "211info is a resource directory and contact center that helps people find information and support services in their area, accessible by phone at 211 or through their website.",
+    "state": "OR",
+    "source_url": "https://www.211info.org/",
+    "source_type": "agency_website",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "mult-211info"
   },
   {
@@ -510,6 +552,12 @@
     "source_type": "Nonprofit",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-lqoqkh"
   },
   {
@@ -526,7 +574,7 @@
     "status_confidence": "low",
     "priority_score": 9,
     "notes": "Focuses on permanent supportive housing and wraparound services. · How to apply: Call 503-238-0705 or visit a Cascadia health center.",
-    "last_verified": "2026-05-12",
+    "last_verified": "2026-08-10",
     "description": "Provides home and community-based services, housing search, and placement.",
     "eligibility_summary": "Individuals with mental health challenges experiencing homelessness.",
     "city": "Portland",
@@ -535,7 +583,13 @@
     "source_url": "https://cascadiahealth.org/housing/",
     "source_type": "Nonprofit",
     "directory_category": "outreach",
-    "raw_category": "outreach"
+    "raw_category": "outreach",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "8aa874f2-81bd-4798-a489-b590496e5e9e",
@@ -563,6 +617,12 @@
     "source_type": "Nonprofit",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-1nch5zu"
   },
   {
@@ -579,7 +639,7 @@
     "status_confidence": "low",
     "priority_score": 10,
     "notes": "Offers low-barrier, recovery, and supportive housing. · How to apply: Call (503) 525-8483 for assistance and current openings.",
-    "last_verified": "2026-05-12",
+    "last_verified": "2026-08-10",
     "description": "Centralized housing office for CCC's portfolio of over 2,300 units.",
     "eligibility_summary": "Very low-income individuals and families, often with barriers to housing.",
     "city": "Portland",
@@ -588,30 +648,13 @@
     "source_url": "https://centralcityconcern.org/services/housing/",
     "source_type": "Nonprofit",
     "directory_category": "public_housing",
-    "raw_category": "public_housing"
-  },
-  {
-    "id": "1f85ddb6-8b05-4c18-b04b-0e183efed6d9",
-    "program_name": "Central City Concern Transitional Housing",
-    "county": "Multnomah",
-    "category": "comprehensive_support",
-    "who_it_helps": [
-      "single_adult",
-      "veteran",
-      "disability"
-    ],
-    "application_method": "referral",
-    "referral_required": true,
-    "phone": "(503) 294-1681",
-    "website": "https://centralcityconcern.org",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 78,
-    "notes": "Recovery-oriented transitional housing with case management and employment services.",
-    "last_verified": "2026-04-14",
-    "directory_category": "supportive_services",
-    "raw_category": "supportive_services",
-    "route_id": "mult-central-city-concern"
+    "raw_category": "public_housing",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "b23ee127-98de-45ca-8f98-b972529e320f",
@@ -632,8 +675,15 @@
     "priority_score": 80,
     "notes": "Peer counseling and referrals for tenants at risk of eviction.",
     "last_verified": "2026-04-17",
+    "state": "OR",
     "directory_category": "eviction_prevention",
     "raw_category": "eviction_prevention",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "mult-eviction-prevention"
   },
   {
@@ -663,6 +713,12 @@
     "source_type": "Nonprofit",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-p0gcxk"
   },
   {
@@ -670,7 +726,9 @@
     "program_name": "Hacienda CDC - Dolores Apartments",
     "county": "Multnomah",
     "category": "long_term_housing_waitlist",
-    "who_it_helps": [],
+    "who_it_helps": [
+      "family"
+    ],
     "application_method": "phone",
     "referral_required": false,
     "phone": "503-284-3985",
@@ -679,7 +737,7 @@
     "status_confidence": "low",
     "priority_score": 8,
     "notes": "Currently listed as 'Now Leasing - Apply Today!' · How to apply: Contact property manager at (503) 284-3985.",
-    "last_verified": "2026-05-12",
+    "last_verified": "2026-08-10",
     "description": "Affordable housing community managed by Hacienda CDC.",
     "eligibility_summary": "Low and moderate-income families.",
     "city": "Portland",
@@ -688,7 +746,13 @@
     "source_url": "https://www.haciendacdc.org/communities",
     "source_type": "Nonprofit",
     "directory_category": "public_housing",
-    "raw_category": "public_housing"
+    "raw_category": "public_housing",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "6f549bde-e3fa-4d41-bcee-3f7ca37119e6",
@@ -716,35 +780,13 @@
     "source_url": "https://www.homeforward.org/",
     "source_type": "Government",
     "directory_category": "rent_assistance",
-    "raw_category": "rent_assistance"
-  },
-  {
-    "id": "77c2f2a5-c37c-40ff-b209-32a3f27a2cc8",
-    "program_name": "Human Solutions (Our Just Future) - Deposit Assistance",
-    "county": "Multnomah",
-    "category": "rental_assistance",
-    "who_it_helps": [
-      "family"
-    ],
-    "application_method": "referral",
-    "referral_required": true,
-    "phone": "503-548-0200",
-    "website": "https://ourjustfuture.org/",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 7,
-    "notes": "Part of the Homeless Family System of Care.",
-    "last_verified": "2026-05-06",
-    "description": "Move-in assistance for families transitioning to housing.",
-    "eligibility_summary": "Families with children; Multnomah County resident.",
-    "city": "Portland",
-    "state": "OR",
-    "address": "12350 SE Powell Blvd, Portland, OR 97236",
-    "source_url": "https://ourjustfuture.org/",
-    "source_type": "Nonprofit",
-    "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
-    "route_id": "csv-154rdej"
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "e207374b-1dd2-43f5-9ae4-d6d8c849a1a6",
@@ -763,8 +805,15 @@
     "priority_score": 82,
     "notes": "Family shelter. Call 211 first for placement referral.",
     "last_verified": "2026-04-16",
+    "state": "OR",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "mult-human-solutions-family"
   },
   {
@@ -794,6 +843,12 @@
     "source_type": "Nonprofit",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-1jr1cb3"
   },
   {
@@ -819,7 +874,13 @@
     "source_url": "https://impactnw.org/programs/housing-and-safety-net/housing-rent-assistance/",
     "source_type": "Nonprofit",
     "directory_category": "rent_assistance",
-    "raw_category": "rent_assistance"
+    "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "4895ca53-0445-45be-9380-e2cea3bf1618",
@@ -847,6 +908,12 @@
     "source_type": "Nonprofit",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-140v1dz"
   },
   {
@@ -876,6 +943,12 @@
     "source_type": "Nonprofit",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-1k8mkjx"
   },
   {
@@ -905,11 +978,17 @@
     "source_type": "Nonprofit",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-grxiq4"
   },
   {
     "id": "f8020b8d-5e5a-43da-9eef-68a6ec5eda60",
-    "program_name": "JOIN - Outreach & Housing Placement",
+    "program_name": "JOIN – Leasing and Housing Placement Support",
     "county": "Multnomah",
     "category": "comprehensive_support",
     "who_it_helps": [],
@@ -920,39 +999,54 @@
     "status": "unknown",
     "status_confidence": "low",
     "priority_score": 10,
-    "notes": "Includes Day Space services (showers, mail, internet) and housing navigation. · How to apply: Call 503-232-2031 or visit the Day Space at 1435 NE 81st Ave.",
+    "notes": "Contact JOIN for information. This is not a general online application program; participants are identified and referred through JOIN’s other service teams.",
     "last_verified": "2026-05-12",
-    "description": "Relationship-based support to help individuals and families transition from the streets to permanent housing.",
-    "eligibility_summary": "Individuals and families experiencing homelessness in Portland.",
-    "city": "Portland",
+    "description": "Helps individuals and families overcome barriers to renting permanent housing. The program offers housing placement assistance, financial support, landlord coordination, and continued help securing and maintaining stable housing.",
+    "eligibility_summary": "Individuals and families facing barriers to the traditional rental market, including low income, limited rental history, unstable employment, disability, immigration status, previous evictions, or justice-system involvement. Participants must be referred through JOIN’s Placement or Retention teams.",
+    "city": "Multnomah County,",
     "state": "OR",
     "address": "1435 NE 81st Ave, Portland, OR 97213",
     "source_url": "https://joinpdx.org/about/our-model/",
     "source_type": "Nonprofit",
     "directory_category": "outreach",
-    "raw_category": "outreach"
+    "raw_category": "outreach",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "8405a7ae-39d1-4e96-8042-41e9e279c62f",
-    "program_name": "JOIN Street Outreach",
+    "program_name": "JOIN Outreach",
     "county": "Multnomah",
     "category": "emergency_shelter",
     "who_it_helps": [
       "single_adult",
       "disability"
     ],
-    "application_method": "walk_in",
+    "application_method": "phone",
     "referral_required": false,
-    "phone": "(503) 232-2031",
+    "phone": "503-232-2031",
     "website": "https://joinpdx.org",
     "status": "unknown",
     "status_confidence": "low",
     "priority_score": 70,
-    "notes": "Day center plus outreach workers help unsheltered neighbors access services.",
-    "last_verified": "2026-04-15",
+    "notes": "Contact JOIN for current outreach availability. The official website does not describe a formal application or guarantee immediate enrollment.",
+    "last_verified": "2026-08-10",
+    "description": "Mobile outreach for people experiencing homelessness in Portland. JOIN staff meet people where they are—including on the streets, in encampments, and in vehicles—to build relationships, address barriers, connect them with resources, and support their transition into permanent housing.",
+    "eligibility_summary": "Individuals and families experiencing homelessness in Portland, particularly people sleeping outside, in vehicles, or in encampments.",
+    "city": "Multnomah County",
+    "state": "OR",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
-    "route_id": "mult-jrc"
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "f24e4a00-5278-408e-a6da-18bee0970ec1",
@@ -973,9 +1067,19 @@
     "status_confidence": "low",
     "priority_score": 84,
     "notes": "Coordinates shelter, outreach, and housing placement across Multnomah County.",
-    "last_verified": "2026-04-18",
+    "last_verified": "2026-08-10",
+    "description": "Coordinates local, state, and federal funding to address homelessness in Portland and Multnomah County through participant-driven, equity-based services.",
+    "state": "OR",
+    "source_url": "https://multco.us/departments/homeless-services-department",
+    "source_type": "agency_website",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "mult-multco-joint-office"
   },
   {
@@ -1004,6 +1108,12 @@
     "source_type": "Nonprofit",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-kqf8tf"
   },
   {
@@ -1033,32 +1143,46 @@
     "source_type": "Nonprofit",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-tjkyvp"
   },
   {
-    "id": "846a7d23-f5b4-4314-8f80-3e3b74931279",
-    "program_name": "Oregon Law Center Eviction Defense",
+    "id": "77c2f2a5-c37c-40ff-b209-32a3f27a2cc8",
+    "program_name": "Our Just Future – Lilac Meadows Family Shelter",
     "county": "Multnomah",
-    "category": "legal_aid",
+    "category": "rental_assistance",
     "who_it_helps": [
-      "family",
-      "single_adult",
-      "senior",
-      "veteran",
-      "disability"
+      "family"
     ],
-    "application_method": "phone",
-    "referral_required": false,
-    "phone": "(503) 295-2760",
-    "website": "https://oregonlawcenter.org",
+    "application_method": "referral",
+    "referral_required": true,
+    "phone": "503-548-0200",
+    "website": "https://ourjustfuture.org/services/homeless-services/",
     "status": "unknown",
     "status_confidence": "low",
-    "priority_score": 88,
-    "notes": "Free legal representation for tenants facing eviction. Call ASAP if you have a court date.",
-    "last_verified": "2026-04-18",
-    "directory_category": "legal_aid",
-    "raw_category": "legal_aid",
-    "route_id": "mult-legal-aid-services"
+    "priority_score": 7,
+    "notes": "Part of the Homeless Family System of Care.",
+    "last_verified": "2026-08-10",
+    "description": "Year-round emergency shelter in Southeast Portland for families experiencing homelessness. Lilac Meadows provides private rooms, meals, help accessing community services, and support finding permanent housing. There is no walk-in access; call 211 for screening and coordinated intake.",
+    "eligibility_summary": "Families with one or more adults and at least one minor child, or individuals in their third trimester of pregnancy, who are experiencing homelessness. Eligibility and placement are determined through 211.",
+    "city": "Portland",
+    "state": "OR",
+    "address": "12350 SE Powell Blvd, Portland, OR 97236",
+    "source_url": "https://ourjustfuture.org/services/lilac-meadows-family-shelter/",
+    "source_type": "Nonprofit",
+    "directory_category": "rent_assistance",
+    "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "c92b96e1-4357-4232-af18-81469b038db1",
@@ -1087,6 +1211,12 @@
     "source_type": "Nonprofit",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-1jnrccn"
   },
   {
@@ -1112,7 +1242,13 @@
     "source_url": "https://pcrihome.org/prospective-tenants/how-to-apply",
     "source_type": "Nonprofit",
     "directory_category": "public_housing",
-    "raw_category": "public_housing"
+    "raw_category": "public_housing",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "34313a47-6f4a-4fbb-baec-7b6cab3d6700",
@@ -1140,6 +1276,12 @@
     "source_type": "Nonprofit",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-1gnpn07"
   },
   {
@@ -1168,6 +1310,12 @@
     "source_type": "Nonprofit",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-196g1m5"
   },
   {
@@ -1196,6 +1344,12 @@
     "source_type": "Nonprofit",
     "directory_category": "public_housing",
     "raw_category": "public_housing",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-1r75qku"
   },
   {
@@ -1224,6 +1378,12 @@
     "source_type": "Nonprofit",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-9khq86"
   },
   {
@@ -1253,11 +1413,17 @@
     "source_type": "Nonprofit",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-tkhh8"
   },
   {
     "id": "aff3c161-df04-4f50-b168-bd0b1d0d039d",
-    "program_name": "Transition Projects Shelter Intake",
+    "program_name": "Transition Projects – Shelter Access",
     "county": "Multnomah",
     "category": "emergency_shelter",
     "who_it_helps": [
@@ -1271,11 +1437,22 @@
     "status": "unknown",
     "status_confidence": "low",
     "priority_score": 85,
-    "notes": "Walk-in shelter for single adults. Limited beds; arrive early.",
+    "notes": "Complete the shelter pre-screening form. Anyone unable to complete the form can visit the Transition Projects Resource Center at 650 NW Irving Street, Portland. Do not go directly to a shelter without a reservation or referral.",
     "last_verified": "2026-04-17",
+    "description": "Access point for Transition Projects’ emergency and short-term shelters in Portland. Programs provide temporary shelter, meals, showers, laundry, case management, wellness support, and help moving toward permanent housing. Shelters are not available for drop-in entry; a reservation or referral is required.",
+    "eligibility_summary": "Adults experiencing homelessness, including individuals and couples. Placement depends on bed availability and each shelter’s requirements. Some programs have specific eligibility based on household type, medical vulnerability, housing status, or sobriety expectations.",
+    "city": "Multnomah County",
+    "state": "OR",
+    "address": "650 NW Irving Street, Portland",
+    "source_url": "https://www.tprojects.org/shelters",
     "directory_category": "emergency_shelter",
     "raw_category": "emergency_shelter",
-    "route_id": "mult-transition-projects"
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ]
   },
   {
     "id": "f8092ba1-ffcf-4828-9d8f-5b3df3f1f738",
@@ -1304,6 +1481,12 @@
     "source_type": "Nonprofit",
     "directory_category": "rent_assistance",
     "raw_category": "rent_assistance",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-o9nfbf"
   },
   {
@@ -1332,31 +1515,140 @@
     "source_type": "Government",
     "directory_category": "supportive_services",
     "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Multnomah"
+      }
+    ],
     "route_id": "csv-12oi571"
   },
   {
+    "id": "b2e7e1dc-5001-4776-b3fd-f213d9686680",
+    "program_name": "Northwest Justice Project Tenant Defense",
+    "county": "Other",
+    "category": "legal_aid",
+    "who_it_helps": [
+      "family",
+      "single_adult",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "(360) 693-6130",
+    "website": "https://nwjustice.org",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 86,
+    "notes": "Free civil legal aid for low-income Washington residents, including eviction defense.",
+    "last_verified": "2026-04-18",
+    "state": "WA",
+    "directory_category": "legal_aid",
+    "raw_category": "legal_aid",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": null
+      }
+    ]
+  },
+  {
+    "id": "846a7d23-f5b4-4314-8f80-3e3b74931279",
+    "program_name": "Oregon Law Center Eviction Defense",
+    "county": "Other",
+    "category": "legal_aid",
+    "who_it_helps": [
+      "family",
+      "single_adult",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "888-585-9638",
+    "website": "https://oregonlawcenter.org",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 88,
+    "notes": "Complete the online form or call immediately. Have the eviction court case number and hearing date ready. Applicants must contact the project before their first appearance date.",
+    "last_verified": "2026-08-10",
+    "description": "Provides free legal assistance to low-income Oregon renters facing an eviction court case. The program may offer legal information, advice, or court representation after reviewing the case. Renters should contact the program immediately and before their first court appearance. This program does not provide rent assistance.",
+    "eligibility_summary": "Low-income renters anywhere in Oregon with an active eviction court case. Multnomah County renters may also request help after receiving a landlord termination notice, even before a court case is filed. Services are available regardless of immigration status.",
+    "state": "OR",
+    "directory_category": "legal_aid",
+    "raw_category": "legal_aid",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": null
+      }
+    ]
+  },
+  {
+    "id": "44d079d7-2806-4a1f-b005-e1670f81dec2",
+    "program_name": "Tenants Union of Washington State – Tenants Rights Hotline",
+    "county": "Other",
+    "category": "eviction_prevention",
+    "who_it_helps": [
+      "family",
+      "single_adult",
+      "senior"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "206-723-0500",
+    "website": "https://tenantsunion.org",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 72,
+    "notes": "Call the hotline or complete the online tenant-counseling intake form. Interpretation is available in most languages.",
+    "last_verified": "2026-04-10",
+    "description": "Free telephone counseling for Washington renters with eviction notices, landlord disputes, or other rental housing problems. Trained non-attorney counselors explain tenant rights, discuss steps that may help prevent housing loss, and provide referrals to community resources and legal assistance. The hotline does not provide legal advice or court representation.",
+    "eligibility_summary": "Renters anywhere in Washington State who need information about eviction, landlord-tenant laws, notices, repairs, deposits, or other tenancy problems. No income requirement is stated.",
+    "state": "WA",
+    "source_url": "https://tenantsunion.org",
+    "source_type": "Website",
+    "directory_category": "eviction_prevention",
+    "raw_category": "eviction_prevention",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": null
+      }
+    ]
+  },
+  {
     "id": "6ee390cb-32e7-42a2-a78b-8a31bfda49f9",
-    "program_name": "REACH CDC - Dartmouth Crossing North",
+    "program_name": "REACH – Dartmouth Crossing North Affordable Apartments",
     "county": "Washington",
     "category": "long_term_housing_waitlist",
     "who_it_helps": [],
     "application_method": "online",
     "referral_required": false,
     "phone": "503-231-0682",
-    "website": "https://reachproperties.org/properties/filter-by/desc/all-locations/Apply%20Now",
+    "website": "https://www.dartmouthcrossingnorth.com/",
     "status": "unknown",
     "status_confidence": "low",
     "priority_score": 8,
-    "notes": "Currently listed as 'Apply Now' on REACH website. · How to apply: Apply online via REACH properties website.",
-    "last_verified": "2026-05-12",
-    "description": "Affordable housing community with studio, 1, 2, and 3 bedroom units.",
-    "eligibility_summary": "Low-income individuals and families meeting AMI requirements.",
+    "notes": "This is the existing category your system uses for regulated affordable apartment communities, even though it is not owned by a public housing authority.",
+    "last_verified": "2026-08-10",
+    "description": "Affordable apartment community in Tigard with 85 homes near downtown, public transportation, schools, and employment centers. The property participates in the Low-Income Housing Tax Credit program and serves households meeting its income limits. Contact the property or apply online for current availability.",
+    "eligibility_summary": "Individuals and families with household income at or below 60% of the area median income. Income limits depend on household size, and additional occupancy and tenant-screening requirements may apply.",
     "city": "Tigard",
     "state": "OR",
-    "address": "6835 SW Clinton St, Tigard, OR 97223",
-    "source_url": "https://reachproperties.org/properties/filter-by/desc/all-locations/Apply%20Now",
+    "address": "6835 SW Clinton Street, Tigard, OR 97223",
+    "source_url": "https://www.dartmouthcrossingnorth.com/",
     "source_type": "Nonprofit",
     "directory_category": "public_housing",
-    "raw_category": "public_housing"
+    "raw_category": "public_housing",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Washington"
+      }
+    ]
   }
 ]
