@@ -71,7 +71,7 @@ export default function AdminDashboard() {
         client
           .from('waitlists_admin')
           .select('id', { count: 'exact', head: true })
-          .eq('current_status', 'open'),
+          .eq('status', 'open'),
         client
           .from('waitlist_status_suggestions')
           .select('id', { count: 'exact', head: true })
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         curationFinishedAt: run?.finished_at ?? null,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load the dashboard');
+      setError(errorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -262,6 +262,19 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+  return 'Could not load the dashboard';
 }
 
 function MetricCard({
