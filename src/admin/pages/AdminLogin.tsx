@@ -50,7 +50,7 @@ export default function AdminLogin() {
   useEffect(() => {
     if (session && isAdmin) {
       navigate(
-        state.from && state.from.startsWith('/admin') ? state.from : '/admin/resources',
+        state.from && state.from.startsWith('/admin') ? state.from : '/admin/dashboard',
         { replace: true },
       );
     }
@@ -68,7 +68,7 @@ export default function AdminLogin() {
       const ok = await signIn(email.trim(), password, captchaToken ?? undefined);
       if (ok) {
         navigate(
-          state.from && state.from.startsWith('/admin') ? state.from : '/admin/resources',
+          state.from && state.from.startsWith('/admin') ? state.from : '/admin/dashboard',
           { replace: true },
         );
       } else {

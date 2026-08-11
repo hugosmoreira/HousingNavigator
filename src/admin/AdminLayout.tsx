@@ -1,8 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BellRing, ClipboardCheck, Home, ListChecks, LogOut, Sparkles } from 'lucide-react';
+import {
+  BellRing,
+  ClipboardCheck,
+  ExternalLink,
+  LayoutDashboard,
+  ListChecks,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  Sparkles,
+  Users,
+  X,
+} from 'lucide-react';
 import { getSupabaseClient } from '../lib/supabaseClient';
 import { useAdminAuth } from './AdminAuthContext';
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: ReactNode;
+  badge?: number;
+}
 
 export default function AdminLayout() {
   const { session, isAdmin, signOut, configured } = useAdminAuth();
@@ -11,25 +30,25 @@ export default function AdminLayout() {
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [pendingReviews, setPendingReviews] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Pending-suggestion count for the Review badge. Cheap head request,
-  // refreshed on navigation so approvals/rejections update it promptly.
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   useEffect(() => {
     if (!session || !isAdmin) return;
     let active = true;
-    (async () => {
-      try {
-        const client = await getSupabaseClient();
-        if (!client) return;
-        const { count } = await client
-          .from('waitlist_status_suggestions')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'pending');
-        if (active) setPendingReviews(count ?? 0);
-      } catch {
-        // Badge is informational only — never surface an error for it.
-      }
-    })();
+    void getSupabaseClient().then((client) => {
+      if (!client || !active) return;
+      void client
+        .from('waitlist_status_suggestions')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .then(({ count }) => {
+          if (active) setPendingReviews(count ?? 0);
+        });
+    });
     return () => {
       active = false;
     };
@@ -41,9 +60,6 @@ export default function AdminLayout() {
     try {
       await signOut();
     } catch (err) {
-      // Local session was already cleared inside signOut(); we still want
-      // the user off the admin pages, but surface the failure so they
-      // know the remote token may not have been revoked.
       const message = err instanceof Error ? err.message : 'Sign out failed';
       setSignOutError(message);
       // eslint-disable-next-line no-console
@@ -54,115 +70,235 @@ export default function AdminLayout() {
     }
   }
 
+  const sidebar = session && isAdmin ? (
+    <Sidebar
+      email={session.user.email ?? 'Administrator'}
+      pendingReviews={pendingReviews}
+      signingOut={signingOut}
+      onSignOut={handleSignOut}
+    />
+  ) : null;
+
   return (
-    <div className="min-h-screen bg-surface text-on-surface flex flex-col">
-      <header className="border-b border-surface-container-highest bg-surface-container-low">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <span className="font-headline font-bold tracking-tight">
-              Housing Navigator{' '}
-              <span className="text-on-surface-variant font-medium">· Admin</span>
-            </span>
-          </div>
+    <div className="min-h-screen bg-surface text-on-surface">
+      {sidebar && (
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-surface-container-highest bg-surface-container-lowest lg:block">
+          {sidebar}
+        </aside>
+      )}
 
-          {session && isAdmin && (
-            <nav className="flex items-center gap-1 sm:gap-2 text-sm">
-              <AdminNavLink to="/admin/resources" icon={<ListChecks className="w-4 h-4" />}>
-                Resources
-              </AdminNavLink>
-              <AdminNavLink to="/admin/waitlists" icon={<ListChecks className="w-4 h-4" />}>
-                Waitlists
-              </AdminNavLink>
-              <AdminNavLink to="/admin/alerts" icon={<BellRing className="w-4 h-4" />}>
-                Alerts
-              </AdminNavLink>
-              <AdminNavLink
-                to="/admin/review"
-                icon={<ClipboardCheck className="w-4 h-4" />}
-                badge={pendingReviews}
-              >
-                Review
-              </AdminNavLink>
-            </nav>
-          )}
+      {sidebar && mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="absolute inset-0 bg-inverse-surface/45"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative h-full w-[min(19rem,88vw)] border-r border-surface-container-highest bg-surface-container-lowest shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute right-3 top-3 rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-low"
+              aria-label="Close navigation"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {sidebar}
+          </aside>
+        </div>
+      )}
 
-          <div className="flex items-center gap-3">
+      <div className={sidebar ? 'lg:pl-64' : ''}>
+        {sidebar && (
+          <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-surface-container-highest bg-surface/95 px-5 backdrop-blur lg:px-8">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-low lg:hidden"
+              aria-label="Open navigation"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="hidden min-w-0 lg:block">
+              <p className="truncate text-sm font-semibold text-on-surface">
+                {currentPageTitle(location.pathname)}
+              </p>
+              <p className="text-xs text-on-surface-variant">Housing Navigator administration</p>
+            </div>
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-on-surface"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-surface-container-highest px-3 py-1.5 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"
             >
-              <Home className="w-4 h-4" /> Public site
+              Public site <ExternalLink className="h-3.5 w-3.5" />
             </Link>
-            {session && (
-              <button
-                type="button"
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-on-surface disabled:opacity-50"
-              >
-                <LogOut className="w-4 h-4" />
-                {signingOut ? 'Signing out…' : 'Sign out'}
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+          </header>
+        )}
 
-      {signOutError && (
-        <div className="bg-error/10 border-b border-error/30 text-sm text-error">
-          <div className="max-w-6xl mx-auto px-6 lg:px-10 py-2">
-            Sign out had trouble: {signOutError}. Local session cleared anyway.
+        {signOutError && (
+          <div className="border-b border-error/30 bg-error/10 px-6 py-2 text-sm text-error lg:px-10">
+            Sign out had trouble: {signOutError}. Your local session was cleared.
           </div>
-        </div>
-      )}
+        )}
 
-      {!configured && (
-        <div className="bg-yellow-50 border-b border-yellow-200 text-yellow-900 text-sm">
-          <div className="max-w-6xl mx-auto px-6 lg:px-10 py-3">
-            Supabase is not configured. Set <code>VITE_SUPABASE_URL</code> and{' '}
-            <code>VITE_SUPABASE_ANON_KEY</code> in <code>.env</code> to use the
+        {!configured && (
+          <div className="border-b border-yellow-200 bg-yellow-50 px-6 py-3 text-sm text-yellow-900 lg:px-10">
+            Supabase is not configured. Add the Supabase URL and anonymous key to use the
             admin tools.
           </div>
-        </div>
-      )}
+        )}
 
-      <main className="flex-1">
-        <Outlet />
-      </main>
+        <main className="min-h-[calc(100vh-4rem)]">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
 
-function AdminNavLink({
-  to,
-  icon,
-  badge,
-  children,
+function Sidebar({
+  email,
+  pendingReviews,
+  signingOut,
+  onSignOut,
 }: {
-  to: string;
-  icon: React.ReactNode;
-  badge?: number;
-  children: React.ReactNode;
+  email: string;
+  pendingReviews: number;
+  signingOut: boolean;
+  onSignOut: () => void;
 }) {
+  const sections: Array<{ label: string; items: NavItem[] }> = [
+    {
+      label: 'Workspace',
+      items: [
+        {
+          to: '/admin/dashboard',
+          label: 'Overview',
+          icon: <LayoutDashboard className="h-4.5 w-4.5" />,
+        },
+      ],
+    },
+    {
+      label: 'Content',
+      items: [
+        {
+          to: '/admin/resources',
+          label: 'Resources',
+          icon: <ListChecks className="h-4.5 w-4.5" />,
+        },
+        {
+          to: '/admin/waitlists',
+          label: 'Waitlists',
+          icon: <PanelLeftClose className="h-4.5 w-4.5" />,
+        },
+      ],
+    },
+    {
+      label: 'Operations',
+      items: [
+        {
+          to: '/admin/review',
+          label: 'Review queue',
+          icon: <ClipboardCheck className="h-4.5 w-4.5" />,
+          badge: pendingReviews,
+        },
+        {
+          to: '/admin/alerts',
+          label: 'Alert history',
+          icon: <BellRing className="h-4.5 w-4.5" />,
+        },
+      ],
+    },
+    {
+      label: 'People',
+      items: [
+        {
+          to: '/admin/users',
+          label: 'Users',
+          icon: <Users className="h-4.5 w-4.5" />,
+        },
+      ],
+    },
+  ];
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex h-16 items-center gap-3 border-b border-surface-container-highest px-5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-on-primary shadow-sm">
+          <Sparkles className="h-4.5 w-4.5" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-headline text-sm font-bold tracking-tight">Housing Navigator</p>
+          <p className="text-xs text-on-surface-variant">Admin workspace</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        {sections.map((section) => (
+          <div key={section.label}>
+            <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant/80">
+              {section.label}
+            </p>
+            <div className="space-y-1">
+              {section.items.map((item) => (
+                <SidebarLink key={item.to} {...item} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      <div className="border-t border-surface-container-highest p-3">
+        <div className="mb-2 rounded-xl bg-surface-container-low px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-on-surface-variant">
+            Signed in
+          </p>
+          <p className="mt-0.5 truncate text-sm font-medium text-on-surface" title={email}>
+            {email}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onSignOut}
+          disabled={signingOut}
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface disabled:opacity-50"
+        >
+          <LogOut className="h-4 w-4" />
+          {signingOut ? 'Signing out…' : 'Sign out'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SidebarLink({ to, label, icon, badge }: NavItem) {
   return (
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
+        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
           isActive
-            ? 'bg-primary/10 text-primary font-semibold'
-            : 'text-on-surface-variant hover:text-on-surface'
+            ? 'bg-primary text-on-primary shadow-sm'
+            : 'font-medium text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
         }`
       }
     >
       {icon}
-      {children}
+      <span className="flex-1">{label}</span>
       {badge != null && badge > 0 && (
-        <span className="inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-primary text-on-primary text-[11px] font-semibold leading-none">
+        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-error px-1.5 py-0.5 text-[11px] font-bold text-on-error">
           {badge > 99 ? '99+' : badge}
         </span>
       )}
     </NavLink>
   );
+}
+
+function currentPageTitle(pathname: string): string {
+  if (pathname.startsWith('/admin/resources')) return 'Resources';
+  if (pathname.startsWith('/admin/waitlists')) return 'Waitlists';
+  if (pathname.startsWith('/admin/review')) return 'Review queue';
+  if (pathname.startsWith('/admin/alerts')) return 'Alert history';
+  if (pathname.startsWith('/admin/users')) return 'Users';
+  return 'Overview';
 }
