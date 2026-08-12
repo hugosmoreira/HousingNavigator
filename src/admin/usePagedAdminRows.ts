@@ -13,7 +13,7 @@ export const ADMIN_PAGE_SIZE = 100;
  * The client-side text filter on those pages only searches loaded rows —
  * callers surface a hint when `hasMore` is true so that stays visible.
  */
-export function usePagedAdminRows<T>(view: 'resources_admin' | 'waitlists_admin') {
+export function usePagedAdminRows<T>(view: 'resources_admin' | 'waitlists_admin' | 'affordable_properties_admin') {
   const [rows, setRows] = useState<T[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);

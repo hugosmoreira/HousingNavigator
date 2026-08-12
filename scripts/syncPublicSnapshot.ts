@@ -4,18 +4,26 @@ import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
 import { createEntitySlug } from '../src/lib/entityRoutes';
 import {
+  affordablePropertyFromRow,
   programFromResourceRow,
   waitlistFromRow,
 } from '../src/services/data/mappers';
 import type {
+  AffordablePropertyRow,
   ResourceRow,
   WaitlistRow,
 } from '../src/services/data/dbTypes';
-import type { Program, WaitlistEntry } from '../src/types';
+import type { AffordableProperty, Program, WaitlistEntry } from '../src/types';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const catalogPath = join(repoRoot, 'src', 'data', 'catalog.json');
 const waitlistsPath = join(repoRoot, 'src', 'data', 'waitlists.json');
+const affordablePropertiesPath = join(
+  repoRoot,
+  'src',
+  'data',
+  'affordableProperties.json',
+);
 const supabaseUrl = process.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, '');
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY?.trim();
 
@@ -58,6 +66,41 @@ const WAITLIST_COLUMNS = [
   'public_notes',
   'published',
   'last_opened_at',
+  'waitlist_type',
+  'affordable_property_id',
+].join(',');
+
+const AFFORDABLE_PROPERTY_COLUMNS = [
+  'id',
+  'name',
+  'owner_organization',
+  'management_company',
+  'property_type',
+  'address',
+  'city',
+  'county',
+  'state',
+  'postal_code',
+  'description',
+  'eligibility_summary',
+  'ami_levels',
+  'bedroom_types',
+  'audiences',
+  'total_units',
+  'accessibility_notes',
+  'phone',
+  'website',
+  'application_url',
+  'source_url',
+  'source_type',
+  'last_verified',
+  'public_notes',
+  'priority_score',
+  'published',
+  'waitlist_id',
+  'waitlist_status',
+  'waitlist_last_checked',
+  'waitlist_application_link',
 ].join(',');
 
 function readJson<T>(path: string): T {
@@ -136,11 +179,19 @@ async function main(): Promise<void> {
   }
 
   validateSupabaseUrl(supabaseUrl);
-  const [resourceRows, waitlistRows] = await Promise.all([
+  const [resourceRows, waitlistRows, affordablePropertyRows] = await Promise.all([
     fetchPublicRows<ResourceRow>('resources_public', RESOURCE_COLUMNS),
     fetchPublicRows<WaitlistRow>('waitlists_public', WAITLIST_COLUMNS),
+    fetchPublicRows<AffordablePropertyRow>(
+      'affordable_properties_public',
+      AFFORDABLE_PROPERTY_COLUMNS,
+    ),
   ]);
-  if (resourceRows.length === 0 || waitlistRows.length === 0) {
+  if (
+    resourceRows.length === 0 ||
+    waitlistRows.length === 0 ||
+    affordablePropertyRows.length === 0
+  ) {
     throw new Error('Refusing to replace the public snapshot with an empty dataset.');
   }
 
@@ -153,11 +204,20 @@ async function main(): Promise<void> {
         ? a.agency.localeCompare(b.agency)
         : a.county.localeCompare(b.county),
     );
+  const affordableProperties = affordablePropertyRows
+    .map(affordablePropertyFromRow)
+    .sort((a: AffordableProperty, b: AffordableProperty) => {
+      if (b.priority_score !== a.priority_score) {
+        return b.priority_score - a.priority_score;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
   writeJson(catalogPath, programs);
   writeJson(waitlistsPath, waitlists);
+  writeJson(affordablePropertiesPath, affordableProperties);
   console.log(
-    `Refreshed the public build snapshot (${programs.length} resources, ${waitlists.length} waitlists).`,
+    `Refreshed the public build snapshot (${programs.length} resources, ${affordableProperties.length} affordable properties, ${waitlists.length} waitlists).`,
   );
 }
 

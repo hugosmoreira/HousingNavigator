@@ -65,6 +65,34 @@ export type StatusConfidence = 'high' | 'medium' | 'low';
 
 export type WaitlistStatus = 'open' | 'closed' | 'limited' | 'unknown';
 
+export type WaitlistType =
+  | 'affordable_property'
+  | 'housing_choice_voucher'
+  | 'public_housing'
+  | 'mixed'
+  | 'other';
+
+export type AffordablePropertyType =
+  | 'affordable_apartments'
+  | 'public_housing'
+  | 'project_based_section8'
+  | 'tax_credit'
+  | 'senior_housing'
+  | 'supportive_housing'
+  | 'mixed';
+
+export type BedroomType = 'studio' | 'sro' | '1' | '2' | '3' | '4_plus';
+
+export type PropertyAudience =
+  | 'general'
+  | 'families'
+  | 'seniors'
+  | 'veterans'
+  | 'disabilities'
+  | 'farmworkers'
+  | 'formerly_homeless'
+  | 'recovery';
+
 export interface IntakeState {
   county: County | null;
   situation: IntakeSituation | null;
@@ -135,7 +163,7 @@ export interface WaitlistEntry {
   /** Stable catalog identity used in public URLs when the backing row has a database UUID. */
   route_id?: string;
   agency: string;
-  county: County;
+  county: string;
   status: WaitlistStatus;
   last_checked: string;
   website: string;
@@ -147,4 +175,40 @@ export interface WaitlistEntry {
   source_url?: string;
   /** ISO timestamp of the most recent transition to `open`, when known. */
   last_opened_at?: string;
+  waitlist_type?: WaitlistType;
+  affordable_property_id?: string;
+}
+
+/** A physical apartment property, separate from services and waitlists. */
+export interface AffordableProperty {
+  id: string;
+  route_id?: string;
+  name: string;
+  owner_organization?: string;
+  management_company?: string;
+  property_type: AffordablePropertyType;
+  address?: string;
+  city: string;
+  county: string;
+  state: SupportedState;
+  postal_code?: string;
+  description?: string;
+  eligibility_summary?: string;
+  ami_levels: number[];
+  bedroom_types: BedroomType[];
+  audiences: PropertyAudience[];
+  total_units?: number;
+  accessibility_notes?: string;
+  phone?: string;
+  website?: string;
+  application_url?: string;
+  source_url?: string;
+  source_type?: string;
+  last_verified: string;
+  public_notes?: string;
+  priority_score: number;
+  waitlist_id?: string;
+  waitlist_status?: WaitlistStatus;
+  waitlist_last_checked?: string;
+  waitlist_application_link?: string;
 }

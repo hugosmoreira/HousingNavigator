@@ -104,6 +104,21 @@
   status = 200
 
 [[redirects]]
+  from = "/admin/properties"
+  to = "/spa.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/properties/new"
+  to = "/spa.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/properties/:id/edit"
+  to = "/spa.html"
+  status = 200
+
+[[redirects]]
   from = "/admin/waitlists"
   to = "/spa.html"
   status = 200

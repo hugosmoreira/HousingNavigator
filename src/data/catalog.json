@@ -827,39 +827,6 @@
     "route_id": "csv-p0gcxk"
   },
   {
-    "id": "57f63343-87ce-4ce0-a008-5c61909e319e",
-    "program_name": "Hacienda CDC - Dolores Apartments",
-    "county": "Multnomah",
-    "category": "long_term_housing_waitlist",
-    "who_it_helps": [
-      "family"
-    ],
-    "application_method": "phone",
-    "referral_required": false,
-    "phone": "503-284-3985",
-    "website": "https://www.haciendacdc.org/communities",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 8,
-    "notes": "Currently listed as 'Now Leasing - Apply Today!' · How to apply: Contact property manager at (503) 284-3985.",
-    "last_verified": "2026-08-10",
-    "description": "Affordable housing community managed by Hacienda CDC.",
-    "eligibility_summary": "Low and moderate-income families.",
-    "city": "Portland",
-    "state": "OR",
-    "address": "Portland, OR",
-    "source_url": "https://www.haciendacdc.org/communities",
-    "source_type": "Nonprofit",
-    "directory_category": "public_housing",
-    "raw_category": "public_housing",
-    "service_areas": [
-      {
-        "state": "OR",
-        "county": "Multnomah"
-      }
-    ]
-  },
-  {
     "id": "6f549bde-e3fa-4d41-bcee-3f7ca37119e6",
     "program_name": "Home Forward - Deposit Assistance",
     "county": "Multnomah",
@@ -1792,37 +1759,6 @@
       {
         "state": "WA",
         "county": "Snohomish"
-      }
-    ]
-  },
-  {
-    "id": "6ee390cb-32e7-42a2-a78b-8a31bfda49f9",
-    "program_name": "REACH – Dartmouth Crossing North Affordable Apartments",
-    "county": "Washington",
-    "category": "long_term_housing_waitlist",
-    "who_it_helps": [],
-    "application_method": "online",
-    "referral_required": false,
-    "phone": "503-231-0682",
-    "website": "https://www.dartmouthcrossingnorth.com/",
-    "status": "unknown",
-    "status_confidence": "low",
-    "priority_score": 8,
-    "notes": "This is the existing category your system uses for regulated affordable apartment communities, even though it is not owned by a public housing authority.",
-    "last_verified": "2026-08-10",
-    "description": "Affordable apartment community in Tigard with 85 homes near downtown, public transportation, schools, and employment centers. The property participates in the Low-Income Housing Tax Credit program and serves households meeting its income limits. Contact the property or apply online for current availability.",
-    "eligibility_summary": "Individuals and families with household income at or below 60% of the area median income. Income limits depend on household size, and additional occupancy and tenant-screening requirements may apply.",
-    "city": "Tigard",
-    "state": "OR",
-    "address": "6835 SW Clinton Street, Tigard, OR 97223",
-    "source_url": "https://www.dartmouthcrossingnorth.com/",
-    "source_type": "Nonprofit",
-    "directory_category": "public_housing",
-    "raw_category": "public_housing",
-    "service_areas": [
-      {
-        "state": "OR",
-        "county": "Washington"
       }
     ]
   },

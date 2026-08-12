@@ -10,7 +10,8 @@
     "housing_authority": "Housing Authority of Clackamas County (HACC)",
     "program_name": "Affordable Housing & Rental Assistance",
     "application_link": "https://www.clackamas.us/housingauthority/looking-for-housing",
-    "source_url": "https://www.clackamas.us/housingauthority/looking-for-housing"
+    "source_url": "https://www.clackamas.us/housingauthority/looking-for-housing",
+    "waitlist_type": "mixed"
   },
   {
     "id": "vha",
@@ -23,7 +24,37 @@
     "housing_authority": "Vancouver Housing Authority",
     "program_name": "Affordable Housing & Rental Assistance",
     "application_link": "https://vhausa.org/housing/open-wait-lists",
-    "source_url": "https://vhausa.org/housing/open-wait-lists"
+    "source_url": "https://vhausa.org/housing/open-wait-lists",
+    "waitlist_type": "mixed"
+  },
+  {
+    "id": "king-county-housing-authority__subsidized-housing__www-kcha-org-housing-subsidized-list-updates",
+    "agency": "King County Housing Authority — Subsidized Housing — Property Waitlists",
+    "county": "King",
+    "status": "closed",
+    "last_checked": "2026-08-10",
+    "website": "https://www.kcha.org/housing/subsidized/list",
+    "notes": "King County Housing Authority provides subsidized apartments for individuals and families with limited incomes. Its waiting list is temporarily closed to new applicants while the agency updates its housing system. No reopening date has been announced. Visit the official website for reopening updates or call 206-574-1248.",
+    "housing_authority": "King County Housing Authority",
+    "program_name": "Subsidized Housing — Property Waitlists",
+    "application_link": "https://www.kcha.org/housing/subsidized/list",
+    "source_url": "https://www.kcha.org/housing/subsidized/list",
+    "waitlist_type": "public_housing"
+  },
+  {
+    "id": "seattle-housing-authority__housing-choice-voucher-section-8__www-seattlehousing-org-housing-housing-choice-vouchers-how-apply-housing-choice-voucher",
+    "agency": "Seattle Housing Authority — Housing Choice Voucher (Section 8)",
+    "county": "King",
+    "status": "open",
+    "last_checked": "2026-08-11",
+    "website": "https://www.seattlehousing.org/housing/housing-choice-vouchers/how-apply-housing-choice-voucher",
+    "notes": "Seattle Housing Authority’s Housing Choice Voucher program helps people with low incomes pay rent from participating landlords. Applications are open year-round, and applicants are selected at random when vouchers become available. Applicants must check in every month to remain on the list. Visit the official website to review eligibility and apply, or call 206-239-1674 for assistance.",
+    "housing_authority": "Seattle Housing Authority",
+    "program_name": "Housing Choice Voucher (Section 8)",
+    "application_link": "https://www.seattlehousing.org/housing/housing-choice-vouchers/how-apply-housing-choice-voucher",
+    "source_url": "https://www.seattlehousing.org/housing/housing-choice-vouchers/how-apply-housing-choice-voucher",
+    "last_opened_at": "2026-08-10T21:52:54.427302+00:00",
+    "waitlist_type": "housing_choice_voucher"
   },
   {
     "id": "cascadia-health__centennial-place-apartments__cascadiahealth-org-waitlist",
@@ -36,7 +67,9 @@
     "housing_authority": "Cascadia Health",
     "program_name": "Affordable Housing — Centennial Place Apartments",
     "application_link": "https://cascadiahealth.org/waitlist/",
-    "source_url": "https://cascadiahealth.org/waitlist/"
+    "source_url": "https://cascadiahealth.org/waitlist/",
+    "waitlist_type": "affordable_property",
+    "affordable_property_id": "5c852f4a-8127-4928-aacf-74d7db60235f"
   },
   {
     "id": "central-city-concern__blackburn-center-fair-market__centralcityconcern-org-services-housing-housing-waitlists",
@@ -49,47 +82,9 @@
     "housing_authority": "Central City Concern",
     "program_name": "Affordable Housing — Blackburn Center",
     "application_link": "https://centralcityconcern.org/services/housing/housing-waitlists/",
-    "source_url": "https://centralcityconcern.org/services/housing/housing-waitlists/"
-  },
-  {
-    "id": "bienestar-oregon__armonia-apartments__bienestar-or-org-armonia-apartments",
-    "agency": "Bienestar Oregon — Affordable Housing — Armonía Apartments",
-    "county": "Other",
-    "status": "closed",
-    "last_checked": "2026-08-10",
-    "website": "https://bienestar-or.org/armonia-apartments/",
-    "notes": "Armonía Apartments is an upcoming affordable housing community in McMinnville with studio, one-bedroom, two-bedroom, and three-bedroom homes. Some apartments will be reserved for farmworkers. Applications are not open yet, and leasing is expected to begin in winter 2027. Visit Bienestar Oregon’s website to submit the inquiry form and receive development and application updates.",
-    "housing_authority": "Bienestar Oregon",
-    "program_name": "Affordable Housing — Armonía Apartments",
-    "application_link": "https://bienestar-or.org/armonia-apartments/",
-    "source_url": "https://bienestar-or.org/armonia-apartments/"
-  },
-  {
-    "id": "king-county-housing-authority__subsidized-housing__www-kcha-org-housing-subsidized-list-updates",
-    "agency": "King County Housing Authority — Subsidized Housing — Property Waitlists",
-    "county": "Other",
-    "status": "closed",
-    "last_checked": "2026-08-10",
-    "website": "https://www.kcha.org/housing/subsidized/list",
-    "notes": "King County Housing Authority provides subsidized apartments for individuals and families with limited incomes. Its waiting list is temporarily closed to new applicants while the agency updates its housing system. No reopening date has been announced. Visit the official website for reopening updates or call 206-574-1248.",
-    "housing_authority": "King County Housing Authority",
-    "program_name": "Subsidized Housing — Property Waitlists",
-    "application_link": "https://www.kcha.org/housing/subsidized/list",
-    "source_url": "https://www.kcha.org/housing/subsidized/list"
-  },
-  {
-    "id": "seattle-housing-authority__housing-choice-voucher-section-8__www-seattlehousing-org-housing-housing-choice-vouchers-how-apply-housing-choice-voucher",
-    "agency": "Seattle Housing Authority — Housing Choice Voucher (Section 8)",
-    "county": "Other",
-    "status": "open",
-    "last_checked": "2026-08-11",
-    "website": "https://www.seattlehousing.org/housing/housing-choice-vouchers/how-apply-housing-choice-voucher",
-    "notes": "Seattle Housing Authority’s Housing Choice Voucher program helps people with low incomes pay rent from participating landlords. Applications are open year-round, and applicants are selected at random when vouchers become available. Applicants must check in every month to remain on the list. Visit the official website to review eligibility and apply, or call 206-239-1674 for assistance.",
-    "housing_authority": "Seattle Housing Authority",
-    "program_name": "Housing Choice Voucher (Section 8)",
-    "application_link": "https://www.seattlehousing.org/housing/housing-choice-vouchers/how-apply-housing-choice-voucher",
-    "source_url": "https://www.seattlehousing.org/housing/housing-choice-vouchers/how-apply-housing-choice-voucher",
-    "last_opened_at": "2026-08-10T21:52:54.427302+00:00"
+    "source_url": "https://centralcityconcern.org/services/housing/housing-waitlists/",
+    "waitlist_type": "affordable_property",
+    "affordable_property_id": "31fb31fe-3f97-42a0-b61e-a387ef89eb27"
   },
   {
     "id": "hacienda-cdc__dolores-apartments__www-haciendacdc-org-communities",
@@ -103,7 +98,9 @@
     "program_name": "Affordable Housing — Dolores Apartments",
     "application_link": "https://dolores.nwrecc.org/",
     "source_url": "https://www.haciendacdc.org/communities",
-    "last_opened_at": "2026-07-20T19:46:12.794244+00:00"
+    "last_opened_at": "2026-07-20T19:46:12.794244+00:00",
+    "waitlist_type": "affordable_property",
+    "affordable_property_id": "dd2cd8f6-6bd1-46be-b3ad-a20c3725f155"
   },
   {
     "id": "washington-housing",
@@ -117,6 +114,22 @@
     "program_name": "Affordable Housing & Rental Assistance",
     "application_link": "https://www.washingtoncountyor.gov/housing/housing-waitlists",
     "source_url": "https://www.washingtoncountyor.gov/housing/housing-waitlists",
-    "last_opened_at": "2026-08-10T21:29:26.362863+00:00"
+    "last_opened_at": "2026-08-10T21:29:26.362863+00:00",
+    "waitlist_type": "mixed"
+  },
+  {
+    "id": "bienestar-oregon__armonia-apartments__bienestar-or-org-armonia-apartments",
+    "agency": "Bienestar Oregon — Affordable Housing — Armonía Apartments",
+    "county": "Yamhill",
+    "status": "closed",
+    "last_checked": "2026-08-10",
+    "website": "https://bienestar-or.org/armonia-apartments/",
+    "notes": "Armonía Apartments is an upcoming affordable housing community in McMinnville with studio, one-bedroom, two-bedroom, and three-bedroom homes. Some apartments will be reserved for farmworkers. Applications are not open yet, and leasing is expected to begin in winter 2027. Visit Bienestar Oregon’s website to submit the inquiry form and receive development and application updates.",
+    "housing_authority": "Bienestar Oregon",
+    "program_name": "Affordable Housing — Armonía Apartments",
+    "application_link": "https://bienestar-or.org/armonia-apartments/",
+    "source_url": "https://bienestar-or.org/armonia-apartments/",
+    "waitlist_type": "affordable_property",
+    "affordable_property_id": "56e55df3-96bc-46c9-8e6c-686949bda46c"
   }
 ]

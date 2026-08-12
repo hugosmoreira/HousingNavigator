@@ -1,0 +1,198 @@
+[
+  {
+    "id": "dd2cd8f6-6bd1-46be-b3ad-a20c3725f155",
+    "name": "Dolores Apartments",
+    "owner_organization": "Hacienda Community Development Corporation",
+    "management_company": "Northwest Real Estate Capital Corp.",
+    "property_type": "affordable_apartments",
+    "address": "9965 NE Walker Road",
+    "city": "Hillsboro",
+    "county": "Washington",
+    "state": "OR",
+    "description": "A 67-home affordable apartment community in Hillsboro with family-sized apartments, resident gathering spaces, a community garden, play area, and on-site supportive services.",
+    "eligibility_summary": "Households must meet the property income and occupancy requirements. Apartments serve households earning approximately 30% to 60% of area median income; ten homes are supportive housing for people transitioning out of homelessness.",
+    "ami_levels": [
+      30,
+      60
+    ],
+    "bedroom_types": [
+      "1",
+      "2",
+      "3",
+      "4_plus"
+    ],
+    "audiences": [
+      "general",
+      "families",
+      "formerly_homeless"
+    ],
+    "total_units": 67,
+    "accessibility_notes": "The three-story community is elevator-served. Contact management for unit-specific accessibility information.",
+    "phone": "971-515-8137",
+    "website": "https://www.haciendacdc.org/properties/dolores",
+    "application_url": "https://www.haciendacdc.org/properties/dolores",
+    "source_url": "https://www.haciendacdc.org/properties/dolores",
+    "source_type": "Official owner website",
+    "last_verified": "2026-08-11",
+    "public_notes": "Contact the property manager to confirm current availability, rents, and required documentation.",
+    "priority_score": 100,
+    "waitlist_id": "hacienda-cdc__dolores-apartments__www-haciendacdc-org-communities",
+    "waitlist_status": "open",
+    "waitlist_last_checked": "2026-08-11",
+    "waitlist_application_link": "https://dolores.nwrecc.org/"
+  },
+  {
+    "id": "31fb31fe-3f97-42a0-b61e-a387ef89eb27",
+    "name": "Blackburn Center Apartments",
+    "owner_organization": "Central City Concern",
+    "management_company": "Central City Concern",
+    "property_type": "supportive_housing",
+    "address": "12015 E Burnside Street",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "postal_code": "97216",
+    "description": "A 124-unit affordable and supportive housing community combining 90 single-room occupancy homes, 34 studios, an on-site health clinic, and resident services near the E 122nd Avenue MAX station.",
+    "eligibility_summary": "Eligibility depends on the unit and waitlist. Some homes prioritize or require participation in substance-use recovery, while other units do not have a recovery requirement. Review the current building criteria before applying.",
+    "ami_levels": [],
+    "bedroom_types": [
+      "sro",
+      "studio"
+    ],
+    "audiences": [
+      "general",
+      "formerly_homeless",
+      "recovery"
+    ],
+    "total_units": 124,
+    "accessibility_notes": "The official property page lists the building as wheelchair accessible. Contact the housing office about a specific unit or reasonable accommodation.",
+    "phone": "503-525-8483",
+    "website": "https://centralcityconcern.org/housing-location/blackburn/",
+    "application_url": "https://centralcityconcern.org/housing-location/blackburn/",
+    "source_url": "https://centralcityconcern.org/housing-location/blackburn/",
+    "source_type": "Official owner website",
+    "last_verified": "2026-08-11",
+    "public_notes": "Blackburn has different unit types with different eligibility rules. Confirm which list is accepting applications.",
+    "priority_score": 95,
+    "waitlist_id": "central-city-concern__blackburn-center-fair-market__centralcityconcern-org-services-housing-housing-waitlists",
+    "waitlist_status": "limited",
+    "waitlist_last_checked": "2026-08-10",
+    "waitlist_application_link": "https://centralcityconcern.org/services/housing/housing-waitlists/"
+  },
+  {
+    "id": "5c852f4a-8127-4928-aacf-74d7db60235f",
+    "name": "Centennial Place Apartments",
+    "owner_organization": "Cascadia Health",
+    "management_company": "Cascadia Health",
+    "property_type": "affordable_apartments",
+    "address": "3750 SE 164th Avenue",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "description": "A 71-unit affordable apartment community in the Centennial School District with studios, one-bedroom, and two-bedroom homes plus community rooms and a courtyard.",
+    "eligibility_summary": "Households must meet the property income, occupancy, and minimum-income requirements. The property serves households within approximately 30% to 60% of median family income; the current application page may identify a narrower range for a particular opening.",
+    "ami_levels": [
+      30,
+      50,
+      60
+    ],
+    "bedroom_types": [
+      "studio",
+      "1",
+      "2"
+    ],
+    "audiences": [
+      "general",
+      "families"
+    ],
+    "total_units": 71,
+    "phone": "503-674-7777",
+    "website": "https://cascadiahealth.org/centennial-application/",
+    "application_url": "https://cascadiahealth.org/centennial-application/",
+    "source_url": "https://cascadiahealth.org/centennial-application/",
+    "source_type": "Official owner website",
+    "last_verified": "2026-08-11",
+    "public_notes": "Review the linked waitlist status before starting an application. Unit availability is not guaranteed.",
+    "priority_score": 95,
+    "waitlist_id": "cascadia-health__centennial-place-apartments__cascadiahealth-org-waitlist",
+    "waitlist_status": "closed",
+    "waitlist_last_checked": "2026-08-10",
+    "waitlist_application_link": "https://cascadiahealth.org/waitlist/"
+  },
+  {
+    "id": "c637a33c-3023-4d30-98d8-37fafcc76944",
+    "name": "Dartmouth Crossing North",
+    "owner_organization": "REACH Community Development",
+    "management_company": "REACH Community Development",
+    "property_type": "tax_credit",
+    "address": "6835 SW Clinton Street",
+    "city": "Tigard",
+    "county": "Washington",
+    "state": "OR",
+    "postal_code": "97223",
+    "description": "An 85-unit family-oriented affordable housing community in the Tigard Triangle with studios and one-, two-, and three-bedroom apartments, community space, outdoor play areas, and energy-efficient design.",
+    "eligibility_summary": "Units are income-restricted for households generally earning no more than 50% or 60% of area median income. Household size, rental history, credit, criminal screening, and student-status rules may also apply.",
+    "ami_levels": [
+      50,
+      60
+    ],
+    "bedroom_types": [
+      "studio",
+      "1",
+      "2",
+      "3"
+    ],
+    "audiences": [
+      "general",
+      "families",
+      "disabilities"
+    ],
+    "total_units": 85,
+    "accessibility_notes": "Contact property management for accessible-unit availability and reasonable accommodations.",
+    "phone": "971-402-1785",
+    "website": "https://reachproperties.org/properties/beaverton/dartmouth-crossing/304",
+    "application_url": "https://reachproperties.org/properties/beaverton/dartmouth-crossing/304",
+    "source_url": "https://reachproperties.org/properties/beaverton/dartmouth-crossing/304",
+    "source_type": "Official property manager website",
+    "last_verified": "2026-08-11",
+    "public_notes": "The property website is the source of truth for current vacancies and application availability.",
+    "priority_score": 95
+  },
+  {
+    "id": "56e55df3-96bc-46c9-8e6c-686949bda46c",
+    "name": "Armonía Apartments",
+    "owner_organization": "Bienestar",
+    "management_company": "Bienestar",
+    "property_type": "affordable_apartments",
+    "city": "McMinnville",
+    "county": "Yamhill",
+    "state": "OR",
+    "description": "A planned 72-home affordable apartment community in McMinnville with studios and one-, two-, and three-bedroom homes, a community room, laundry, bike storage, and a garden terrace.",
+    "eligibility_summary": "Income requirements have not yet been published. A portion of the apartments is planned for farmworker households. Confirm final eligibility with Bienestar when leasing information becomes available.",
+    "ami_levels": [],
+    "bedroom_types": [
+      "studio",
+      "1",
+      "2",
+      "3"
+    ],
+    "audiences": [
+      "general",
+      "families",
+      "farmworkers"
+    ],
+    "total_units": 72,
+    "accessibility_notes": "The plans include two elevators. Contact Bienestar for unit-specific accessibility details when leasing begins.",
+    "website": "https://bienestar-or.org/armonia-apartments/",
+    "application_url": "https://bienestar-or.org/armonia-apartments/",
+    "source_url": "https://bienestar-or.org/armonia-apartments/",
+    "source_type": "Official owner website",
+    "last_verified": "2026-08-11",
+    "public_notes": "Construction is expected to begin in fall 2026, with leasing currently projected for winter 2027.",
+    "priority_score": 70,
+    "waitlist_id": "bienestar-oregon__armonia-apartments__bienestar-or-org-armonia-apartments",
+    "waitlist_status": "closed",
+    "waitlist_last_checked": "2026-08-10",
+    "waitlist_application_link": "https://bienestar-or.org/armonia-apartments/"
+  }
+]

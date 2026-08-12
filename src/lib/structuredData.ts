@@ -8,13 +8,14 @@ import {
   localLandingPrograms,
 } from '../data/localLandingPages';
 import { STATE_NAMES, serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
-import { resourcePath, waitlistPath } from './entityRoutes';
+import { affordablePropertyPath, resourcePath, waitlistPath } from './entityRoutes';
 import { resolvePageMetadata, SITE_URL } from './pageMetadata';
 import {
   STATIC_PROGRAMS,
   STATIC_WAITLISTS,
+  STATIC_AFFORDABLE_PROPERTIES,
 } from '../services/data/staticDataService';
-import type { Program, WaitlistEntry } from '../types';
+import type { AffordableProperty, Program, WaitlistEntry } from '../types';
 
 export type StructuredDataNode = Record<string, unknown>;
 
@@ -30,6 +31,7 @@ const SOCIAL_IMAGE_URL = `${SITE_URL}/social-card.png`;
 
 const PAGE_LABELS: Record<string, string> = {
   '/resources': 'Housing resources',
+  '/affordable-housing': 'Affordable housing',
   '/waitlist': 'Housing waitlists',
   '/mission': 'About Housing Navigator',
   '/help': 'Housing search help',
@@ -243,6 +245,34 @@ function waitlistServiceNode(
   });
 }
 
+function affordablePropertyNode(
+  property: AffordableProperty,
+  canonicalUrl: string,
+): StructuredDataNode {
+  const address = compact({
+    '@type': 'PostalAddress',
+    streetAddress: property.address,
+    addressLocality: property.city,
+    addressRegion: property.state,
+    postalCode: property.postal_code,
+    addressCountry: 'US',
+  });
+  return compact({
+    '@type': 'ApartmentComplex',
+    '@id': `${canonicalUrl}#property`,
+    name: property.name,
+    description: property.description || property.eligibility_summary,
+    url: property.website || canonicalUrl,
+    mainEntityOfPage: { '@id': pageId(canonicalUrl) },
+    address,
+    telephone: property.phone,
+    numberOfAccommodationUnits: property.total_units,
+    amenityFeature: property.accessibility_notes
+      ? [{ '@type': 'LocationFeatureSpecification', name: property.accessibility_notes }]
+      : undefined,
+  });
+}
+
 function collectionItemList(
   canonicalUrl: string,
   items: Array<{ name: string; path: string }>,
@@ -289,9 +319,24 @@ export function resolveStructuredData(
 
   const resourcePathMatch = metadata.path.match(/^\/resources\/([^/]+)$/);
   const waitlistPathMatch = metadata.path.match(/^\/waitlist\/([^/]+)$/);
+  const propertyPathMatch = metadata.path.match(/^\/affordable-housing\/([^/]+)$/);
   const localLandingPage = findLocalLandingPage(metadata.path);
 
-  if (localLandingPage) {
+  if (propertyPathMatch) {
+    const property = STATIC_AFFORDABLE_PROPERTIES.find(
+      (candidate) => affordablePropertyPath(candidate) === `${metadata.path}/`,
+    );
+    if (!property) return null;
+    pageType = 'ItemPage';
+    dateModified = property.last_verified || undefined;
+    citation = property.source_url || property.website || undefined;
+    breadcrumb = breadcrumbNode(canonicalUrl, [
+      { name: 'Home', url: `${SITE_URL}/` },
+      { name: 'Affordable housing', url: `${SITE_URL}/affordable-housing/` },
+      { name: property.name, url: canonicalUrl },
+    ]);
+    mainEntity = affordablePropertyNode(property, canonicalUrl);
+  } else if (localLandingPage) {
     const programs = localLandingPrograms(localLandingPage, STATIC_PROGRAMS);
     const countyPage = countyLandingPage(localLandingPage.county);
     pageType = 'CollectionPage';
@@ -370,6 +415,19 @@ export function resolveStructuredData(
       STATIC_WAITLISTS.map((waitlist) => ({
         name: waitlist.agency,
         path: waitlistPath(waitlist),
+      })),
+    );
+  } else if (metadata.path === '/affordable-housing') {
+    pageType = 'CollectionPage';
+    breadcrumb = breadcrumbNode(
+      canonicalUrl,
+      genericBreadcrumbs(metadata.path, canonicalUrl),
+    );
+    mainEntity = collectionItemList(
+      canonicalUrl,
+      STATIC_AFFORDABLE_PROPERTIES.map((property) => ({
+        name: property.name,
+        path: affordablePropertyPath(property),
       })),
     );
   } else {

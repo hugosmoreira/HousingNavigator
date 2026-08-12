@@ -4,6 +4,8 @@ Development notes for the admin-triggered, existing-resource curation workflow
 are in [`docs/RESOURCE_CURATION.md`](docs/RESOURCE_CURATION.md).
 The statewide multi-county resource model is documented in
 [`docs/RESOURCE_SERVICE_AREAS.md`](docs/RESOURCE_SERVICE_AREAS.md).
+The physical affordable-property model and publishing workflow are documented in
+[`docs/AFFORDABLE_HOUSING.md`](docs/AFFORDABLE_HOUSING.md).
 
 Housing Navigator is a web application expanding across **Oregon and Washington**, beginning with strong Portland–Vancouver coverage: a searchable directory of housing-related programs (rent help, shelter, legal aid, vouchers, and more), plus tools to **track waitlists** and **save** programs for later.
 
@@ -14,9 +16,10 @@ The goal is to make it easier for people to find relevant resources without wadi
 | Area | Description |
 |------|-------------|
 | **Public directory** | Browse `/resources`, search and filter programs, read details and eligibility-style information. |
+| **Affordable housing** | Browse `/affordable-housing` for physical income-restricted apartment properties, eligibility, bedrooms, and linked application status. |
 | **Waitlists** | Explore published waitlists at `/waitlist`, see when a list last opened, and follow ones that matter to you (when signed in). |
 | **Account dashboard** | After sign-up/login (`/signup`, `/login`), use `/dashboard` for **saved resources**, **waitlist alerts** (openings and status changes), and **email notification** preferences. |
-| **Admin CMS** | Staff with access use `/admin` (separate Supabase-backed login) to create and edit **resources** and **waitlists** in the catalog. |
+| **Admin CMS** | Staff with access use `/admin` (separate Supabase-backed login) to manage **resources**, **affordable properties**, and **waitlists**. |
 
 Static content pages include mission, help, privacy, terms, accessibility, and a staff-oriented area (`/staff`).
 

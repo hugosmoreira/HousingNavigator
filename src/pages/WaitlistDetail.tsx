@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useWaitlists } from '../hooks/useWaitlists';
-import { findWaitlistBySlug } from '../lib/entityRoutes';
+import { useAffordableProperties } from '../hooks/useAffordableProperties';
+import { WAITLIST_TYPE_LABELS } from '../data/affordableHousing';
+import { affordablePropertyPath, findWaitlistBySlug } from '../lib/entityRoutes';
 import type { WaitlistStatus } from '../types';
 import NotFound from './NotFound';
 
@@ -38,6 +40,7 @@ function formatDate(iso: string): string | null {
 export default function WaitlistDetail() {
   const { slug = '' } = useParams();
   const { waitlists, loading, error } = useWaitlists();
+  const { properties } = useAffordableProperties();
   const waitlist = findWaitlistBySlug(waitlists, slug);
 
   if (!waitlist && loading) {
@@ -51,6 +54,9 @@ export default function WaitlistDetail() {
   const checked = formatDate(waitlist.last_checked);
   const verificationSourceUrl =
     waitlist.source_url || waitlist.application_link || waitlist.website;
+  const linkedProperty = waitlist.affordable_property_id
+    ? properties.find((property) => property.id === waitlist.affordable_property_id)
+    : undefined;
 
   return (
     <div className="bg-surface min-h-[calc(100vh-80px)]">
@@ -69,11 +75,18 @@ export default function WaitlistDetail() {
             <span className="rounded-full border border-surface-container-highest px-3 py-1 text-xs font-medium text-on-surface-variant">
               {waitlist.county} County
             </span>
+            {waitlist.waitlist_type && (
+              <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+                {WAITLIST_TYPE_LABELS[waitlist.waitlist_type]}
+              </span>
+            )}
           </div>
           <h1 className="max-w-4xl text-3xl font-headline font-bold tracking-tight text-on-surface lg:text-5xl">
             {waitlist.agency}
           </h1>
-          <p className="mt-4 text-lg text-on-surface-variant">Affordable housing waitlist status and official application information.</p>
+          <p className="mt-4 text-lg text-on-surface-variant">
+            {waitlist.waitlist_type ? WAITLIST_TYPE_LABELS[waitlist.waitlist_type] : 'Housing'} waitlist status and official application information.
+          </p>
         </div>
       </section>
 
@@ -97,6 +110,18 @@ export default function WaitlistDetail() {
           <div role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-900">
             Waitlist status can change without notice. Always confirm directly with the housing authority before preparing or submitting an application.
           </div>
+
+          {linkedProperty && (
+            <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+              <h2 className="font-headline text-lg font-bold text-on-surface">About this apartment property</h2>
+              <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                See bedroom sizes, income limits, eligibility, accessibility, address, and contact information.
+              </p>
+              <Link to={affordablePropertyPath(linkedProperty)} className="mt-4 inline-flex text-sm font-semibold text-primary hover:text-primary-dim">
+                View {linkedProperty.name}
+              </Link>
+            </section>
+          )}
 
           {error && (
             <p className="text-sm text-on-surface-variant">Live updates are temporarily unavailable; this page is showing the last bundled status.</p>

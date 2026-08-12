@@ -7,6 +7,7 @@ a collection of unrelated list pages.
 
 - **Overview** — totals, current operational problems, and common actions.
 - **Resources** — resource directory editing and manual curation.
+- **Affordable housing** — physical income-restricted apartment property editing.
 - **Waitlists** — waitlist editing and monitoring configuration.
 - **Review queue** — proposed waitlist status changes and failed source checks.
 - **Alert history** — subscriber notification delivery history.

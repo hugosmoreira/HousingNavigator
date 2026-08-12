@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Database, Plus, Search } from 'lucide-react';
+import { WAITLIST_TYPE_LABELS } from '../../data/affordableHousing';
 import type { WaitlistRow } from '../../services/data/dbTypes';
 import { usePagedAdminRows } from '../usePagedAdminRows';
 import {
@@ -144,6 +145,7 @@ export default function AdminWaitlistsList() {
             <tr>
               <th className="px-4 py-3 font-semibold">Authority / program</th>
               <th className="px-4 py-3 font-semibold">County</th>
+              <th className="px-4 py-3 font-semibold">Type</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Published</th>
               <th className="px-4 py-3 font-semibold">Last checked</th>
@@ -153,13 +155,13 @@ export default function AdminWaitlistsList() {
           <tbody className="divide-y divide-surface-container-highest bg-surface-container-lowest">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-on-surface-variant">
+                <td colSpan={7} className="px-4 py-8 text-center text-on-surface-variant">
                   Loading…
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-on-surface-variant">
+                <td colSpan={7} className="px-4 py-8 text-center text-on-surface-variant">
                   {rows.length === 0 ? (
                     <div className="flex flex-col items-center gap-3">
                       <div className="font-medium text-on-surface">
@@ -223,6 +225,9 @@ export default function AdminWaitlistsList() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-on-surface-variant">{row.county}</td>
+                    <td className="px-4 py-3 text-on-surface-variant">
+                      {row.waitlist_type ? WAITLIST_TYPE_LABELS[row.waitlist_type] : 'Other waitlist'}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${status.className}`}

@@ -48,7 +48,7 @@ const SITUATIONS: Situation[] = [
   { key: 'rent_help', label: 'Rent help', category: 'rent_assistance' },
   { key: 'eviction', label: 'Eviction notice', category: 'eviction_prevention' },
   { key: 'shelter_tonight', label: 'Shelter tonight', category: 'emergency_shelter' },
-  { key: 'affordable', label: 'Affordable housing', category: 'public_housing' },
+  { key: 'public_housing', label: 'Public housing', category: 'public_housing' },
   { key: 'section8', label: 'Section 8', category: 'section8_waitlist' },
   { key: 'senior', label: 'Senior housing', household: 'senior' },
   { key: 'disability', label: 'Disability housing', household: 'disability' },
@@ -219,6 +219,17 @@ export default function Resources() {
               {page.county} County
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="border-b border-surface-container-highest bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-12">
+          <p className="text-sm text-on-surface-variant">
+            Looking for a physical income-restricted apartment instead of an assistance program?
+          </p>
+          <Link to="/affordable-housing/" className="shrink-0 text-sm font-semibold text-primary hover:text-primary-dim">
+            Browse affordable housing →
+          </Link>
         </div>
       </section>
 

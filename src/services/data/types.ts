@@ -9,10 +9,11 @@
  * change when we swap adapters.
  */
 
-import type { DecisionRule, Program, WaitlistEntry } from '../../types';
+import type { AffordableProperty, DecisionRule, Program, WaitlistEntry } from '../../types';
 
 export interface DataService {
   getPrograms(): Promise<Program[]>;
   getDecisionRules(): Promise<DecisionRule[]>;
   getWaitlists(): Promise<WaitlistEntry[]>;
+  getAffordableProperties(): Promise<AffordableProperty[]>;
 }

@@ -60,6 +60,7 @@ export default function Layout() {
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Find resources', path: '/resources/' },
+    { name: 'Affordable housing', path: '/affordable-housing/' },
     { name: 'Waitlists', path: '/waitlist/' },
     { name: 'About', path: '/mission/' },
   ];
@@ -85,7 +86,7 @@ export default function Layout() {
             <Home className="w-[1.125rem] h-[1.125rem] text-primary" fill="currentColor" />
             Housing Navigator
           </Link>
-          <div className="hidden md:flex items-center gap-10">
+          <div className="hidden lg:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -141,7 +142,7 @@ export default function Layout() {
               aria-expanded={mobileOpen}
               aria-controls="mobile-menu"
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+              className="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -152,7 +153,7 @@ export default function Layout() {
         {mobileOpen && (
           <div
             id="mobile-menu"
-            className="md:hidden border-t border-surface-container-highest bg-surface/95 backdrop-blur-xl"
+            className="lg:hidden border-t border-surface-container-highest bg-surface/95 backdrop-blur-xl"
           >
             <div className="px-6 py-4 flex flex-col gap-1 max-w-7xl mx-auto">
               {navLinks.map((link) => (

@@ -9,15 +9,19 @@
 
 import type {
   ApplicationMethod,
+  AffordablePropertyType,
+  BedroomType,
   County,
   Goal,
   HouseholdType,
   IntakeSituation,
   ProgramCategory,
   ProgramStatus,
+  PropertyAudience,
   ServiceArea,
   StatusConfidence,
   WaitlistStatus,
+  WaitlistType,
 } from '../../types';
 
 export type SourceType =
@@ -72,7 +76,7 @@ export interface WaitlistRow {
   id: string;
   housing_authority: string;
   program_name: string | null;
-  county: County;
+  county: string;
   city: string | null;
   state: string | null;
   status: WaitlistStatus;
@@ -96,6 +100,45 @@ export interface WaitlistRow {
   auto_check_enabled?: boolean;
   check_failures?: number;
   last_auto_check_at?: string | null;
+  waitlist_type?: WaitlistType;
+  affordable_property_id?: string | null;
+}
+
+export interface AffordablePropertyRow {
+  id: string;
+  name: string;
+  owner_organization: string | null;
+  management_company: string | null;
+  property_type: AffordablePropertyType;
+  address: string | null;
+  city: string;
+  county: string;
+  state: 'OR' | 'WA';
+  postal_code: string | null;
+  description: string | null;
+  eligibility_summary: string | null;
+  ami_levels: number[];
+  bedroom_types: BedroomType[];
+  audiences: PropertyAudience[];
+  total_units: number | null;
+  accessibility_notes: string | null;
+  phone: string | null;
+  website: string | null;
+  application_url: string | null;
+  source_url: string | null;
+  source_type: string | null;
+  last_verified: string | null;
+  public_notes: string | null;
+  internal_notes: string | null;
+  priority_score: number;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
+  waitlist_id?: string | null;
+  waitlist_status?: WaitlistStatus | null;
+  waitlist_last_checked?: string | null;
+  waitlist_application_link?: string | null;
+  linked_waitlist_id?: string | null;
 }
 
 /**

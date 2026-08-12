@@ -61,8 +61,8 @@ export default function NotifySubscribersModal({
         ),
       );
       if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      const first = focusable[0] as HTMLElement;
+      const last = focusable[focusable.length - 1] as HTMLElement;
       const active = document.activeElement;
       if (e.shiftKey && (active === first || !dialog.contains(active))) {
         e.preventDefault();

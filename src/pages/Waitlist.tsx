@@ -13,8 +13,9 @@ import {
 import { Link } from 'react-router-dom';
 import { useWaitlists } from '../hooks/useWaitlists';
 import { useUserData } from '../auth/UserDataContext';
+import { WAITLIST_TYPE_LABELS, WAITLIST_TYPES } from '../data/affordableHousing';
 import { waitlistPath } from '../lib/entityRoutes';
-import type { County, WaitlistStatus } from '../types';
+import type { WaitlistStatus, WaitlistType } from '../types';
 
 interface StatusPresentation {
   label: string;
@@ -89,10 +90,11 @@ export default function Waitlist() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [county, setCounty] = useState<County | 'all'>('all');
+  const [county, setCounty] = useState<string | 'all'>('all');
+  const [waitlistType, setWaitlistType] = useState<WaitlistType | 'all'>('all');
 
   const counties = useMemo(() => {
-    const set = new Set<County>();
+    const set = new Set<string>();
     waitlists.forEach((wl) => set.add(wl.county));
     return Array.from(set).sort();
   }, [waitlists]);
@@ -101,6 +103,7 @@ export default function Waitlist() {
     const filtered = waitlists.filter((wl) => {
       if (statusFilter !== 'all' && wl.status !== statusFilter) return false;
       if (county !== 'all' && wl.county !== county) return false;
+      if (waitlistType !== 'all' && wl.waitlist_type !== waitlistType) return false;
       return true;
     });
     return [...filtered].sort((a, b) => {
@@ -108,7 +111,7 @@ export default function Waitlist() {
       if (order !== 0) return order;
       return a.agency.localeCompare(b.agency);
     });
-  }, [waitlists, statusFilter, county]);
+  }, [waitlists, statusFilter, county, waitlistType]);
 
   const openCount = useMemo(
     () => waitlists.filter((wl) => wl.status === 'open').length,
@@ -153,7 +156,7 @@ export default function Waitlist() {
 
         {/* Filters */}
         {!loading && !error && waitlists.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center mb-6">
             <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
               {STATUS_FILTERS.map((f) => {
                 const active = statusFilter === f.key;
@@ -174,12 +177,25 @@ export default function Waitlist() {
                 );
               })}
             </div>
+            <label className="inline-flex items-center gap-2 text-sm text-on-surface-variant sm:ml-auto">
+              <span className="sr-only">Filter by waitlist type</span>
+              <select
+                value={waitlistType}
+                onChange={(e) => setWaitlistType(e.target.value as WaitlistType | 'all')}
+                className="bg-surface-container-lowest border border-surface-container-highest rounded-full px-3 py-1.5 text-sm font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
+              >
+                <option value="all">All waitlist types</option>
+                {WAITLIST_TYPES.map((type) => (
+                  <option key={type} value={type}>{WAITLIST_TYPE_LABELS[type]}</option>
+                ))}
+              </select>
+            </label>
             {counties.length > 1 && (
-              <label className="inline-flex items-center gap-2 text-sm text-on-surface-variant sm:ml-auto">
+              <label className="inline-flex items-center gap-2 text-sm text-on-surface-variant">
                 <span className="sr-only">Filter by county</span>
                 <select
                   value={county}
-                  onChange={(e) => setCounty(e.target.value as County | 'all')}
+                  onChange={(e) => setCounty(e.target.value)}
                   className="bg-surface-container-lowest border border-surface-container-highest rounded-full px-3 py-1.5 text-sm font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                 >
                   <option value="all">All counties</option>
@@ -230,6 +246,7 @@ export default function Waitlist() {
               onClick={() => {
                 setStatusFilter('all');
                 setCounty('all');
+                setWaitlistType('all');
               }}
               className="text-primary font-semibold text-sm hover:underline"
             >
@@ -281,6 +298,11 @@ export default function Waitlist() {
                     <span className="inline-flex items-center gap-1.5 bg-surface-container-low text-on-surface-variant text-xs px-2.5 py-1 rounded-full font-medium">
                       <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                       Checked {lastChecked}
+                    </span>
+                  )}
+                  {wl.waitlist_type && (
+                    <span className="bg-primary/5 text-primary text-xs px-2.5 py-1 rounded-full font-medium">
+                      {WAITLIST_TYPE_LABELS[wl.waitlist_type]}
                     </span>
                   )}
                   {lastOpened && (
