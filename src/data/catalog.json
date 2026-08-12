@@ -31,6 +31,41 @@
     ]
   },
   {
+    "id": "f0f39011-2e0b-448d-a60e-f342633de8f5",
+    "program_name": "Clackamas County Housing Rights and Resources Program",
+    "county": "Clackamas",
+    "category": "eviction_prevention",
+    "who_it_helps": [
+      "single_adult",
+      "family",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "503-650-5750",
+    "website": "https://www.clackamas.us/socialservices/housingassistance",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 80,
+    "notes": "This program provides information and referrals. Contact the program to confirm what assistance is appropriate for your situation.",
+    "last_verified": "2026-08-11",
+    "description": "Provides general housing information and referrals about landlord-tenant issues, fair housing, housing rights, and lower-cost housing options in Clackamas County.",
+    "eligibility_summary": "Community members in Clackamas County who need housing-rights information, fair-housing guidance, landlord-tenant referrals, or help locating lower-cost housing. The county does not state an income requirement on the program page.",
+    "state": "OR",
+    "source_url": "https://www.clackamas.us/socialservices/housingassistance",
+    "source_type": "Government",
+    "directory_category": "eviction_prevention",
+    "raw_category": "eviction_prevention",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Clackamas"
+      }
+    ]
+  },
+  {
     "id": "fe85ec80-7e0f-42d8-93a6-a973d3105b66",
     "program_name": "Area Agency on Aging and Disabilities of SW WA - Housing Info",
     "county": "Clark",
@@ -490,6 +525,76 @@
       }
     ],
     "route_id": "csv-1gzk02i"
+  },
+  {
+    "id": "13205acc-15a4-4796-bbb7-4b7de8199e6b",
+    "program_name": "King County Coordinated Entry",
+    "county": "King",
+    "category": "comprehensive_support",
+    "who_it_helps": [
+      "single_adult",
+      "family",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "walk_in",
+    "referral_required": false,
+    "phone": "",
+    "website": "https://kcrha.org/find-services/for-people-experiencing-homelessness/",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 90,
+    "notes": "Contact a Regional Access Point listed on the official page. Walk-in capacity is limited, and Coordinated Entry does not guarantee a housing referral or placement.",
+    "last_verified": "2026-08-11",
+    "description": "Connects people experiencing homelessness in King County with assessment and possible referrals to rapid rehousing, transitional housing, permanent housing, and permanent supportive housing through Regional Access Points.",
+    "eligibility_summary": "People experiencing homelessness in King County, including single adults, couples, families, veterans, people staying outside or in shelter, people fleeing violence, and some people leaving institutions. Young adults at risk of homelessness within 14 days may also qualify.",
+    "state": "WA",
+    "source_url": "https://kcrha.org/find-services/for-people-experiencing-homelessness/",
+    "source_type": "Regional public authority",
+    "directory_category": "supportive_services",
+    "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "King"
+      }
+    ]
+  },
+  {
+    "id": "d06a6601-76b8-49c4-a542-0dc97a23c55d",
+    "program_name": "Lane County Coordinated Entry",
+    "county": "Lane",
+    "category": "comprehensive_support",
+    "who_it_helps": [
+      "single_adult",
+      "family",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "211",
+    "website": "https://www.lanecountyor.gov/government/county_departments/health_and_human_services/human_services_division/coordinated_entry",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 90,
+    "notes": "Call 211, enter your ZIP code, and choose housing, shelter, or rent assistance. Housing is not immediately available, and each participating program has its own requirements.",
+    "last_verified": "2026-08-11",
+    "description": "Lane County's coordinated pathway to shelter, homelessness prevention, rent-assistance information, housing assessment, outreach, and referrals to participating housing programs.",
+    "eligibility_summary": "People in Lane County who are experiencing homelessness, seeking shelter or housing, or at risk of losing their housing. Individual providers and programs determine final eligibility.",
+    "state": "OR",
+    "source_url": "https://www.lanecountyor.gov/government/county_departments/health_and_human_services/human_services_division/coordinated_entry",
+    "source_type": "Government",
+    "directory_category": "supportive_services",
+    "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Lane"
+      }
+    ]
   },
   {
     "id": "5891f0b5-6921-46a2-9cd6-088456e983fb",
@@ -1621,6 +1726,76 @@
     ]
   },
   {
+    "id": "fcc73e76-f349-436b-8812-b2284397a429",
+    "program_name": "Pierce County Coordinated Entry",
+    "county": "Pierce",
+    "category": "comprehensive_support",
+    "who_it_helps": [
+      "single_adult",
+      "family",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "253-572-4357",
+    "website": "https://www.uwpc.org/Get-help-now-overview",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 90,
+    "notes": "Call Access Pierce or 211 for live support. Housing referrals are based on eligibility, vulnerability, and availability and are not guaranteed.",
+    "last_verified": "2026-08-11",
+    "description": "The first step for connecting with housing resources in Pierce County. Navigators discuss the household's situation, explore diversion options, and may place eligible households in the Priority Pool for matching with housing programs.",
+    "eligibility_summary": "People in Pierce County who are experiencing homelessness or housing instability and need help identifying housing solutions. Eligibility and requirements vary by the program to which a household may be referred.",
+    "state": "WA",
+    "source_url": "https://www.piercecountywa.gov/4809/Coordinated-Entry",
+    "source_type": "Official county and access provider",
+    "directory_category": "supportive_services",
+    "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Pierce"
+      }
+    ]
+  },
+  {
+    "id": "a33fea71-fb5b-4ba8-ae09-cd740c8f7f44",
+    "program_name": "Snohomish County Coordinated Entry",
+    "county": "Snohomish",
+    "category": "comprehensive_support",
+    "who_it_helps": [
+      "single_adult",
+      "family",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "360-862-4357",
+    "website": "https://www.snohomishcountywa.gov/2238/Coordinated-Entry",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 90,
+    "notes": "Call the VOA Connect line to complete an eligibility assessment. If eligible, the household is referred to an appropriate navigation site; housing assistance is not guaranteed.",
+    "last_verified": "2026-08-11",
+    "description": "Connects Snohomish County households with homelessness prevention, housing navigation, program matching, and other services through a standardized screening and assessment process.",
+    "eligibility_summary": "Individuals and families in Snohomish County who are experiencing homelessness, living in shelter or a place not meant for habitation, fleeing domestic violence, or at imminent risk of homelessness.",
+    "state": "WA",
+    "source_url": "https://www.snohomishcountywa.gov/2238/Coordinated-Entry",
+    "source_type": "Government",
+    "directory_category": "supportive_services",
+    "raw_category": "supportive_services",
+    "service_areas": [
+      {
+        "state": "WA",
+        "county": "Snohomish"
+      }
+    ]
+  },
+  {
     "id": "6ee390cb-32e7-42a2-a78b-8a31bfda49f9",
     "program_name": "REACH – Dartmouth Crossing North Affordable Apartments",
     "county": "Washington",
@@ -1644,6 +1819,41 @@
     "source_type": "Nonprofit",
     "directory_category": "public_housing",
     "raw_category": "public_housing",
+    "service_areas": [
+      {
+        "state": "OR",
+        "county": "Washington"
+      }
+    ]
+  },
+  {
+    "id": "6c3f5721-4586-4c38-8942-27f0c7dce62a",
+    "program_name": "Washington County Community Connect",
+    "county": "Washington",
+    "category": "comprehensive_support",
+    "who_it_helps": [
+      "single_adult",
+      "family",
+      "senior",
+      "veteran",
+      "disability"
+    ],
+    "application_method": "phone",
+    "referral_required": false,
+    "phone": "503-640-3263",
+    "website": "https://caowash.org/housing-stability/homeless-services-tenant-resources",
+    "status": "unknown",
+    "status_confidence": "low",
+    "priority_score": 90,
+    "notes": "Call Community Connect to discuss your situation. Eligible households may be assessed and connected to available services; an opening is not guaranteed.",
+    "last_verified": "2026-08-11",
+    "description": "Washington County's coordinated entry program for people who need housing or shelter support. Staff screen the household's situation, assess eligibility, and connect eligible callers with available housing, shelter, and support services.",
+    "eligibility_summary": "People in Washington County who are experiencing homelessness or are at risk of becoming homeless. An assessment determines eligibility for particular programs, and housing or shelter is not guaranteed.",
+    "state": "OR",
+    "source_url": "https://www.washingtoncountyor.gov/housing/homeless-referral-system-coordination",
+    "source_type": "Official county and provider",
+    "directory_category": "supportive_services",
+    "raw_category": "supportive_services",
     "service_areas": [
       {
         "state": "OR",
