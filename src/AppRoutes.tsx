@@ -12,6 +12,8 @@ export interface PublicPageComponents {
   Resources: ComponentType;
   LocalHousingLanding: ComponentType;
   ResourceDetail: ComponentType;
+  AffordableHousing: ComponentType;
+  AffordablePropertyDetail: ComponentType;
   Waitlist: ComponentType;
   WaitlistDetail: ComponentType;
   Mission: ComponentType;
@@ -56,6 +58,8 @@ export default function AppRoutes({
     Resources,
     LocalHousingLanding,
     ResourceDetail,
+    AffordableHousing,
+    AffordablePropertyDetail,
     Waitlist,
     WaitlistDetail,
     Mission,
@@ -82,6 +86,8 @@ export default function AppRoutes({
           <Route index element={<DeferredRoute><Home /></DeferredRoute>} />
           <Route path="resources" element={<DeferredRoute><Resources /></DeferredRoute>} />
           <Route path="resources/:slug" element={<DeferredRoute><ResourceDetail /></DeferredRoute>} />
+          <Route path="affordable-housing" element={<DeferredRoute><AffordableHousing /></DeferredRoute>} />
+          <Route path="affordable-housing/:slug" element={<DeferredRoute><AffordablePropertyDetail /></DeferredRoute>} />
           <Route path="housing-help/:countySlug" element={<DeferredRoute><LocalHousingLanding /></DeferredRoute>} />
           <Route path="housing-help/:countySlug/:serviceSlug" element={<DeferredRoute><LocalHousingLanding /></DeferredRoute>} />
           <Route path="waitlist" element={<DeferredRoute><Waitlist /></DeferredRoute>} />

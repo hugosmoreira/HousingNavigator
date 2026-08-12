@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   BellRing,
+  Building2,
   ClipboardCheck,
   ExternalLink,
   LayoutDashboard,
@@ -187,6 +188,11 @@ function Sidebar({
           icon: <ListChecks className="h-4.5 w-4.5" />,
         },
         {
+          to: '/admin/properties',
+          label: 'Affordable housing',
+          icon: <Building2 className="h-4.5 w-4.5" />,
+        },
+        {
           to: '/admin/waitlists',
           label: 'Waitlists',
           icon: <PanelLeftClose className="h-4.5 w-4.5" />,
@@ -295,6 +301,7 @@ function SidebarLink({ to, label, icon, badge }: NavItem) {
 }
 
 function currentPageTitle(pathname: string): string {
+  if (pathname.startsWith('/admin/properties')) return 'Affordable housing';
   if (pathname.startsWith('/admin/resources')) return 'Resources';
   if (pathname.startsWith('/admin/waitlists')) return 'Waitlists';
   if (pathname.startsWith('/admin/review')) return 'Review queue';

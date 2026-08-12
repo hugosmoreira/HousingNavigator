@@ -3,8 +3,8 @@ import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router';
 import AppServer from './AppServer';
 import AnalyticsPageView from './components/AnalyticsPageView';
-import { STATIC_PROGRAMS, STATIC_WAITLISTS } from './services/data/staticDataService';
-import { resourcePath, waitlistPath } from './lib/entityRoutes';
+import { STATIC_AFFORDABLE_PROPERTIES, STATIC_PROGRAMS, STATIC_WAITLISTS } from './services/data/staticDataService';
+import { affordablePropertyPath, resourcePath, waitlistPath } from './lib/entityRoutes';
 import {
   INDEXABLE_PAGE_METADATA,
   resolvePageMetadata,
@@ -21,6 +21,7 @@ export const prerenderRoutes = [
   ),
   ...STATIC_PROGRAMS.map(resourcePath),
   ...STATIC_WAITLISTS.map(waitlistPath),
+  ...STATIC_AFFORDABLE_PROPERTIES.map(affordablePropertyPath),
 ];
 
 export function render(url: string): string {

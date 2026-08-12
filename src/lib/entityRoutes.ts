@@ -1,4 +1,4 @@
-import type { Program, WaitlistEntry } from '../types';
+import type { AffordableProperty, Program, WaitlistEntry } from '../types';
 
 function slugify(value: string): string {
   return value
@@ -44,4 +44,19 @@ export function findWaitlistBySlug(
   slug: string,
 ): WaitlistEntry | undefined {
   return waitlists.find((waitlist) => waitlistSlug(waitlist) === slug);
+}
+
+export function affordablePropertySlug(property: AffordableProperty): string {
+  return createEntitySlug(property.name, property.route_id ?? property.id);
+}
+
+export function affordablePropertyPath(property: AffordableProperty): string {
+  return `/affordable-housing/${affordablePropertySlug(property)}/`;
+}
+
+export function findAffordablePropertyBySlug(
+  properties: readonly AffordableProperty[],
+  slug: string,
+): AffordableProperty | undefined {
+  return properties.find((property) => affordablePropertySlug(property) === slug);
 }

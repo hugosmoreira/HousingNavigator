@@ -21,9 +21,10 @@ import { createEntitySlug } from '../../lib/entityRoutes';
 import { requireSupabase } from '../../lib/supabaseClient';
 import {
   programFromResourceRow,
+  affordablePropertyFromRow,
   waitlistFromRow,
 } from './mappers';
-import type { ResourceRow, WaitlistRow } from './dbTypes';
+import type { AffordablePropertyRow, ResourceRow, WaitlistRow } from './dbTypes';
 import type { DataService } from './types';
 import type { DecisionRule } from '../../types';
 import { STATIC_PROGRAMS } from './staticDataService';
@@ -67,5 +68,15 @@ export const supabaseDataService: DataService = {
       .eq('published', true);
     if (error) throw error;
     return ((data ?? []) as WaitlistRow[]).map(waitlistFromRow);
+  },
+
+  async getAffordableProperties() {
+    const client = await requireSupabase();
+    const { data, error } = await client
+      .from('affordable_properties_public')
+      .select('*')
+      .eq('published', true);
+    if (error) throw error;
+    return ((data ?? []) as AffordablePropertyRow[]).map(affordablePropertyFromRow);
   },
 };

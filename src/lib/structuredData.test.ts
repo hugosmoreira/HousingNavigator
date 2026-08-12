@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   STATIC_PROGRAMS,
   STATIC_WAITLISTS,
+  STATIC_AFFORDABLE_PROPERTIES,
 } from '../services/data/staticDataService';
-import { resourcePath, waitlistPath } from './entityRoutes';
+import { affordablePropertyPath, resourcePath, waitlistPath } from './entityRoutes';
 import {
   resolveStructuredData,
   serializeStructuredData,
@@ -126,6 +127,26 @@ describe('structured data', () => {
       name: waitlist.program_name || waitlist.agency,
       serviceType: 'Affordable housing waitlist',
       url: waitlist.website,
+    });
+  });
+
+  it('describes the affordable housing directory and physical properties', () => {
+    const collection = resolveStructuredData('/affordable-housing/');
+    const list = nodeByType(collection!, 'ItemList');
+    expect(list.numberOfItems).toBe(STATIC_AFFORDABLE_PROPERTIES.length);
+
+    const property = STATIC_AFFORDABLE_PROPERTIES[0];
+    const document = resolveStructuredData(affordablePropertyPath(property));
+    const page = nodeByType(document!, 'ItemPage');
+    const apartment = nodeByType(document!, 'ApartmentComplex');
+    expect(page).toMatchObject({
+      dateModified: property.last_verified,
+      citation: property.source_url || property.website,
+    });
+    expect(apartment).toMatchObject({
+      name: property.name,
+      numberOfAccommodationUnits: property.total_units,
+      address: { addressLocality: property.city, addressRegion: property.state },
     });
   });
 

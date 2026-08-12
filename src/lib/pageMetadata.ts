@@ -1,14 +1,17 @@
 import catalogData from '../data/catalog.json';
 import waitlistsData from '../data/waitlists.json';
+import affordablePropertiesData from '../data/affordableProperties.json';
 import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
 import { serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
 import {
   findResourceBySlug,
+  findAffordablePropertyBySlug,
   findWaitlistBySlug,
+  affordablePropertyPath,
   resourcePath,
   waitlistPath,
 } from './entityRoutes';
-import type { Program, WaitlistEntry } from '../types';
+import type { AffordableProperty, Program, WaitlistEntry } from '../types';
 
 export const SITE_URL = 'https://housingnavigator.us';
 export const SOCIAL_IMAGE_URL = `${SITE_URL}/social-card.png`;
@@ -17,6 +20,7 @@ export const SOCIAL_IMAGE_ALT =
 
 const STATIC_PROGRAMS = catalogData as unknown as Program[];
 const STATIC_WAITLISTS = waitlistsData as unknown as WaitlistEntry[];
+const STATIC_AFFORDABLE_PROPERTIES = affordablePropertiesData as unknown as AffordableProperty[];
 
 export interface PageMetadata {
   title: string;
@@ -34,9 +38,9 @@ export interface ResolvedPageMetadata extends PageMetadata {
 
 export const INDEXABLE_PAGE_METADATA: Record<string, PageMetadata> = {
   '/': {
-    title: 'Housing Help & Waitlists in Portland & Vancouver | Housing Navigator',
+    title: 'Housing Help & Waitlists in Oregon & Washington | Housing Navigator',
     description:
-      'Search a verified directory of rent assistance, shelter, legal aid, and housing waitlists across the Portland–Vancouver metro.',
+      'Search verified rent assistance, shelter, legal aid, affordable apartment, and housing waitlist information across Oregon and Washington.',
     index: true,
   },
   '/resources': {
@@ -45,10 +49,16 @@ export const INDEXABLE_PAGE_METADATA: Record<string, PageMetadata> = {
       'Search rent assistance, shelter, eviction prevention, legal aid, and affordable housing resources across Oregon and Washington.',
     index: true,
   },
+  '/affordable-housing': {
+    title: 'Affordable apartments in Oregon & Washington | Housing Navigator',
+    description:
+      'Find verified income-restricted apartment properties, bedroom sizes, eligibility, income limits, and application information in Oregon and Washington.',
+    index: true,
+  },
   '/waitlist': {
     title: 'Track affordable housing waitlists | Housing Navigator',
     description:
-      'Check affordable housing and voucher waitlist statuses and follow local openings across the Portland–Vancouver metro.',
+      'Check affordable housing and voucher waitlist statuses and follow openings across Oregon and Washington.',
     index: true,
   },
   '/mission': {
@@ -131,6 +141,19 @@ function shorten(value: string, maxLength: number): string {
 }
 
 function resolveDetailMetadata(path: string): PageMetadata | null {
+  const propertyMatch = path.match(/^\/affordable-housing\/([^/]+)$/);
+  if (propertyMatch) {
+    const property = findAffordablePropertyBySlug(STATIC_AFFORDABLE_PROPERTIES, propertyMatch[1]);
+    if (!property || normalizePagePath(affordablePropertyPath(property)) !== path) return null;
+    const summary = property.description || property.eligibility_summary ||
+      `Affordable apartment information for ${property.name} in ${property.city}, ${property.state}.`;
+    return {
+      title: shorten(`${property.name} | Housing Navigator`, 65),
+      description: shorten(summary, 155),
+      index: true,
+    };
+  }
+
   const resourceMatch = path.match(/^\/resources\/([^/]+)$/);
   if (resourceMatch) {
     const program = findResourceBySlug(STATIC_PROGRAMS, resourceMatch[1]);

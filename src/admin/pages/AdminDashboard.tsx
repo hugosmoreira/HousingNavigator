@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowRight,
   BellRing,
+  Building2,
   CheckCircle2,
   ClipboardCheck,
   ListChecks,
@@ -18,6 +19,8 @@ import { listAdminUsers } from '../adminUsers';
 interface DashboardSnapshot {
   resources: number;
   resourceDrafts: number;
+  properties: number;
+  propertyDrafts: number;
   waitlists: number;
   openWaitlists: number;
   users: number;
@@ -31,6 +34,8 @@ interface DashboardSnapshot {
 const EMPTY_SNAPSHOT: DashboardSnapshot = {
   resources: 0,
   resourceDrafts: 0,
+  properties: 0,
+  propertyDrafts: 0,
   waitlists: 0,
   openWaitlists: 0,
   users: 0,
@@ -55,6 +60,8 @@ export default function AdminDashboard() {
       const [
         resources,
         drafts,
+        properties,
+        propertyDrafts,
         waitlists,
         openWaitlists,
         pendingReviews,
@@ -65,6 +72,11 @@ export default function AdminDashboard() {
         client.from('resources_admin').select('id', { count: 'exact', head: true }),
         client
           .from('resources_admin')
+          .select('id', { count: 'exact', head: true })
+          .eq('published', false),
+        client.from('affordable_properties_admin').select('id', { count: 'exact', head: true }),
+        client
+          .from('affordable_properties_admin')
           .select('id', { count: 'exact', head: true })
           .eq('published', false),
         client.from('waitlists_admin').select('id', { count: 'exact', head: true }),
@@ -94,6 +106,8 @@ export default function AdminDashboard() {
       const queryError = [
         resources.error,
         drafts.error,
+        properties.error,
+        propertyDrafts.error,
         waitlists.error,
         openWaitlists.error,
         pendingReviews.error,
@@ -110,6 +124,8 @@ export default function AdminDashboard() {
       setSnapshot({
         resources: resources.count ?? 0,
         resourceDrafts: drafts.count ?? 0,
+        properties: properties.count ?? 0,
+        propertyDrafts: propertyDrafts.count ?? 0,
         waitlists: waitlists.count ?? 0,
         openWaitlists: openWaitlists.count ?? 0,
         users: userPage.total,
@@ -166,12 +182,19 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Platform totals">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Platform totals">
         <MetricCard
           label="Resources"
           value={snapshot.resources}
           detail={`${snapshot.resourceDrafts} draft${snapshot.resourceDrafts === 1 ? '' : 's'}`}
           icon={<ListChecks className="h-5 w-5" />}
+          loading={loading}
+        />
+        <MetricCard
+          label="Affordable properties"
+          value={snapshot.properties}
+          detail={`${snapshot.propertyDrafts} draft${snapshot.propertyDrafts === 1 ? '' : 's'}`}
+          icon={<Building2 className="h-5 w-5" />}
           loading={loading}
         />
         <MetricCard
@@ -247,6 +270,9 @@ export default function AdminDashboard() {
           <div className="mt-6 space-y-2">
             <QuickAction to="/admin/resources/new" icon={<Plus className="h-4 w-4" />}>
               Add a resource
+            </QuickAction>
+            <QuickAction to="/admin/properties/new" icon={<Building2 className="h-4 w-4" />}>
+              Add an affordable property
             </QuickAction>
             <QuickAction to="/admin/waitlists/new" icon={<Plus className="h-4 w-4" />}>
               Add a waitlist

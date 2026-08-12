@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { STATIC_PROGRAMS, STATIC_WAITLISTS } from '../services/data/staticDataService';
+import { STATIC_AFFORDABLE_PROPERTIES, STATIC_PROGRAMS, STATIC_WAITLISTS } from '../services/data/staticDataService';
 import {
+  affordablePropertyPath,
+  affordablePropertySlug,
+  findAffordablePropertyBySlug,
   findResourceBySlug,
   findWaitlistBySlug,
   resourcePath,
@@ -38,10 +41,19 @@ describe('indexable entity routes', () => {
     }
   });
 
+  it('creates unique, reversible affordable-property slugs', () => {
+    const slugs = STATIC_AFFORDABLE_PROPERTIES.map(affordablePropertySlug);
+    expect(new Set(slugs).size).toBe(STATIC_AFFORDABLE_PROPERTIES.length);
+    for (const property of STATIC_AFFORDABLE_PROPERTIES) {
+      expect(findAffordablePropertyBySlug(STATIC_AFFORDABLE_PROPERTIES, affordablePropertySlug(property))).toEqual(property);
+    }
+  });
+
   it('returns indexable metadata and canonicals for every generated detail page', () => {
     const paths = [
       ...STATIC_PROGRAMS.map(resourcePath),
       ...STATIC_WAITLISTS.map(waitlistPath),
+      ...STATIC_AFFORDABLE_PROPERTIES.map(affordablePropertyPath),
     ];
     for (const path of paths) {
       const metadata = resolvePageMetadata(path);
@@ -59,6 +71,10 @@ describe('indexable entity routes', () => {
       canonicalUrl: null,
     });
     expect(resolvePageMetadata('/waitlist/not-a-real-waitlist')).toMatchObject({
+      index: false,
+      canonicalUrl: null,
+    });
+    expect(resolvePageMetadata('/affordable-housing/not-a-real-property')).toMatchObject({
       index: false,
       canonicalUrl: null,
     });

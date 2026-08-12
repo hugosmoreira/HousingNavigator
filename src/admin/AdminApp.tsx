@@ -12,6 +12,9 @@ const AdminResourceEdit = lazy(() => import('./pages/AdminResourceEdit'));
 const AdminWaitlistsList = lazy(() => import('./pages/AdminWaitlistsList'));
 const AdminWaitlistNew = lazy(() => import('./pages/AdminWaitlistNew'));
 const AdminWaitlistEdit = lazy(() => import('./pages/AdminWaitlistEdit'));
+const AdminAffordablePropertiesList = lazy(() => import('./pages/AdminAffordablePropertiesList'));
+const AdminAffordablePropertyNew = lazy(() => import('./pages/AdminAffordablePropertyNew'));
+const AdminAffordablePropertyEdit = lazy(() => import('./pages/AdminAffordablePropertyEdit'));
 const AdminAlertsLog = lazy(() => import('./pages/AdminAlertsLog'));
 const AdminReviewQueue = lazy(() => import('./pages/AdminReviewQueue'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -58,6 +61,30 @@ export default function AdminApp() {
               element={
                 <ProtectedAdminRoute>
                   <AdminResourceEdit />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="properties"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminAffordablePropertiesList />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="properties/new"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminAffordablePropertyNew />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route
+              path="properties/:id/edit"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminAffordablePropertyEdit />
                 </ProtectedAdminRoute>
               }
             />

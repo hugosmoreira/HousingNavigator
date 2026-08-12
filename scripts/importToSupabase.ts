@@ -25,7 +25,6 @@ import {
 } from '../src/data/categoryMap.ts';
 import type {
   ApplicationMethod,
-  County,
   DirectoryCategory,
   HouseholdType,
   Program,
@@ -65,7 +64,7 @@ interface WaitlistInsert {
   id: string;
   housing_authority: string;
   program_name: string | null;
-  county: County;
+  county: string;
   city: string | null;
   state: string | null;
   status: WaitlistStatus;

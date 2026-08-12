@@ -8,6 +8,7 @@
  */
 
 import type {
+  AffordableProperty,
   DecisionRule,
   DirectoryCategory,
   Program,
@@ -20,6 +21,7 @@ import {
 } from '../../data/categoryMap';
 import { normalizeServiceAreas } from '../../data/serviceAreas';
 import type {
+  AffordablePropertyRow,
   DecisionRuleRow,
   ProgramRow,
   ResourceRow,
@@ -127,6 +129,44 @@ export function waitlistFromRow(row: WaitlistRow): WaitlistEntry {
     application_link: row.application_link ?? undefined,
     source_url: row.source_url ?? undefined,
     last_opened_at: row.last_opened_at ?? undefined,
+    waitlist_type: row.waitlist_type ?? 'other',
+    affordable_property_id: row.affordable_property_id ?? undefined,
+  };
+}
+
+export function affordablePropertyFromRow(
+  row: AffordablePropertyRow,
+): AffordableProperty {
+  return {
+    id: row.id,
+    name: row.name,
+    owner_organization: row.owner_organization ?? undefined,
+    management_company: row.management_company ?? undefined,
+    property_type: row.property_type,
+    address: row.address ?? undefined,
+    city: row.city,
+    county: row.county,
+    state: row.state,
+    postal_code: row.postal_code ?? undefined,
+    description: row.description ?? undefined,
+    eligibility_summary: row.eligibility_summary ?? undefined,
+    ami_levels: row.ami_levels ?? [],
+    bedroom_types: row.bedroom_types ?? [],
+    audiences: row.audiences ?? [],
+    total_units: row.total_units ?? undefined,
+    accessibility_notes: row.accessibility_notes ?? undefined,
+    phone: row.phone ?? undefined,
+    website: row.website ?? undefined,
+    application_url: row.application_url ?? undefined,
+    source_url: row.source_url ?? undefined,
+    source_type: row.source_type ?? undefined,
+    last_verified: row.last_verified ?? '',
+    public_notes: row.public_notes ?? undefined,
+    priority_score: row.priority_score,
+    waitlist_id: row.waitlist_id ?? undefined,
+    waitlist_status: row.waitlist_status ?? undefined,
+    waitlist_last_checked: row.waitlist_last_checked ?? undefined,
+    waitlist_application_link: row.waitlist_application_link ?? undefined,
   };
 }
 

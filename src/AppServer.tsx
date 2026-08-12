@@ -3,6 +3,8 @@ import Home from './pages/Home';
 import Resources from './pages/Resources';
 import LocalHousingLanding from './pages/LocalHousingLanding';
 import ResourceDetail from './pages/ResourceDetail';
+import AffordableHousing from './pages/AffordableHousing';
+import AffordablePropertyDetail from './pages/AffordablePropertyDetail';
 import Waitlist from './pages/Waitlist';
 import WaitlistDetail from './pages/WaitlistDetail';
 import Mission from './pages/Mission';
@@ -17,6 +19,8 @@ const publicPages: PublicPageComponents = {
   Resources,
   LocalHousingLanding,
   ResourceDetail,
+  AffordableHousing,
+  AffordablePropertyDetail,
   Waitlist,
   WaitlistDetail,
   Mission,

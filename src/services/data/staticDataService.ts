@@ -18,8 +18,9 @@ import catalogData from '../../data/catalog.json';
 import fallbackPrograms from '../../data/programs.json';
 import rulesData from '../../data/decisionRules.json';
 import waitlistsData from '../../data/waitlists.json';
+import affordablePropertiesData from '../../data/affordableProperties.json';
 import { legacyToDirectoryCategory } from '../../data/categoryMap';
-import type { DecisionRule, Program, WaitlistEntry } from '../../types';
+import type { AffordableProperty, DecisionRule, Program, WaitlistEntry } from '../../types';
 import type { DataService } from './types';
 
 const RAW_CATALOG = catalogData as unknown as Program[];
@@ -42,6 +43,8 @@ export const STATIC_PROGRAMS = ensureDirectoryCategory(
 );
 const RULES = rulesData as unknown as DecisionRule[];
 export const STATIC_WAITLISTS = waitlistsData as unknown as WaitlistEntry[];
+export const STATIC_AFFORDABLE_PROPERTIES =
+  affordablePropertiesData as unknown as AffordableProperty[];
 
 export const staticDataService: DataService = {
   async getPrograms() {
@@ -52,5 +55,8 @@ export const staticDataService: DataService = {
   },
   async getWaitlists() {
     return STATIC_WAITLISTS;
+  },
+  async getAffordableProperties() {
+    return STATIC_AFFORDABLE_PROPERTIES;
   },
 };

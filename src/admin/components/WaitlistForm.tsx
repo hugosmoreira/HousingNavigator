@@ -2,11 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
-import type { WaitlistRow } from '../../services/data/dbTypes';
-import type { County, WaitlistStatus } from '../../types';
+import { WAITLIST_TYPES, WAITLIST_TYPE_LABELS } from '../../data/affordableHousing';
+import { COUNTIES_BY_STATE, SUPPORTED_STATES, isSupportedState } from '../../data/serviceAreas';
+import type { AffordablePropertyRow, WaitlistRow } from '../../services/data/dbTypes';
+import type { SupportedState, WaitlistStatus, WaitlistType } from '../../types';
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
 
-const COUNTIES: County[] = ['Multnomah', 'Clark', 'Washington', 'Clackamas', 'Other'];
 const STATUSES: Array<{ value: WaitlistStatus; label: string }> = [
   { value: 'open', label: 'Open' },
   { value: 'limited', label: 'Limited' },
@@ -30,6 +31,8 @@ const EMPTY: WaitlistDraft = {
   public_notes: '',
   internal_notes: '',
   published: false,
+  waitlist_type: 'other',
+  affordable_property_id: null,
 };
 
 export interface WaitlistFormProps {
@@ -43,6 +46,23 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
   const [loading, setLoading] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [properties, setProperties] = useState<AffordablePropertyRow[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    void requireSupabase().then((client) => client
+      .from('affordable_properties_admin')
+      .select('id,name,city,state,linked_waitlist_id')
+      .order('name'))
+      .then(({ data, error: propertyError }) => {
+        if (propertyError) throw propertyError;
+        if (active) setProperties((data ?? []) as AffordablePropertyRow[]);
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Failed to load affordable properties');
+      });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (mode !== 'edit' || !waitlistId) return;
@@ -76,6 +96,8 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
           public_notes: row.public_notes ?? row.notes ?? '',
           internal_notes: row.internal_notes ?? '',
           published: row.published,
+          waitlist_type: row.waitlist_type ?? 'other',
+          affordable_property_id: row.affordable_property_id ?? null,
         });
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Failed to load');
@@ -91,6 +113,8 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
   function update<K extends keyof WaitlistDraft>(key: K, value: WaitlistDraft[K]) {
     setDraft((prev) => ({ ...prev, [key]: value }));
   }
+
+  const selectedState: SupportedState = isSupportedState(draft.state) ? draft.state : 'OR';
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -199,6 +223,21 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
               onChange={(e) => update('program_name', e.target.value)}
             />
           </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Waitlist type" required hint="Use Apartment/property only for a specific building or community.">
+              <Select value={draft.waitlist_type ?? 'other'} onChange={(e) => update('waitlist_type', e.target.value as WaitlistType)}>
+                {WAITLIST_TYPES.map((type) => <option key={type} value={type}>{WAITLIST_TYPE_LABELS[type]}</option>)}
+              </Select>
+            </Field>
+            <Field label="Affordable property" hint="Optional. Links this status to a property detail page.">
+              <Select value={draft.affordable_property_id ?? ''} onChange={(e) => update('affordable_property_id', e.target.value || null)}>
+                <option value="">No linked property</option>
+                {properties
+                  .filter((property) => !property.linked_waitlist_id || property.linked_waitlist_id === waitlistId)
+                  .map((property) => <option key={property.id} value={property.id}>{property.name} — {property.city}, {property.state}</option>)}
+              </Select>
+            </Field>
+          </div>
         </Section>
 
         <Section title="Location">
@@ -206,9 +245,9 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
             <Field label="County" required>
               <Select
                 value={draft.county}
-                onChange={(e) => update('county', e.target.value as County)}
+                onChange={(e) => update('county', e.target.value)}
               >
-                {COUNTIES.map((c) => (
+                {COUNTIES_BY_STATE[selectedState].map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -222,11 +261,13 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
               />
             </Field>
             <Field label="State">
-              <TextInput
-                value={draft.state ?? ''}
-                maxLength={2}
-                onChange={(e) => update('state', e.target.value.toUpperCase())}
-              />
+              <Select value={selectedState} onChange={(e) => {
+                const next = e.target.value as SupportedState;
+                update('state', next);
+                if (!COUNTIES_BY_STATE[next].includes(draft.county)) update('county', COUNTIES_BY_STATE[next][0]);
+              }}>
+                {SUPPORTED_STATES.map((state) => <option key={state} value={state}>{state}</option>)}
+              </Select>
             </Field>
           </div>
         </Section>
