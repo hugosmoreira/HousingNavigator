@@ -1,5 +1,45 @@
 [
   {
+    "id": "4690b230-5abd-498f-89c1-5eb968c26812",
+    "name": "73Foster",
+    "owner_organization": "REACH Community Development",
+    "management_company": "Guardian Management LLC",
+    "property_type": "mixed",
+    "address": "7330 SE Foster Road",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "postal_code": "97206",
+    "description": "A new 64-home affordable community with studios and one-, two-, and three-bedroom apartments. It includes 22 permanent supportive housing homes, 42 affordable family and general-occupancy homes, resident services, a food pantry, community space, laundry rooms, and a courtyard.",
+    "eligibility_summary": "Twenty-two supportive housing homes are restricted at 30% AMI and have additional program eligibility or referral requirements. The other 42 homes serve households at or below 60% AMI. Confirm which application path applies to your household.",
+    "ami_levels": [
+      30,
+      60
+    ],
+    "bedroom_types": [
+      "studio",
+      "1",
+      "2",
+      "3"
+    ],
+    "audiences": [
+      "general",
+      "families",
+      "disabilities",
+      "formerly_homeless"
+    ],
+    "total_units": 64,
+    "accessibility_notes": "The City lists 10 ADA-accessible homes and universal-design features. Contact leasing for unit-specific accessibility and accommodation requests.",
+    "phone": "971-466-0526",
+    "website": "https://www.73fosterpdx.com/",
+    "application_url": "https://www.73fosterpdx.com/",
+    "source_url": "https://reachcdc.org/housing/hd/pipeline/419",
+    "source_type": "Official owner and City websites",
+    "last_verified": "2026-08-14",
+    "public_notes": "REACH and the City identify a fall 2026 opening. The property website is the source of truth for current leasing and availability.",
+    "priority_score": 100
+  },
+  {
     "id": "dd2cd8f6-6bd1-46be-b3ad-a20c3725f155",
     "name": "Dolores Apartments",
     "owner_organization": "Hacienda Community Development Corporation",
@@ -38,7 +78,7 @@
     "priority_score": 100,
     "waitlist_id": "hacienda-cdc__dolores-apartments__www-haciendacdc-org-communities",
     "waitlist_status": "open",
-    "waitlist_last_checked": "2026-08-11",
+    "waitlist_last_checked": "2026-08-14",
     "waitlist_application_link": "https://dolores.nwrecc.org/"
   },
   {
@@ -157,6 +197,165 @@
     "last_verified": "2026-08-11",
     "public_notes": "The property website is the source of truth for current vacancies and application availability.",
     "priority_score": 95
+  },
+  {
+    "id": "916d2d04-33b4-44d1-aabf-eaa45c42f295",
+    "name": "Pearl Court Apartments",
+    "management_company": "Pinehurst Management",
+    "property_type": "affordable_apartments",
+    "address": "920 NW Kearney Street",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "postal_code": "97209",
+    "description": "A regulated affordable apartment community across from Jamison Square in Portland's Pearl District, with studio homes, a secure building, resident lounge, laundry facilities, and patios in some homes.",
+    "eligibility_summary": "Affordable-housing income and occupancy restrictions apply. The property page does not publish the current limits; contact the leasing office to confirm eligibility and required documentation.",
+    "ami_levels": [],
+    "bedroom_types": [
+      "studio"
+    ],
+    "audiences": [
+      "general"
+    ],
+    "accessibility_notes": "Contact property management for accessible-unit availability or a reasonable accommodation.",
+    "phone": "503-222-1999",
+    "website": "https://www.pinehurstmanagement.com/pearl-court",
+    "application_url": "https://www.pinehurstmanagement.com/pearl-court",
+    "source_url": "https://www.pinehurstmanagement.com/pearl-court",
+    "source_type": "Official property manager website",
+    "last_verified": "2026-08-14",
+    "public_notes": "The official manager page said \"Accepting Applications\" when checked on August 14, 2026. Confirm availability before applying.",
+    "priority_score": 95
+  },
+  {
+    "id": "e1474334-8f03-40f6-a2b1-8941128ccc94",
+    "name": "The Bria Apartments",
+    "management_company": "Northwest Real Estate Capital Corp.",
+    "property_type": "affordable_apartments",
+    "address": "30 NE 146th Ave",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "postal_code": "97230",
+    "description": "An income-restricted apartment community in Portland's Glenfair neighborhood with one- and two-bedroom homes, laundry facilities, a courtyard, secure bike storage, parking, and nearby transit.",
+    "eligibility_summary": "Household income must be at or below 60% of the Multnomah County area median income. Housing vouchers are accepted. Application screening and documentation requirements apply.",
+    "ami_levels": [
+      60
+    ],
+    "bedroom_types": [
+      "1",
+      "2"
+    ],
+    "audiences": [
+      "general",
+      "families"
+    ],
+    "accessibility_notes": "Contact property management for accessible-unit availability or a reasonable accommodation.",
+    "phone": "503-477-7653",
+    "website": "https://www.thebriaapartments.com/",
+    "application_url": "https://www.thebriaapartments.com/",
+    "source_url": "https://www.thebriaapartments.com/",
+    "source_type": "Official property website",
+    "last_verified": "2026-08-14",
+    "public_notes": "The official property site says it is now leasing. Rents and availability can change; contact the leasing office before applying.",
+    "priority_score": 95
+  },
+  {
+    "id": "2ccca6b9-c566-4e59-b61f-01c96998112b",
+    "name": "Gretchen Kafoury Commons",
+    "management_company": "Pinehurst Management",
+    "property_type": "affordable_apartments",
+    "address": "1240 SW Columbia Street",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "postal_code": "97201",
+    "description": "A 120-home affordable apartment community near Portland State University with studios, one- and two-bedroom homes, controlled building access, a staffed front desk, community space, laundry facilities, and a courtyard.",
+    "eligibility_summary": "The official property page says the community serves residents earning between 40% and 80% of area median income. Confirm the income limit, occupancy rules, and required documents for the specific apartment before applying.",
+    "ami_levels": [
+      40,
+      80
+    ],
+    "bedroom_types": [
+      "studio",
+      "1",
+      "2"
+    ],
+    "audiences": [
+      "general",
+      "families"
+    ],
+    "total_units": 120,
+    "accessibility_notes": "Contact property management for accessible-unit availability or a reasonable accommodation.",
+    "phone": "971-351-1884",
+    "website": "https://www.pinehurstmanagement.com/gretchen-kafoury-commons-apartments",
+    "application_url": "https://www.pinehurstmanagement.com/gretchen-kafoury-commons-apartments",
+    "source_url": "https://www.pinehurstmanagement.com/gretchen-kafoury-commons-apartments",
+    "source_type": "Official property manager website",
+    "last_verified": "2026-08-14",
+    "public_notes": "Contact the property directly to confirm current availability, rents, and application instructions.",
+    "priority_score": 90
+  },
+  {
+    "id": "e9da3e2a-5a6d-4145-b418-c04f732e1305",
+    "name": "Jim and Salle's Place",
+    "management_company": "Quantum Residential Inc.",
+    "property_type": "affordable_apartments",
+    "address": "7531-7629 SE Steele Avenue",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "postal_code": "97206",
+    "description": "A regulated affordable apartment community in Southeast Portland with one- and two-bedroom homes, on-site laundry, off-street parking, a courtyard, and on-site management.",
+    "eligibility_summary": "Income restrictions apply. The official property website does not publish the current income limits, so contact the leasing office to confirm household eligibility, occupancy rules, and required documentation.",
+    "ami_levels": [],
+    "bedroom_types": [
+      "1",
+      "2"
+    ],
+    "audiences": [
+      "general",
+      "families"
+    ],
+    "accessibility_notes": "Contact property management for accessible-unit availability or a reasonable accommodation.",
+    "phone": "503-771-3808",
+    "website": "https://www.jimandsalles.com/",
+    "application_url": "https://www.jimandsalles.com/floorplans",
+    "source_url": "https://www.jimandsalles.com/",
+    "source_type": "Official property website",
+    "last_verified": "2026-08-14",
+    "public_notes": "Use the property website to check current availability and pricing. Income limits and rents can change.",
+    "priority_score": 90
+  },
+  {
+    "id": "fed56e42-885b-46a7-bf70-60daea4120f8",
+    "name": "Lents Village Apartments",
+    "management_company": "Quantum Residential Inc.",
+    "property_type": "senior_housing",
+    "address": "10325 SE Holgate Boulevard",
+    "city": "Portland",
+    "county": "Multnomah",
+    "state": "OR",
+    "postal_code": "97266",
+    "description": "A regulated affordable apartment community for residents age 55 and older, with one- and two-bedroom homes, on-site laundry, and a community room in Southeast Portland.",
+    "eligibility_summary": "At least one resident must meet the property's age requirement of 55 or older. Income and occupancy restrictions also apply; contact the leasing office for the current limits and documentation requirements.",
+    "ami_levels": [],
+    "bedroom_types": [
+      "1",
+      "2"
+    ],
+    "audiences": [
+      "seniors"
+    ],
+    "accessibility_notes": "Contact property management for accessible-unit availability or a reasonable accommodation.",
+    "phone": "503-954-2865",
+    "website": "https://www.lentsvillage.com/",
+    "application_url": "https://www.lentsvillage.com/floorplans",
+    "source_url": "https://www.lentsvillage.com/",
+    "source_type": "Official property website",
+    "last_verified": "2026-08-14",
+    "public_notes": "Use the official availability search and confirm rents and eligibility with the leasing office before applying.",
+    "priority_score": 90
   },
   {
     "id": "56e55df3-96bc-46c9-8e6c-686949bda46c",
