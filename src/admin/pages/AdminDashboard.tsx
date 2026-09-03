@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
 import { listAdminUsers } from '../adminUsers';
+import AutomationHealthPanel from '../components/AutomationHealthPanel';
 
 interface DashboardSnapshot {
   resources: number;
@@ -220,6 +221,8 @@ export default function AdminDashboard() {
           tone={attentionCount > 0 ? 'warning' : 'success'}
         />
       </section>
+
+      <AutomationHealthPanel />
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.8fr)]">
         <section className="rounded-3xl border border-surface-container-highest bg-surface-container-lowest p-5 lg:p-6">

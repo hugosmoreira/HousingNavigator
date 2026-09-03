@@ -21,6 +21,7 @@ interface SuggestionRow {
   suggested_status: WaitlistStatus;
   confidence: number | null;
   evidence: string | null;
+  evidence_verified: boolean;
   checked_url: string | null;
   created_at: string;
   updated_at: string;
@@ -120,25 +121,36 @@ export default function AdminReviewQueue() {
     void load();
   }, [load]);
 
-  async function handleReview(id: string, approve: boolean) {
-    setBusyId(id);
+  async function handleReview(suggestion: SuggestionRow, approve: boolean) {
+    setBusyId(suggestion.id);
     setError(null);
     setNotice(null);
     try {
       const client = await requireSupabase();
       const { error: rpcErr } = await client.rpc('review_waitlist_suggestion', {
-        p_suggestion_id: id,
+        p_suggestion_id: suggestion.id,
         p_approve: approve,
+        p_expected_updated_at: suggestion.updated_at,
+        p_expected_previous_status: suggestion.previous_status,
+        p_expected_suggested_status: suggestion.suggested_status,
       });
       if (rpcErr) throw rpcErr;
-      setSuggestions((prev) => prev.filter((s) => s.id !== id));
+      setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
       setNotice(
         approve
           ? 'Status updated. Subscribers with matching alert preferences are emailed automatically.'
           : 'Suggestion dismissed. The checker will only re-suggest if it sees the change again.',
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Review failed');
+      const message = errorMessage(err);
+      if (message.toLowerCase().includes('stale review')) {
+        await load();
+        setError(
+          'This suggestion changed after you loaded it. The queue was refreshed; review the current version before deciding.',
+        );
+      } else {
+        setError(message);
+      }
     } finally {
       setBusyId(null);
     }
@@ -272,7 +284,7 @@ export default function AdminReviewQueue() {
                 <div className="mt-4 flex items-center gap-3 flex-wrap">
                   <button
                     type="button"
-                    onClick={() => handleReview(s.id, true)}
+                    onClick={() => handleReview(s, true)}
                     disabled={busyId !== null}
                     className="inline-flex items-center gap-1.5 rounded-full bg-primary text-on-primary font-semibold text-sm px-4 py-2 hover:bg-primary-dim disabled:opacity-60 disabled:cursor-not-allowed"
                   >
@@ -281,7 +293,7 @@ export default function AdminReviewQueue() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleReview(s.id, false)}
+                    onClick={() => handleReview(s, false)}
                     disabled={busyId !== null}
                     className="inline-flex items-center gap-1.5 rounded-full border border-surface-container-highest text-on-surface font-semibold text-sm px-4 py-2 hover:bg-surface-container-low disabled:opacity-60"
                   >
@@ -329,4 +341,17 @@ export default function AdminReviewQueue() {
       </section>
     </div>
   );
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+  return 'Review failed';
 }
