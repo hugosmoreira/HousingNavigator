@@ -5,6 +5,9 @@
 [build.environment]
   # Pin Node so builds stay reproducible on Vite 6 (needs Node 18+).
   NODE_VERSION = "20"
+  # Read the same live Supabase catalog that administrators curate. Without
+  # this build-time flag, public pages fall back to the bundled JSON snapshot.
+  VITE_USE_SUPABASE = "true"
 
 # Public routes are generated as static HTML and shadow these fallback rules.
 # Account/admin routes use the clean SPA shell in spa.html. Keep this allowlist
