@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ExternalLink, RefreshCw, XCircle } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
 import { WAITLIST_STATUS_LABEL } from '../notifyWaitlistAlert';
+import { loadAutomationHealth } from '../automationHealth';
 import type { WaitlistStatus } from '../../types';
 
 /**
@@ -41,6 +42,7 @@ interface WaitlistName {
 }
 
 const PROBLEM_LABEL: Record<string, string> = {
+  uncertain: 'Status could not be confirmed — check manually',
   fetch_failed: 'URL unreachable',
   insufficient_content: 'Page needs JavaScript — check manually',
   classify_failed: 'Classifier error',
@@ -69,43 +71,31 @@ export default function AdminReviewQueue() {
     setError(null);
     try {
       const client = await requireSupabase();
-      const [sugRes, probRes] = await Promise.all([
+      const [sugRes, health] = await Promise.all([
         client
           .from('waitlist_status_suggestions')
           .select('*')
           .eq('status', 'pending')
           .order('updated_at', { ascending: false }),
-        client
-          .from('waitlist_status_checks')
-          .select('id, waitlist_id, checked_at, action, error')
-          .in('action', ['fetch_failed', 'insufficient_content', 'classify_failed'])
-          .order('checked_at', { ascending: false })
-          .limit(12),
+        loadAutomationHealth(),
       ]);
       if (sugRes.error) throw sugRes.error;
-      if (probRes.error) throw probRes.error;
       const sugs = (sugRes.data ?? []) as SuggestionRow[];
-      const probs = (probRes.data ?? []) as ProblemCheck[];
-
-      const ids = [
-        ...new Set([...sugs.map((s) => s.waitlist_id), ...probs.map((p) => p.waitlist_id)]),
-      ];
-      let nameMap: Record<string, WaitlistName> = {};
-      if (ids.length > 0) {
-        // waitlists_admin (0010) is the admin read surface; the base table's
-        // SELECT grant for authenticated is column-restricted.
-        const { data: wlData, error: wlErr } = await client
-          .from('waitlists_admin')
-          .select('id, housing_authority, program_name')
-          .in('id', ids);
-        if (wlErr) throw wlErr;
-        nameMap = Object.fromEntries(
-          (wlData ?? []).map((w: WaitlistName & { id: string }) => [
-            w.id,
-            { housing_authority: w.housing_authority, program_name: w.program_name },
-          ]),
-        );
-      }
+      const probs = health.attentionItems
+        .filter((item) => item.reason === 'manual_review' && item.latestCheck)
+        .map((item) => ({
+          id: item.latestCheck!.id,
+          waitlist_id: item.waitlist.id,
+          checked_at: item.latestCheck!.checked_at,
+          action: item.latestCheck!.action,
+          error: item.latestCheck!.error,
+        })) as ProblemCheck[];
+      const nameMap: Record<string, WaitlistName> = Object.fromEntries(
+        health.waitlists.map((row) => [
+          row.id,
+          { housing_authority: row.housing_authority, program_name: row.program_name },
+        ]),
+      );
 
       setSuggestions(sugs);
       setProblems(probs);
