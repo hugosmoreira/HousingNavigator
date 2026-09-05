@@ -63,7 +63,11 @@ export type ApplicationMethod = 'walk_in' | 'phone' | 'online' | 'referral';
 export type ResourceServiceTag =
   | 'financial_education'
   | 'internet_assistance'
-  | 'health_support';
+  | 'health_support'
+  | 'moving_help'
+  | 'move_in_costs'
+  | 'furniture'
+  | 'utility_help';
 
 export type ProgramStatus = 'open' | 'limited' | 'waitlist' | 'closed' | 'unknown';
 
@@ -137,6 +141,7 @@ export interface Program {
   /** Counties actually served; a null county represents statewide coverage. */
   service_areas?: ServiceArea[];
   service_tags?: ResourceServiceTag[];
+  cost_details?: string;
   /** Directory-facing taxonomy (set by the merge pipeline). */
   directory_category?: DirectoryCategory;
   /** Free-text category from the source dataset, kept for transparency / search. */

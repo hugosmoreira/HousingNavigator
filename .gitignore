@@ -3,6 +3,8 @@ build/
 dist/
 .prerender/
 coverage/
+tmp/source-check-tests/
+tmp/source-check-ui/
 .DS_Store
 *.log
 .env*

@@ -187,6 +187,7 @@ export function programFromResourceRow(row: ResourceRow): Program {
     : legacyToDirectoryCategory(row.category as ProgramCategory) ?? 'supportive_services';
   const legacy: ProgramCategory = DIRECTORY_TO_LEGACY[directory];
   return {
+    cost_details: row.cost_details ?? undefined,
     id: row.id,
     program_name: row.name,
     county: row.county,

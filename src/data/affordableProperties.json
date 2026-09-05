@@ -33,10 +33,10 @@
     "phone": "971-466-0526",
     "website": "https://www.73fosterpdx.com/",
     "application_url": "https://www.73fosterpdx.com/",
-    "source_url": "https://reachcdc.org/housing/hd/pipeline/419",
-    "source_type": "Official owner and City websites",
-    "last_verified": "2026-08-14",
-    "public_notes": "REACH and the City identify a fall 2026 opening. The property website is the source of truth for current leasing and availability.",
+    "source_url": "https://www.73fosterpdx.com/",
+    "source_type": "Official property website",
+    "last_verified": "2026-08-27",
+    "public_notes": "The official property site says “Ready To Move In” and provides an Apply Now link. Contact leasing at 971-466-0526 to confirm current unit availability and income eligibility before applying.",
     "priority_score": 100
   },
   {
@@ -49,6 +49,7 @@
     "city": "Hillsboro",
     "county": "Washington",
     "state": "OR",
+    "postal_code": "97223",
     "description": "A 67-home affordable apartment community in Hillsboro with family-sized apartments, resident gathering spaces, a community garden, play area, and on-site supportive services.",
     "eligibility_summary": "Households must meet the property income and occupancy requirements. Apartments serve households earning approximately 30% to 60% of area median income; ten homes are supportive housing for people transitioning out of homelessness.",
     "ami_levels": [
@@ -73,12 +74,12 @@
     "application_url": "https://www.haciendacdc.org/properties/dolores",
     "source_url": "https://www.haciendacdc.org/properties/dolores",
     "source_type": "Official owner website",
-    "last_verified": "2026-08-11",
-    "public_notes": "Contact the property manager to confirm current availability, rents, and required documentation.",
+    "last_verified": "2026-08-27",
+    "public_notes": "Applications are available from the official property page. Contact leasing at 971-515-8137 to confirm current availability, income limits, and application requirements.",
     "priority_score": 100,
     "waitlist_id": "hacienda-cdc__dolores-apartments__www-haciendacdc-org-communities",
     "waitlist_status": "open",
-    "waitlist_last_checked": "2026-08-14",
+    "waitlist_last_checked": "2026-09-04",
     "waitlist_application_link": "https://dolores.nwrecc.org/"
   },
   {
@@ -111,12 +112,12 @@
     "application_url": "https://centralcityconcern.org/housing-location/blackburn/",
     "source_url": "https://centralcityconcern.org/housing-location/blackburn/",
     "source_type": "Official owner website",
-    "last_verified": "2026-08-11",
-    "public_notes": "Blackburn has different unit types with different eligibility rules. Confirm which list is accepting applications.",
+    "last_verified": "2026-08-27",
+    "public_notes": "Both Blackburn Center fair-market SRO and studio waitlists are closed as of August 27, 2026. Check Central City Concern’s current waitlist table before applying because status can change.",
     "priority_score": 95,
     "waitlist_id": "central-city-concern__blackburn-center-fair-market__centralcityconcern-org-services-housing-housing-waitlists",
-    "waitlist_status": "limited",
-    "waitlist_last_checked": "2026-08-10",
+    "waitlist_status": "closed",
+    "waitlist_last_checked": "2026-09-04",
     "waitlist_application_link": "https://centralcityconcern.org/services/housing/housing-waitlists/"
   },
   {
@@ -151,12 +152,12 @@
     "application_url": "https://cascadiahealth.org/centennial-application/",
     "source_url": "https://cascadiahealth.org/centennial-application/",
     "source_type": "Official owner website",
-    "last_verified": "2026-08-11",
-    "public_notes": "Review the linked waitlist status before starting an application. Unit availability is not guaranteed.",
+    "last_verified": "2026-08-27",
+    "public_notes": "The official page states that the Centennial Place waitlist is closed. Check the linked page for future opening announcements and current eligibility information.",
     "priority_score": 95,
     "waitlist_id": "cascadia-health__centennial-place-apartments__cascadiahealth-org-waitlist",
     "waitlist_status": "closed",
-    "waitlist_last_checked": "2026-08-10",
+    "waitlist_last_checked": "2026-09-03",
     "waitlist_application_link": "https://cascadiahealth.org/waitlist/"
   },
   {
@@ -194,7 +195,7 @@
     "application_url": "https://reachproperties.org/properties/beaverton/dartmouth-crossing/304",
     "source_url": "https://reachproperties.org/properties/beaverton/dartmouth-crossing/304",
     "source_type": "Official property manager website",
-    "last_verified": "2026-08-11",
+    "last_verified": "2026-08-27",
     "public_notes": "The property website is the source of truth for current vacancies and application availability.",
     "priority_score": 95
   },
@@ -223,8 +224,8 @@
     "application_url": "https://www.pinehurstmanagement.com/pearl-court",
     "source_url": "https://www.pinehurstmanagement.com/pearl-court",
     "source_type": "Official property manager website",
-    "last_verified": "2026-08-14",
-    "public_notes": "The official manager page said \"Accepting Applications\" when checked on August 14, 2026. Confirm availability before applying.",
+    "last_verified": "2026-08-27",
+    "public_notes": "The official manager page says “Accepting Applications.” Call 503-222-1999 to confirm current availability, rent, and eligibility before applying.",
     "priority_score": 95
   },
   {
@@ -256,8 +257,8 @@
     "application_url": "https://www.thebriaapartments.com/",
     "source_url": "https://www.thebriaapartments.com/",
     "source_type": "Official property website",
-    "last_verified": "2026-08-14",
-    "public_notes": "The official property site says it is now leasing. Rents and availability can change; contact the leasing office before applying.",
+    "last_verified": "2026-08-27",
+    "public_notes": "The official property site says it is now leasing one- and two-bedroom homes. Call 503-477-7653 to confirm current availability, rent, and income eligibility.",
     "priority_score": 95
   },
   {
@@ -292,7 +293,7 @@
     "application_url": "https://www.pinehurstmanagement.com/gretchen-kafoury-commons-apartments",
     "source_url": "https://www.pinehurstmanagement.com/gretchen-kafoury-commons-apartments",
     "source_type": "Official property manager website",
-    "last_verified": "2026-08-14",
+    "last_verified": "2026-08-27",
     "public_notes": "Contact the property directly to confirm current availability, rents, and application instructions.",
     "priority_score": 90
   },
@@ -323,7 +324,7 @@
     "application_url": "https://www.jimandsalles.com/floorplans",
     "source_url": "https://www.jimandsalles.com/",
     "source_type": "Official property website",
-    "last_verified": "2026-08-14",
+    "last_verified": "2026-08-27",
     "public_notes": "Use the property website to check current availability and pricing. Income limits and rents can change.",
     "priority_score": 90
   },
@@ -353,7 +354,7 @@
     "application_url": "https://www.lentsvillage.com/floorplans",
     "source_url": "https://www.lentsvillage.com/",
     "source_type": "Official property website",
-    "last_verified": "2026-08-14",
+    "last_verified": "2026-08-27",
     "public_notes": "Use the official availability search and confirm rents and eligibility with the leasing office before applying.",
     "priority_score": 90
   },
@@ -386,12 +387,82 @@
     "application_url": "https://bienestar-or.org/armonia-apartments/",
     "source_url": "https://bienestar-or.org/armonia-apartments/",
     "source_type": "Official owner website",
-    "last_verified": "2026-08-11",
+    "last_verified": "2026-08-27",
     "public_notes": "Construction is expected to begin in fall 2026, with leasing currently projected for winter 2027.",
     "priority_score": 70,
     "waitlist_id": "bienestar-oregon__armonia-apartments__bienestar-or-org-armonia-apartments",
     "waitlist_status": "closed",
-    "waitlist_last_checked": "2026-08-10",
+    "waitlist_last_checked": "2026-09-03",
     "waitlist_application_link": "https://bienestar-or.org/armonia-apartments/"
+  },
+  {
+    "id": "a220868e-a7aa-4565-b685-a73dd8f008df",
+    "name": "Evergreen Vista I",
+    "owner_organization": "Mercy Housing Northwest",
+    "management_company": "Mercy Housing",
+    "property_type": "affordable_apartments",
+    "address": "1209 Fern Street SW",
+    "city": "Olympia",
+    "county": "Thurston",
+    "state": "WA",
+    "postal_code": "98502",
+    "description": "A 104-home family affordable housing community with two- and three-bedroom apartments. Resident services include a computer center, after-school activities, ESL classes, summer meals, and community food-bank services.",
+    "eligibility_summary": "Families who meet Mercy Housing property-specific income and occupancy rules. Call the leasing office for current income limits and application requirements.",
+    "ami_levels": [],
+    "bedroom_types": [
+      "2",
+      "3"
+    ],
+    "audiences": [
+      "families"
+    ],
+    "total_units": 104,
+    "accessibility_notes": "Call the property at 360-352-2638 or TTY 711 to request current accessibility information or a reasonable accommodation.",
+    "phone": "360-352-2638",
+    "website": "https://www.mercyhousing.org/northwest/evergreen-vista-i/",
+    "application_url": "https://www.mercyhousing.org/northwest/evergreen-vista-i/",
+    "source_url": "https://www.mercyhousing.org/northwest/evergreen-vista-i/",
+    "source_type": "Official owner website",
+    "last_verified": "2026-09-01",
+    "public_notes": "The official property page states “Currently Accepting Applications.” Call 360-352-2638 before relying on that status because availability can change.",
+    "priority_score": 10
+  },
+  {
+    "id": "d4f04f09-624f-417e-a030-0405240a534b",
+    "name": "Canopy White Center",
+    "owner_organization": "Community Roots Housing",
+    "management_company": "Community Roots Housing",
+    "property_type": "affordable_apartments",
+    "address": "10821 8th Ave SW",
+    "city": "Seattle",
+    "county": "King",
+    "state": "WA",
+    "postal_code": "98146",
+    "description": "A 76-home affordable apartment community in White Center with one- through four-bedroom homes. The property is near transit, schools, parks, groceries, and the White Center HUB, with a playground, resident lounge, on-site laundry, elevator, and bike storage.",
+    "eligibility_summary": "Households earning 30% to 60% of area median income. Full-time-student restrictions apply. Three-bedroom homes require at least four household members, and three- and four-bedroom homes require a minor child.",
+    "ami_levels": [
+      30,
+      60
+    ],
+    "bedroom_types": [
+      "1",
+      "2",
+      "3",
+      "4_plus"
+    ],
+    "audiences": [
+      "general",
+      "families"
+    ],
+    "total_units": 76,
+    "accessibility_notes": "The property has an elevator. Contact the leasing team for accessible-unit features and reasonable accommodations.",
+    "phone": "206-895-1400",
+    "website": "https://communityrootshousing.org/building/canopy-white-center/",
+    "application_url": "https://communityrootshousing.org/building/canopy-white-center/",
+    "source_url": "https://communityrootshousing.org/building/canopy-white-center/",
+    "source_type": "Official owner website",
+    "last_verified": "2026-09-01",
+    "public_notes": "Contact the leasing team for current availability, rent, and application instructions. Leasing email: leasinginfo@communityrootshousing.org.",
+    "priority_score": 9
   }
 ]

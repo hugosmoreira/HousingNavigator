@@ -32,6 +32,7 @@ const EMPTY: ResourceDraft = {
   service_areas: [{ state: 'OR', county: 'Multnomah' }],
   service_tags: [],
   description: '',
+  cost_details: '',
   who_qualifies: '',
   who_it_helps: [],
   application_method: 'walk_in',
@@ -89,6 +90,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
             county: row.county,
           }),
           description: row.description ?? '',
+          cost_details: row.cost_details ?? '',
           who_qualifies: row.who_qualifies ?? '',
           who_it_helps: row.who_it_helps ?? [],
           service_tags: normalizeResourceServiceTags(row.service_tags),
@@ -382,6 +384,9 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
         </Section>
 
         <Section title="Notes">
+          <Field label="Costs and fees" hint="Shown on the card. Include required fees or repayment conditions; leave blank if unknown, never assume free.">
+            <TextArea value={draft.cost_details ?? ''} onChange={(e) => update('cost_details', e.target.value)} />
+          </Field>
           <Field
             label="Public notes"
             hint="Visible on the public card. Keep neutral and current."
@@ -459,6 +464,7 @@ function sanitize(draft: ResourceDraft): ResourceBaseDraft {
     state: primaryArea?.state ?? null,
     city: emptyToNull(draft.city),
     description: emptyToNull(draft.description),
+    cost_details: emptyToNull(draft.cost_details),
     who_qualifies: emptyToNull(draft.who_qualifies),
     who_it_helps: draft.who_it_helps,
     service_tags: normalizeResourceServiceTags(draft.service_tags),

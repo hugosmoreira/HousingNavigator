@@ -148,6 +148,7 @@ export interface AffordablePropertyRow {
  * existing seed pipeline but is not read by the app.
  */
 export interface ResourceRow {
+  cost_details?: string | null;
   id: string;
   name: string;
   category: string;

@@ -80,7 +80,7 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
       <header className="flex items-start justify-between gap-3 mb-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-            {resourceServiceLabels(program.service_tags).join(' · ') || categoryLabel}
+            {resourceServiceLabels(program.service_tags).slice(0, 2).join(' · ') || categoryLabel}
           </span>
           <span className="px-2.5 py-1 rounded-full text-xs font-medium border border-surface-container-highest text-on-surface-variant">
             {areaSummary}
@@ -126,6 +126,12 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
         </p>
       )}
 
+      {program.cost_details && (
+        <p className="text-xs text-on-surface leading-relaxed mb-4">
+          <span className="font-semibold">Costs: </span>{program.cost_details}
+        </p>
+      )}
+
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm mb-5">
         <div className="flex items-start gap-2 text-on-surface-variant">
           <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
@@ -143,7 +149,7 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
           <ShieldCheck className="w-4 h-4 mt-0.5 text-primary shrink-0" />
           <span>
             Apply: {APPLICATION_METHOD_LABEL[program.application_method]}
-            {program.referral_required && (
+            {program.referral_required && program.application_method !== 'referral' && (
               <span className="ml-1 text-on-surface-variant">· Referral required</span>
             )}
           </span>

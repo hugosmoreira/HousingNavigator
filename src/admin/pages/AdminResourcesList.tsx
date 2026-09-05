@@ -6,6 +6,7 @@ import { normalizeServiceAreas, serviceAreaSummary } from '../../data/serviceAre
 import type { ResourceRow } from '../../services/data/dbTypes';
 import type { DirectoryCategory } from '../../types';
 import ResourceCurationPanel from '../components/ResourceCurationPanel';
+import ResourceSourceCheckPanel from '../components/ResourceSourceCheckPanel';
 import { usePagedAdminRows } from '../usePagedAdminRows';
 import {
   BUNDLED_RESOURCE_COUNT,
@@ -94,7 +95,11 @@ export default function AdminResourcesList() {
         </Link>
       </div>
 
-      <ResourceCurationPanel onResourcesChanged={reload} />
+      <ResourceSourceCheckPanel resources={rows} onResourcesChanged={reload} />
+      <details className="mb-6">
+        <summary className="mb-3 cursor-pointer text-sm font-semibold text-on-surface-variant">Fill missing resource information</summary>
+        <ResourceCurationPanel onResourcesChanged={reload} />
+      </details>
 
       <div className="max-w-sm mb-5">
         <div className="relative">
