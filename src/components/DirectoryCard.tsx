@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowUpRight, Bookmark, BookmarkCheck, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import PhoneLink from './PhoneLink';
 import { resourceServiceLabels } from '../data/resourceServiceTags';
 import {
   DIRECTORY_CATEGORY_LABELS,
@@ -54,9 +55,6 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
   const summary = program.description || program.notes || '';
   const areaSummary = serviceAreaSummary(serviceAreasForProgram(program));
   const verified = formatLastVerified(program.last_verified);
-  const phoneHref = program.phone
-    ? `tel:${program.phone.replace(/[^0-9+]/g, '')}`
-    : null;
 
   const { isResourceSaved, toggleResource } = useUserData();
   const saved = isResourceSaved(program.id);
@@ -137,12 +135,10 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
           <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
           <span>{formatLocation(program)}</span>
         </div>
-        {phoneHref && (
+        {program.phone && (
           <div className="flex items-start gap-2 text-on-surface-variant">
             <Phone className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-            <a href={phoneHref} className="hover:text-primary font-medium">
-              {program.phone}
-            </a>
+            <PhoneLink phone={program.phone} className="hover:text-primary font-medium" />
           </div>
         )}
         <div className="flex items-start gap-2 text-on-surface-variant">

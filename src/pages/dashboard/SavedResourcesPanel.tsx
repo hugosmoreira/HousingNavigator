@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PhoneLink from '../../components/PhoneLink';
 import { Bookmark, Phone, MapPin, ArrowUpRight, Trash2 } from 'lucide-react';
 import { useUserData } from '../../auth/UserDataContext';
 import { fetchResourcesByIds } from '../../services/userData';
@@ -136,12 +137,7 @@ export default function SavedResourcesPanel() {
                     {row.phone && (
                       <div className="flex items-center gap-1.5">
                         <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
-                        <a
-                          href={`tel:${row.phone.replace(/[^0-9+]/g, '')}`}
-                          className="hover:text-primary"
-                        >
-                          {row.phone}
-                        </a>
+                        <PhoneLink phone={row.phone} className="hover:text-primary" />
                       </div>
                     )}
                   </dl>
