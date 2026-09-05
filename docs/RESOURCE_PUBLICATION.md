@@ -68,6 +68,9 @@ Tests: `npm test`, `npm run lint`, `npm run build`, and
 PGlite dependency under ignored tmp/source-check-tests).
 Use `scripts/auditPublicationRelease.mjs` before/after with an explicit local
 env and new ignored snapshot path; it performs no database writes.
+Run `scripts/verifyResourcePublication.ts` with the explicit local public
+Supabase environment to compare the deployed manifest, every resource detail
+page, sitemap and unauthenticated refresh rejection against current public data.
 
 Recovery: revert the UI/function integration if needed, retain the additive
 request table, and use the existing Netlify manual deployment workflow. Never
