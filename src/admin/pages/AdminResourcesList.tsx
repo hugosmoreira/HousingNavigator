@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Database, Plus, Search } from 'lucide-react';
 import { DIRECTORY_CATEGORY_LABELS } from '../../data/categoryMap';
 import { normalizeServiceAreas, serviceAreaSummary } from '../../data/serviceAreas';
@@ -7,6 +7,8 @@ import type { ResourceRow } from '../../services/data/dbTypes';
 import type { DirectoryCategory } from '../../types';
 import ResourceCurationPanel from '../components/ResourceCurationPanel';
 import ResourceSourceCheckPanel from '../components/ResourceSourceCheckPanel';
+import ResourcePublicationPanel, { PUBLICATION_LABELS } from '../components/ResourcePublicationPanel';
+import type { PublicationStatus } from '../../lib/resourcePublication';
 import { usePagedAdminRows } from '../usePagedAdminRows';
 import {
   BUNDLED_RESOURCE_COUNT,
@@ -34,6 +36,8 @@ export default function AdminResourcesList() {
   } = usePagedAdminRows<ResourceRow>('resources_admin');
   const [query, setQuery] = useState('');
   const [seeding, setSeeding] = useState(false);
+  const [publication, setPublication] = useState<PublicationStatus | null>(null);
+  const location = useLocation();
 
   async function handleSeed() {
     if (
@@ -95,6 +99,10 @@ export default function AdminResourcesList() {
         </Link>
       </div>
 
+      {location.state?.publicationMessage && (
+        <p role="status" className="mb-4 text-sm text-on-surface-variant">{location.state.publicationMessage}</p>
+      )}
+      <ResourcePublicationPanel revision={rows} onStatus={setPublication} />
       <ResourceSourceCheckPanel resources={rows} onResourcesChanged={reload} />
       <details className="mb-6">
         <summary className="mb-3 cursor-pointer text-sm font-semibold text-on-surface-variant">Fill missing resource information</summary>
@@ -200,17 +208,19 @@ export default function AdminResourcesList() {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        row.published
+                        row.published && publication?.resources[row.id] === 'live'
                           ? 'bg-green-50 text-green-800 border border-green-200'
                           : 'bg-surface-container-high text-on-surface-variant border border-outline-variant/30'
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          row.published ? 'bg-green-500' : 'bg-on-surface-variant/50'
+                          row.published && publication?.resources[row.id] === 'live' ? 'bg-green-500' : 'bg-on-surface-variant/50'
                         }`}
                       />
-                      {row.published ? 'Published' : 'Draft'}
+                      {row.published
+                        ? publication?.resources[row.id] ? PUBLICATION_LABELS[publication.resources[row.id]] : 'Not confirmed'
+                        : 'Draft'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-on-surface-variant whitespace-nowrap">

@@ -7,6 +7,8 @@ Development notes for the admin-triggered, existing-resource curation workflow
 are in [`docs/RESOURCE_CURATION.md`](docs/RESOURCE_CURATION.md).
 The statewide multi-county resource model is documented in
 [`docs/RESOURCE_SERVICE_AREAS.md`](docs/RESOURCE_SERVICE_AREAS.md).
+The explicit admin publishing refresh, deployed-page status, and retry workflow
+are documented in [`docs/RESOURCE_PUBLICATION.md`](docs/RESOURCE_PUBLICATION.md).
 The physical affordable-property model and publishing workflow are documented in
 [`docs/AFFORDABLE_HOUSING.md`](docs/AFFORDABLE_HOUSING.md).
 
