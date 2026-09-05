@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowUpRight, Bookmark, BookmarkCheck, MapPin, Phone, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { resourceServiceLabels } from '../data/resourceServiceTags';
 import {
   DIRECTORY_CATEGORY_LABELS,
   legacyToDirectoryCategory,
@@ -79,7 +80,7 @@ export default function DirectoryCard({ program }: DirectoryCardProps) {
       <header className="flex items-start justify-between gap-3 mb-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-            {categoryLabel}
+            {resourceServiceLabels(program.service_tags).join(' · ') || categoryLabel}
           </span>
           <span className="px-2.5 py-1 rounded-full text-xs font-medium border border-surface-container-highest text-on-surface-variant">
             {areaSummary}

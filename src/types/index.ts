@@ -59,6 +59,12 @@ export type DirectoryCategory =
 
 export type ApplicationMethod = 'walk_in' | 'phone' | 'online' | 'referral';
 
+/** Additional services, independent of the existing housing categories. */
+export type ResourceServiceTag =
+  | 'financial_education'
+  | 'internet_assistance'
+  | 'health_support';
+
 export type ProgramStatus = 'open' | 'limited' | 'waitlist' | 'closed' | 'unknown';
 
 export type StatusConfidence = 'high' | 'medium' | 'low';
@@ -130,6 +136,7 @@ export interface Program {
   source_type?: string;
   /** Counties actually served; a null county represents statewide coverage. */
   service_areas?: ServiceArea[];
+  service_tags?: ResourceServiceTag[];
   /** Directory-facing taxonomy (set by the merge pipeline). */
   directory_category?: DirectoryCategory;
   /** Free-text category from the source dataset, kept for transparency / search. */

@@ -49,6 +49,7 @@ const RESOURCE_COLUMNS = [
   'priority_score',
   'published',
   'service_areas',
+  'service_tags',
 ].join(',');
 
 const WAITLIST_COLUMNS = [
