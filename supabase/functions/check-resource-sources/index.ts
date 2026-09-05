@@ -4,7 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { fetchPublicHttpText } from '../_shared/checkerSecurity.ts';
 import {
   buildSourcePlan, canReuseSourceAnalysis, findingFingerprint, retryDelayMs,
-  SOURCE_FIELDS, sourceDigest, sourcePageText,
+  SOURCE_FIELDS, SOURCE_CHECK_POLICY_VERSION, sourceDigest, sourcePageText,
 } from '../_shared/resourceSourceChecks.ts';
 import { compareResourceSource } from '../_shared/resourceSourceExtractor.ts';
 
@@ -73,7 +73,7 @@ Deno.serve(async (request: Request) => {
     for (const field of SOURCE_FIELDS) comparison[field] = field === 'service_area' ? areas : resource[field];
     comparison.source_url=sourceUrl;
     const hash=await sourceDigest(page);
-    const signature=await sourceDigest(JSON.stringify(comparison));
+    const signature=await sourceDigest(JSON.stringify([SOURCE_CHECK_POLICY_VERSION,comparison]));
     const metadata={ source_hash:hash,resource_signature:signature,source_url:fetched.finalUrl };
     if (canReuseSourceAnalysis(previous,hash,signature)) {
       // No LLM call, no new finding, no public verification-date change.
