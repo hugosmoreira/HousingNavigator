@@ -9,6 +9,16 @@
   # this build-time flag, public pages fall back to the bundled JSON snapshot.
   VITE_USE_SUPABASE = "true"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/.well-known/resource-publication.json"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
+    X-Robots-Tag = "noindex, nofollow"
+
 # Public routes are generated as static HTML and shadow these fallback rules.
 # Account/admin routes use the clean SPA shell in spa.html. Keep this allowlist
 # in sync with src/admin/AdminApp.tsx; unknown paths fall through to the custom 404 page.

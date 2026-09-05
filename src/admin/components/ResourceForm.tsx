@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
@@ -9,6 +9,7 @@ import type { ResourceRow } from '../../services/data/dbTypes';
 import type { ApplicationMethod, DirectoryCategory, ServiceArea } from '../../types';
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
 import ServiceAreaPicker from './ServiceAreaPicker';
+import { refreshAfterResourceSave } from '../resourcePublication';
 
 const APPLICATION_METHODS: Array<{ value: ApplicationMethod; label: string }> = [
   { value: 'walk_in', label: 'Walk-in' },
@@ -60,6 +61,8 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
   const [loading, setLoading] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const initiallyPublished = useRef(false);
+  const createdId = useRef<string | null>(null);
 
   useEffect(() => {
     if (mode !== 'edit' || !resourceId) return;
@@ -79,6 +82,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
         if (!data) throw new Error('Resource not found');
         if (!active) return;
         const row = data as ResourceRow;
+        initiallyPublished.current = row.published;
         setDraft({
           name: row.name,
           category: row.category,
@@ -135,14 +139,21 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
       const payload = sanitize(draft);
       if (mode === 'new') {
         const publishAfterAreaSave = payload.published;
-        const { data, error: err } = await client
-          .from('resources')
-          // Keep a partially created row private if the service-area RPC fails.
-          .insert({ ...payload, published: false })
-          .select('id')
-          .single();
-        if (err) throw err;
-        const id = (data as { id: string }).id;
+        if (!createdId.current) {
+          const { data, error: err } = await client
+            .from('resources')
+            // Keep a partially created row private if the service-area RPC fails.
+            .insert({ ...payload, published: false })
+            .select('id')
+            .single();
+          if (err) throw err;
+          createdId.current = (data as { id: string }).id;
+        } else {
+          const { error: retryError } = await client.from('resources')
+            .update({ ...payload, published: false }).eq('id', createdId.current);
+          if (retryError) throw retryError;
+        }
+        const id = createdId.current;
         const { error: areaError } = await client.rpc('replace_resource_service_areas', {
           p_resource_id: id,
           p_service_areas: draft.service_areas,
@@ -155,7 +166,9 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
             .eq('id', id);
           if (publishError) throw publishError;
         }
-        navigate(`/admin/resources/${id}/edit`, { replace: true });
+        const publicationMessage = publishAfterAreaSave
+          ? await refreshAfterResourceSave() : 'Draft saved. It remains hidden.';
+        navigate('/admin/resources', { replace: true, state: { publicationMessage } });
       } else if (resourceId) {
         const { error: err } = await client
           .from('resources')
@@ -167,7 +180,9 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
           p_service_areas: draft.service_areas,
         });
         if (areaError) throw areaError;
-        navigate('/admin/resources');
+        const publicationMessage = payload.published || initiallyPublished.current
+          ? await refreshAfterResourceSave() : 'Draft saved. It remains hidden.';
+        navigate('/admin/resources', { state: { publicationMessage } });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed');
@@ -184,7 +199,11 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
       const client = await requireSupabase();
       const { error: err } = await client.from('resources').delete().eq('id', resourceId);
       if (err) throw err;
-      navigate('/admin/resources');
+      let publicationMessage = 'Resource deleted.';
+      if (initiallyPublished.current) {
+        publicationMessage = (await refreshAfterResourceSave()).replace('Resource saved.', 'Resource deleted.');
+      }
+      navigate('/admin/resources', { state: { publicationMessage } });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
       setSaving(false);
@@ -216,7 +235,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
           label={draft.published ? 'Published' : 'Draft'}
           hint={
             draft.published
-              ? 'Visible on the public directory.'
+              ? 'Saving also refreshes public pages. Check for Live on the Resources screen before sharing a new page.'
               : 'Hidden from the public site until you publish.'
           }
           checked={draft.published}

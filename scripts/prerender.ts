@@ -1,6 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { resourcePath } from '../src/lib/entityRoutes';
+import { resourceDigests, publicationDigest } from '../src/lib/resourcePublication';
+import type { Program } from '../src/types';
 
 interface PageMetadata {
   title: string;
@@ -182,5 +185,20 @@ const sitemap = [
   '',
 ].join('\n');
 writeFileSync(join(distDir, 'sitemap.xml'), sitemap, 'utf8');
+
+// Use the exact rendered snapshot, not a second database read or just Git SHA.
+const publicPrograms = JSON.parse(readFileSync(join(repoRoot, 'src/data/catalog.json'), 'utf8')) as Program[];
+const digests = await resourceDigests(publicPrograms);
+const publicationResources = Object.fromEntries(publicPrograms.map(program => {
+  const path = resourcePath(program);
+  if (!routes.includes(path) || !readFileSync(outputPathFor(path), 'utf8').includes('data-ssr="true"')) {
+    throw new Error('Publication manifest cannot claim a missing resource page: ' + path);
+  }
+  return [program.id, { digest: digests[program.id], path }];
+}));
+writeFileSync(join(deployMarkerDir, 'resource-publication.json'), JSON.stringify({
+  version: 1, generated_at: new Date().toISOString(),
+  digest: await publicationDigest(digests), resources: publicationResources,
+}) + '\n', 'utf8');
 
 console.log(`Prerendered ${routes.length} indexable routes and generated sitemap.xml.`);
