@@ -1,6 +1,9 @@
 // Pure source-comparison policy, shared with regression tests. No database writes.
 import { resourceHtmlToText, verifiedCurationEvidence } from './resourceCuration.ts';
 
+// Increment when the comparison contract changes so old cached assessments are rechecked.
+export const SOURCE_CHECK_POLICY_VERSION = 2;
+
 export const SOURCE_FIELDS = [
   'description', 'who_qualifies', 'cost_details', 'public_notes',
   'phone', 'application_method', 'referral_required', 'service_area',

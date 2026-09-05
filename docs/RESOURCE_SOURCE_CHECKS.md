@@ -1,11 +1,37 @@
 # Resource source-change checks and compact filters
 
-Implemented September 4, 2026. Migrations 0026/0027 and the admin-only
-check-resource-sources function are deployed. All six pilot resources remain
-unpublished. The user approved publishing the tested code changes to the
-existing public hugosmoreira/HousingNavigator deployment repository. Frontend
-release and authenticated live pilot checks are in progress; do not treat draft
-records as automatically verified until the live results have been reviewed.
+Deployed September 4, 2026 (Pacific). Migrations 0026/0027, the admin-only
+check-resource-sources function and the frontend are live. The frontend release
+is [PR 34](https://github.com/hugosmoreira/HousingNavigator/pull/34), production
+commit 9a58d0e173edd61ab9eade596f65e66c559c44ec. All six pilot resources remain
+unpublished. No existing listing text or publication state changed.
+
+## Live pilot outcome
+
+- The first run exposed a prompt-contract defect: the model joined separate
+  identity excerpts with ellipses; the exact-quote guard correctly rejected them.
+  The extractor now explicitly requests one short consecutive identity excerpt.
+  Comparison policy version 2 invalidates prior cached analyses. The guard was
+  not weakened, and regression tests cover stitched versus exact identity quotes.
+- Corrected live run: Community Warehouse, TA-DVS, DCA and PGE returned unchanged.
+  Old identity warnings were superseded automatically, not manually deleted.
+- NW Furniture Bank proposed a wording-only eligibility change. Its official
+  [service steps and FAQ](https://www.nwfurniturebank.org/need-furniture/) still
+  support needing furniture, being housed and arranging service through a
+  community partner. The unnecessary proposal was dismissed in the live admin
+  UI; its summary's suggestion that referrals were unnecessary was not accepted.
+- Operation Warm Heart returned HTTP 403 to the restricted checker. Its existing
+  information stays intact, retry delay is honored, and no closure is inferred.
+  Separately retrieved indexed official content supports the program/contact;
+  this does not count as a successful direct crawler verification.
+- Repeat live run: **4 unchanged, 1 already reviewed, 1 deferred; 0 pending
+  source-change findings**. The dismissed proposal did not reopen.
+- Production UI tests confirmed the compact filters, hidden draft results,
+  approval confirmation/cancellation and authenticated dismissal. No live
+  approval write was made; field-write behavior remains covered by isolated
+  PostgreSQL tests. No browser errors/warnings were recorded.
+- Final preservation audit again passed for all original catalog records and
+  anonymous access restrictions. The local baseline is intentionally untracked.
 
 ## Scope
 
@@ -111,7 +137,7 @@ this workflow. The older curator retains its separately documented date behavior
 
 ## Tests and limitations
 
-- TypeScript passed; 201 application tests across 24 files passed.
+- TypeScript passed; 203 application tests across 24 files passed.
 - 14 isolated PostgreSQL checks passed using PGlite with real migrations
   0024/0026/0027 and representative prior schema/roles. Covers view order, leases,
   RLS, resolved deduplication, approval, concurrent edits, forbidden fields,
@@ -142,7 +168,7 @@ before, after or results plus explicit local env/baseline paths. The generated
 baseline contains resource records and must remain in ignored local storage.
 The script does not write to the database. Do not commit credentials or baselines.
 
-## Deployment and remaining verification
+## Deployment procedure
 
 1. Re-run tests, inspect the diff, and snapshot existing resources/service areas
    read-only for preservation comparison.
@@ -161,6 +187,13 @@ The script does not write to the database. Do not commit credentials or baseline
    intended records once satisfactory. Do not bulk publish unrelated drafts.
 
 Do not deploy frontend before 0026. No scheduler is required.
+
+## Before publishing the pilot
+
+Review final intake/fees and address-specific coverage, especially delivery and
+utility territories. Resolve or manually verify the HTTP 403 source. These
+checks do not establish live funding, appointment availability or full-record
+verification. Keep draft publication an explicit admin decision.
 
 Recovery: disable the new checker/revert the frontend if needed; retain additive
 schema/audit history. Pilot drafts remain hidden. If later published, unpublish

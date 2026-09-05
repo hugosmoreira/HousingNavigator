@@ -4,7 +4,10 @@ const schema = {
   type: 'object',
   properties: {
     identity_match: { type: 'boolean' },
-    identity_evidence: { type: 'string' },
+    identity_evidence: {
+      type: 'string',
+      description: 'ONE short consecutive verbatim excerpt from official_page_text naming the provider or specific program. Copy a title or sentence exactly. Do not join excerpts, insert ellipses, paraphrase, or explain the match.',
+    },
     confidence: { type: 'number' },
     outcome: { type: 'string', enum: ['unchanged', 'changed', 'uncertain'] },
     closure_notice: { type: 'string', description: 'Exact quote for a CURRENT pause or closure; otherwise empty.' },
@@ -40,6 +43,7 @@ export async function compareResourceSource(
         'Use unchanged only if identity and the relevant existing claims are supported; use uncertain if evidence is inadequate.',
         'Ignore ads, menus, footer/legal changes, unrelated programs and historical announcements. Date-specific changes must be current.',
         'Each proposed value must have a consecutive verbatim evidence quote. Never combine unrelated phrases into a quote.',
+        'identity_evidence must also be ONE short consecutive verbatim excerpt, such as the program title copied exactly from official_page_text. Never concatenate titles with sentences, add ellipses, or write an explanation in identity_evidence.',
         'Preserve supported qualifications in each full replacement field. No invented prices, dates, eligibility or availability.',
         'Use service_area for geographic changes (manual edit required); never infer that an office location is a service area.',
         'For a current closure or intake pause, also return the exact notice in closure_notice. Never change publication or waitlists.',

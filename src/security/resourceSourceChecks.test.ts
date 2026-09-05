@@ -30,6 +30,12 @@ describe('evidence-backed source comparisons',()=>{
   it('rejects an unrelated source identity',()=>{
     expect(buildSourcePlan(current,{...assessment,identity_evidence:'Another Furniture Provider'},page).patch).toEqual({});
   });
+  it('rejects stitched identity quotes but accepts an exact short program title',()=>{
+    const details='Temporary Assistance for Domestic Violence Survivors (TA-DVS) Application information This program helps families experiencing domestic violence.';
+    const unchanged={...assessment,outcome:'unchanged' as const,changes:[]};
+    expect(buildSourcePlan(current,{...unchanged,identity_evidence:'Temporary Assistance for Domestic Violence Survivors (TA-DVS) ... This program helps families experiencing domestic violence.'},details).status).toBe('uncertain');
+    expect(buildSourcePlan(current,{...unchanged,identity_evidence:'Temporary Assistance for Domestic Violence Survivors (TA-DVS)'},details).status).toBe('unchanged');
+  });
   it('rejects invented evidence and punctuation-only evidence',()=>{
     for(const evidence of ['Free furniture for everyone.','...','..............']){
       const plan=buildSourcePlan(current,{...assessment,changes:[{...assessment.changes[0],evidence}]},page);
@@ -106,6 +112,12 @@ describe('quiet, bounded repeat checks',()=>{
 describe('database and edge safeguards',()=>{
   const migration=readFileSync(new URL('../../supabase/migrations/0026_resource_source_checks.sql',import.meta.url),'utf8');
   const edge=readFileSync(new URL('../../supabase/functions/check-resource-sources/index.ts',import.meta.url),'utf8');
+  const extractor=readFileSync(new URL('../../supabase/functions/_shared/resourceSourceExtractor.ts',import.meta.url),'utf8');
+  it('requests exact identity excerpts and versions cached comparisons',()=>{
+    expect(extractor).toContain('ONE short consecutive verbatim excerpt');
+    expect(extractor).toContain('Never concatenate titles with sentences');
+    expect(edge).toContain('JSON.stringify([SOURCE_CHECK_POLICY_VERSION,comparison])');
+  });
   it('does not create a schedule or update public resources from the checker',()=>{
     expect(migration).not.toMatch(/cron\.schedule|create trigger/i);
     expect(edge).not.toMatch(/\.update\(/);
