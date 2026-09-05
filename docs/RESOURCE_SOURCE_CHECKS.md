@@ -3,8 +3,11 @@
 Deployed September 4, 2026 (Pacific). Migrations 0026/0027, the admin-only
 check-resource-sources function and the frontend are live. The frontend release
 is [PR 34](https://github.com/hugosmoreira/HousingNavigator/pull/34), production
-commit 9a58d0e173edd61ab9eade596f65e66c559c44ec. All six pilot resources remain
-unpublished. No existing listing text or publication state changed.
+commit 9a58d0e173edd61ab9eade596f65e66c559c44ec. The six pilot resources were
+initially unpublished. Following manual review and explicit user approval,
+four content corrections were applied and all six were published. No other
+resource, property or waitlist was changed by the publication operation.
+See the [publication review and outcome](RESOURCE_PILOT_PREPUBLICATION_REVIEW.md).
 
 ## Live pilot outcome
 
@@ -189,6 +192,12 @@ The script does not write to the database. Do not commit credentials or baseline
 Do not deploy frontend before 0026. No scheduler is required.
 
 ## Before publishing the pilot
+
+The [September 4 pre-publication review](RESOURCE_PILOT_PREPUBLICATION_REVIEW.md)
+completed manual browser verification of Operation Warm Heart and reviewed all
+six drafts. Three were ready as written; the documented eligibility/benefit-period
+clarifications on the other three were applied on subsequent user approval.
+All six are now published. The backend HTTP 403 remains a separate limitation.
 
 Review final intake/fees and address-specific coverage, especially delivery and
 utility territories. Resolve or manually verify the HTTP 403 source. These
