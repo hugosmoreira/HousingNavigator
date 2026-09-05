@@ -18,6 +18,7 @@ import type {
   ProgramCategory,
   ProgramStatus,
   PropertyAudience,
+  ResourceServiceTag,
   ServiceArea,
   StatusConfidence,
   WaitlistStatus,
@@ -172,6 +173,8 @@ export interface ResourceRow {
   updated_at?: string;
   /** Aggregated by resources_public/resources_admin in migration 0019. */
   service_areas?: ServiceArea[];
+  /** Optional for compatibility with snapshots created before migration 0024. */
+  service_tags?: ResourceServiceTag[];
 }
 
 export interface ResourceSubmissionRow {

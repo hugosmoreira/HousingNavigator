@@ -6,8 +6,9 @@ import {
   DIRECTORY_CATEGORIES,
   DIRECTORY_CATEGORY_DESCRIPTIONS,
   DIRECTORY_CATEGORY_LABELS,
-  legacyToDirectoryCategory,
 } from '../data/categoryMap';
+import { RESOURCE_SERVICE_TAGS, RESOURCE_SERVICE_LABELS } from '../data/resourceServiceTags';
+import { matchesResourceFilters } from '../utils/resourceFilters';
 import { searchPrograms } from '../utils/resourceSearch';
 import DirectoryCard from '../components/DirectoryCard';
 import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
@@ -15,12 +16,11 @@ import {
   STATE_NAMES,
   SUPPORTED_STATES,
   availableCounties,
-  programServesArea,
 } from '../data/serviceAreas';
 import type {
   DirectoryCategory,
   HouseholdType,
-  Program,
+  ResourceServiceTag,
   SupportedState,
 } from '../types';
 
@@ -69,13 +69,10 @@ const POPULAR_SUGGESTIONS = [
   'Shelter tonight',
 ];
 
-function programDirectoryCategory(p: Program): DirectoryCategory {
-  return p.directory_category ?? legacyToDirectoryCategory(p.category);
-}
-
 export default function Resources() {
   const { programs, loading, error } = usePrograms();
   const [selectedCategories, setSelectedCategories] = useState<DirectoryCategory[]>([]);
+  const [selectedServiceTags, setSelectedServiceTags] = useState<ResourceServiceTag[]>([]);
   const [householdFilter, setHouseholdFilter] = useState<HouseholdType | null>(null);
   const [state, setState] = useState<SupportedState | 'All'>('All');
   const [county, setCounty] = useState<string | 'All'>('All');
@@ -85,6 +82,7 @@ export default function Resources() {
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
+    selectedServiceTags.length > 0 ||
     householdFilter !== null ||
     state !== 'All' ||
     county !== 'All' ||
@@ -100,8 +98,15 @@ export default function Resources() {
     setHouseholdFilter((prev) => (prev === h ? null : h));
   }
 
+  function toggleServiceTag(tag: ResourceServiceTag) {
+    setSelectedServiceTags((prev) =>
+      prev.includes(tag) ? prev.filter((value) => value !== tag) : [...prev, tag],
+    );
+  }
+
   function clearTaxonomyFilters() {
     setSelectedCategories([]);
+    setSelectedServiceTags([]);
     setHouseholdFilter(null);
   }
 
@@ -114,22 +119,10 @@ export default function Resources() {
 
   const filtered = useMemo(() => {
     let ranked = searchPrograms(programs, searchQuery);
-    ranked = ranked.filter(({ program }) => {
-      if (selectedCategories.length > 0) {
-        const directory = programDirectoryCategory(program);
-        if (!selectedCategories.includes(directory)) return false;
-      }
-      if (householdFilter && !program.who_it_helps.includes(householdFilter)) {
-        return false;
-      }
-      if (
-        state !== 'All' &&
-        !programServesArea(program, state, county === 'All' ? null : county)
-      ) {
-        return false;
-      }
-      return true;
-    });
+    ranked = ranked.filter(({ program }) => matchesResourceFilters(program, {
+      categories: selectedCategories, serviceTags: selectedServiceTags,
+      household: householdFilter, state, county,
+    }));
     if (sort === 'recent') {
       // Empty dates sort last by using a min sentinel.
       ranked = [...ranked].sort((a, b) => {
@@ -156,12 +149,12 @@ export default function Resources() {
       });
     }
     return ranked;
-  }, [programs, selectedCategories, householdFilter, state, county, searchQuery, sort]);
+  }, [programs, selectedCategories, selectedServiceTags, householdFilter, state, county, searchQuery, sort]);
 
   const visibleCounties = state === 'All' ? [] : availableCounties(programs, state);
 
   const noTaxonomyActive =
-    selectedCategories.length === 0 && householdFilter === null;
+    selectedCategories.length === 0 && selectedServiceTags.length === 0 && householdFilter === null;
 
   return (
     <div className="bg-surface min-h-[calc(100vh-80px)]">
@@ -282,6 +275,26 @@ export default function Resources() {
             >
               {showMoreCategories ? 'Fewer −' : 'More +'}
             </button>
+
+            {(showMoreCategories || selectedServiceTags.length > 0) &&
+              RESOURCE_SERVICE_TAGS.filter((tag) => showMoreCategories || selectedServiceTags.includes(tag)).map((tag) => {
+                const active = selectedServiceTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleServiceTag(tag)}
+                    aria-pressed={active}
+                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                      active
+                        ? 'bg-primary text-on-primary border-primary'
+                        : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-highest hover:border-primary/40 hover:text-on-surface'
+                    }`}
+                  >
+                    {RESOURCE_SERVICE_LABELS[tag]}
+                  </button>
+                );
+              })}
 
             {showMoreCategories &&
               EXTRA_CATEGORIES.map((cat) => {

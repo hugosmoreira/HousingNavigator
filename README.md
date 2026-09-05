@@ -1,5 +1,8 @@
 # Housing Navigator
 
+The additional financial, internet, and health-support resource filters and
+verified first batch are documented in [`docs/RESOURCE_SUPPORT_EXPANSION.md`](docs/RESOURCE_SUPPORT_EXPANSION.md).
+
 Development notes for the admin-triggered, existing-resource curation workflow
 are in [`docs/RESOURCE_CURATION.md`](docs/RESOURCE_CURATION.md).
 The statewide multi-county resource model is documented in

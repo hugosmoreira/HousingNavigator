@@ -20,6 +20,7 @@ import {
   legacyToDirectoryCategory,
 } from '../../data/categoryMap';
 import { normalizeServiceAreas } from '../../data/serviceAreas';
+import { normalizeResourceServiceTags } from '../../data/resourceServiceTags';
 import type {
   AffordablePropertyRow,
   DecisionRuleRow,
@@ -209,6 +210,7 @@ export function programFromResourceRow(row: ResourceRow): Program {
     source_type: row.source_type ?? undefined,
     directory_category: directory,
     raw_category: row.category,
+    service_tags: normalizeResourceServiceTags(row.service_tags),
     service_areas: normalizeServiceAreas(row.service_areas, {
       state: row.state,
       county: row.county,

@@ -8,6 +8,7 @@ import {
   Users,
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { resourceServiceLabels } from '../data/resourceServiceTags';
 import {
   DIRECTORY_CATEGORY_LABELS,
   legacyToDirectoryCategory,
@@ -84,7 +85,7 @@ export default function ResourceDetail() {
           </Link>
           <div className="flex flex-wrap gap-2 mb-4">
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              {categoryLabel}
+              {resourceServiceLabels(program.service_tags).join(' · ') || categoryLabel}
             </span>
             <span className="rounded-full border border-surface-container-highest px-3 py-1 text-xs font-medium text-on-surface-variant">
               {areaSummary}

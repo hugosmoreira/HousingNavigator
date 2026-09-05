@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
 import { DIRECTORY_CATEGORIES, DIRECTORY_CATEGORY_LABELS } from '../../data/categoryMap';
 import { normalizeServiceAreas } from '../../data/serviceAreas';
+import { normalizeResourceServiceTags, RESOURCE_SERVICE_TAGS, RESOURCE_SERVICE_LABELS } from '../../data/resourceServiceTags';
 import type { ResourceRow } from '../../services/data/dbTypes';
 import type { ApplicationMethod, DirectoryCategory, ServiceArea } from '../../types';
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
@@ -29,6 +30,7 @@ const EMPTY: ResourceDraft = {
   city: '',
   state: 'OR',
   service_areas: [{ state: 'OR', county: 'Multnomah' }],
+  service_tags: [],
   description: '',
   who_qualifies: '',
   who_it_helps: [],
@@ -89,6 +91,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
           description: row.description ?? '',
           who_qualifies: row.who_qualifies ?? '',
           who_it_helps: row.who_it_helps ?? [],
+          service_tags: normalizeResourceServiceTags(row.service_tags),
           application_method: row.application_method,
           referral_required: row.referral_required,
           phone: row.phone ?? '',
@@ -264,6 +267,24 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
               onChange={(e) => update('description', e.target.value)}
             />
           </Field>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold">Additional services</legend>
+            <p className="text-xs text-on-surface-variant">Optional filters under More in the public directory. Select only services confirmed by the provider.</p>
+            <div className="flex flex-wrap gap-4">
+              {RESOURCE_SERVICE_TAGS.map((tag) => (
+                <label key={tag} className="inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={draft.service_tags?.includes(tag) ?? false}
+                    onChange={(event) => update('service_tags', event.target.checked
+                      ? [...(draft.service_tags ?? []), tag]
+                      : (draft.service_tags ?? []).filter((value) => value !== tag))}
+                  />
+                  {RESOURCE_SERVICE_LABELS[tag]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <Field label="Who qualifies" hint="Plain-language eligibility summary.">
             <TextArea
               value={draft.who_qualifies ?? ''}
@@ -440,6 +461,7 @@ function sanitize(draft: ResourceDraft): ResourceBaseDraft {
     description: emptyToNull(draft.description),
     who_qualifies: emptyToNull(draft.who_qualifies),
     who_it_helps: draft.who_it_helps,
+    service_tags: normalizeResourceServiceTags(draft.service_tags),
     application_method: draft.application_method,
     referral_required: draft.referral_required,
     phone: emptyToNull(draft.phone),

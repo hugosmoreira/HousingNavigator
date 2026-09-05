@@ -16,6 +16,7 @@
 
 import { directoryCategoryLabel } from '../data/categoryMap';
 import { serviceAreaLabel, serviceAreasForProgram } from '../data/serviceAreas';
+import { resourceServiceLabels } from '../data/resourceServiceTags';
 import type { Program } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -48,6 +49,9 @@ const SYNONYM_CLUSTERS: string[][] = [
   ['portland', 'pdx', 'multnomah', 'mult'],
   ['vancouver', 'clark county', 'clark'],
   ['deposit', 'move-in', 'security deposit', 'first month'],
+  ['internet', 'wifi', 'wi-fi', 'hotspot', 'broadband'],
+  ['budget', 'budgeting', 'financial education', 'money management'],
+  ['naloxone', 'narcan'],
 ];
 
 const TOKEN_SYNONYMS = (() => {
@@ -91,6 +95,7 @@ const STOPWORDS = new Set<string>([
 export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
+    .replace(/\bwi[\s-]+fi\b/g, 'wifi')
     .replace(PUNCT_RE, ' ')
     .split(/\s+/)
     .filter((t) => t.length > 0);
@@ -143,6 +148,7 @@ const FIELD_WEIGHTS = {
   whoItHelps: 1.5,
   location: 1,
   rawCategory: 1.5,
+  services: 3,
 } as const;
 
 interface FieldBag {
@@ -154,6 +160,7 @@ interface FieldBag {
   whoItHelps: string;
   location: string;
   rawCategory: string;
+  services: string;
 }
 
 function buildFieldBag(program: Program): FieldBag {
@@ -177,6 +184,7 @@ function buildFieldBag(program: Program): FieldBag {
       .filter(Boolean)
       .join(' '),
     rawCategory: program.raw_category ?? '',
+    services: resourceServiceLabels(program.service_tags).join(' '),
   };
 }
 
