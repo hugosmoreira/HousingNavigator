@@ -50,6 +50,7 @@ const RESOURCE_COLUMNS = [
   'published',
   'service_areas',
   'service_tags',
+  'cost_details',
 ].join(',');
 
 const WAITLIST_COLUMNS = [

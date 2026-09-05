@@ -104,6 +104,12 @@ export default function ResourceDetail() {
 
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-12 lg:py-14">
         <main className="min-w-0 space-y-8">
+          {program.cost_details && (
+            <section className="rounded-2xl border border-surface-container-highest bg-surface-container-lowest p-6">
+              <h2 className="mb-2 text-lg font-semibold">Costs and fees</h2>
+              <p className="text-on-surface-variant">{program.cost_details}</p>
+            </section>
+          )}
           {program.eligibility_summary && (
             <section className="rounded-2xl border border-surface-container-highest bg-surface-container-lowest p-6">
               <div className="mb-3 flex items-center gap-3">

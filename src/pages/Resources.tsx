@@ -4,10 +4,9 @@ import { Link } from 'react-router-dom';
 import { usePrograms } from '../hooks/usePrograms';
 import {
   DIRECTORY_CATEGORIES,
-  DIRECTORY_CATEGORY_DESCRIPTIONS,
   DIRECTORY_CATEGORY_LABELS,
 } from '../data/categoryMap';
-import { RESOURCE_SERVICE_TAGS, RESOURCE_SERVICE_LABELS } from '../data/resourceServiceTags';
+import ResourceMoreFilters from '../components/ResourceMoreFilters';
 import { matchesResourceFilters } from '../utils/resourceFilters';
 import { searchPrograms } from '../utils/resourceSearch';
 import DirectoryCard from '../components/DirectoryCard';
@@ -229,7 +228,8 @@ export default function Resources() {
       {/* Situation chips (sticky, scrollable on mobile) */}
       <section className="bg-surface border-b border-surface-container-highest sticky top-20 z-40 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
         <div className="max-w-6xl mx-auto px-6 lg:px-12 py-3">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scroll-smooth">
+          <div className="flex items-start gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 px-1 scroll-smooth">
             <button
               type="button"
               onClick={clearTaxonomyFilters}
@@ -267,56 +267,22 @@ export default function Resources() {
               );
             })}
 
+          </div>
             <button
               type="button"
               onClick={() => setShowMoreCategories((v) => !v)}
               className="shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border border-surface-container-highest text-on-surface-variant hover:border-primary/40 hover:text-on-surface"
               aria-expanded={showMoreCategories}
+              aria-controls="additional-resource-filters"
             >
-              {showMoreCategories ? 'Fewer −' : 'More +'}
+              {showMoreCategories ? 'Close filters −' : 'More filters +'}
             </button>
 
-            {(showMoreCategories || selectedServiceTags.length > 0) &&
-              RESOURCE_SERVICE_TAGS.filter((tag) => showMoreCategories || selectedServiceTags.includes(tag)).map((tag) => {
-                const active = selectedServiceTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleServiceTag(tag)}
-                    aria-pressed={active}
-                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                      active
-                        ? 'bg-primary text-on-primary border-primary'
-                        : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-highest hover:border-primary/40 hover:text-on-surface'
-                    }`}
-                  >
-                    {RESOURCE_SERVICE_LABELS[tag]}
-                  </button>
-                );
-              })}
 
-            {showMoreCategories &&
-              EXTRA_CATEGORIES.map((cat) => {
-                const active = selectedCategories.includes(cat);
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => toggleCategory(cat)}
-                    aria-pressed={active}
-                    title={DIRECTORY_CATEGORY_DESCRIPTIONS[cat]}
-                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                      active
-                        ? 'bg-primary text-on-primary border-primary'
-                        : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-highest hover:border-primary/40 hover:text-on-surface'
-                    }`}
-                  >
-                    {DIRECTORY_CATEGORY_LABELS[cat]}
-                  </button>
-                );
-              })}
           </div>
+          <ResourceMoreFilters expanded={showMoreCategories} extraCategories={EXTRA_CATEGORIES}
+            categories={selectedCategories} tags={selectedServiceTags}
+            onCategory={toggleCategory} onTag={toggleServiceTag} />
         </div>
       </section>
 

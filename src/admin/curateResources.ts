@@ -57,7 +57,7 @@ export function partitionResourceCurationChecks(checks: ResourceCurationCheck[])
   };
 }
 
-function edgeFunctionError(error: unknown): Promise<Error> | Error {
+export function edgeFunctionError(error: unknown): Promise<Error> | Error {
   const context = (error as { context?: unknown })?.context;
   if (context instanceof Response) {
     return context
