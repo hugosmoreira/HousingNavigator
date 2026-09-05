@@ -8,6 +8,7 @@ import {
   Users,
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import PhoneLink from '../components/PhoneLink';
 import { resourceServiceLabels } from '../data/resourceServiceTags';
 import {
   DIRECTORY_CATEGORY_LABELS,
@@ -61,9 +62,6 @@ export default function ResourceDetail() {
     program.directory_category ?? legacyToDirectoryCategory(program.category);
   const categoryLabel = DIRECTORY_CATEGORY_LABELS[directoryCategory];
   const verified = formatDate(program.last_verified);
-  const phoneHref = program.phone
-    ? `tel:${program.phone.replace(/[^0-9+]/g, '')}`
-    : null;
   const verificationSourceUrl = program.source_url || program.website;
   const verificationSourceType = program.source_type || 'Provider website';
   const serviceAreas = serviceAreasForProgram(program);
@@ -153,10 +151,10 @@ export default function ResourceDetail() {
         <aside className="h-fit rounded-2xl border border-surface-container-highest bg-surface-container-lowest p-6 shadow-sm">
           <h2 className="mb-5 text-lg font-headline font-bold text-on-surface">Contact and verification</h2>
           <div className="space-y-4 text-sm">
-            {phoneHref && (
-              <a href={phoneHref} className="flex items-start gap-3 font-semibold text-primary hover:text-primary-dim">
+            {program.phone && (
+              <PhoneLink phone={program.phone} className="flex items-start gap-3 font-semibold text-primary hover:text-primary-dim">
                 <Phone className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {program.phone}
-              </a>
+              </PhoneLink>
             )}
             {location && (
               <p className="flex items-start gap-3 text-on-surface-variant">

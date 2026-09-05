@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import PhoneLink from '../components/PhoneLink';
 import {
   AFFORDABLE_PROPERTY_TYPE_LABELS,
   BEDROOM_LABELS,
@@ -67,7 +68,6 @@ export default function AffordablePropertyDetail() {
   const checked = formatDate(property.waitlist_last_checked);
   const applicationUrl =
     property.waitlist_application_link || property.application_url || property.website;
-  const phoneHref = property.phone ? `tel:${property.phone.replace(/[^0-9+]/g, '')}` : null;
   const address = [property.address, property.city, property.state, property.postal_code]
     .filter(Boolean)
     .join(', ');
@@ -164,7 +164,7 @@ export default function AffordablePropertyDetail() {
           )}
 
           <div className="mt-5 space-y-4 text-sm">
-            {phoneHref && <a href={phoneHref} className="flex items-start gap-3 font-semibold text-primary hover:text-primary-dim"><Phone className="mt-0.5 h-4 w-4" /> {property.phone}</a>}
+            {property.phone && <PhoneLink phone={property.phone} className="flex items-start gap-3 font-semibold text-primary hover:text-primary-dim"><Phone className="mt-0.5 h-4 w-4" /> {property.phone}</PhoneLink>}
             {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer noopener" className="flex items-start gap-3 text-on-surface-variant hover:text-primary"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {address}</a>}
             {(property.management_company || property.owner_organization) && <p className="flex items-start gap-3 text-on-surface-variant"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Managed by {property.management_company || property.owner_organization}</p>}
             <p className="flex items-start gap-3 text-on-surface-variant"><CalendarCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {verified ? `Property verified ${verified}` : 'Verification pending'}</p>
