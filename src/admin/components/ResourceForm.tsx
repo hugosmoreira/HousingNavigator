@@ -10,6 +10,7 @@ import type { ApplicationMethod, DirectoryCategory, ServiceArea } from '../../ty
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
 import ServiceAreaPicker from './ServiceAreaPicker';
 import { refreshAfterResourceSave } from '../resourcePublication';
+import ResourcePreview from './ResourcePreview';
 
 const APPLICATION_METHODS: Array<{ value: ApplicationMethod; label: string }> = [
   { value: 'walk_in', label: 'Walk-in' },
@@ -249,6 +250,11 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
         </div>
       )}
 
+      <div className="mb-6">
+        <ResourcePreview disabled={saving || !draft.name.trim()}
+          resource={{ ...sanitize(draft), id: resourceId ?? 'unsaved-preview', service_areas: draft.service_areas }} />
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-8">
         <Section title="Basics">
           <Field label="Name" required>
@@ -408,7 +414,7 @@ export default function ResourceForm({ mode, resourceId }: ResourceFormProps) {
           </Field>
           <Field
             label="Public notes"
-            hint="Visible on the public card. Keep neutral and current."
+            hint="Shown on the detail page; used on the card only when Description is blank. Keep neutral and current."
           >
             <TextArea
               value={draft.public_notes ?? ''}

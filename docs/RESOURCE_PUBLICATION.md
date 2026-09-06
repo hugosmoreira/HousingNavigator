@@ -8,6 +8,26 @@ was added. Existing published resources are rebuilt; unrelated drafts remain hid
 
 ## Admin workflow
 
+Before saving/publishing, **Preview resource** in the resource editor opens an
+admin-only dialog with **Directory card** and **Detail page** views. It uses the
+same `DirectoryCardView` and `ResourceDetailView` components as the public site,
+with the current editor values (including unsaved changes). Preview is not a
+save or publication action. Links and the bookmark action are disabled; closing
+the preview or pressing Escape returns to the editor without discarding edits.
+
+The preview lives inside the existing protected editor, not a public draft URL.
+It performs no additional data request, writes nothing to browser storage or the
+database, and maps the record through `programFromResourceRow`, which excludes
+internal notes. Public notes appear on the detail page; cards use them only as a
+fallback when the description is blank. Existing public data loading, RLS,
+publication checks, sitemap and refresh workflow are unchanged.
+
+**Preview release (September 6):** this is a frontend-only change. No new
+migration, backend function or scheduled task is required. The control ships
+through the existing website release workflow; deploying it does not publish
+draft records. Verify both preview views in the signed-in editor after release,
+and keep publication approval separate from the preview check.
+
 1. Review information and save the intended resource with Published selected.
 2. The resource is saved in Supabase. The editor requests a website refresh and
    returns to Resources. If the request fails, it reports **saved**, not Save failed.
