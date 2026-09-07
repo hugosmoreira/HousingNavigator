@@ -9,18 +9,21 @@ import {
 import ResourceMoreFilters from '../components/ResourceMoreFilters';
 import { matchesResourceFilters } from '../utils/resourceFilters';
 import { searchPrograms } from '../utils/resourceSearch';
+import { resourceSearchContext } from '../utils/resourceSearchLocation';
+import ResourceLocationNotice from '../components/ResourceLocationNotice';
 import DirectoryCard from '../components/DirectoryCard';
 import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
 import {
   STATE_NAMES,
   SUPPORTED_STATES,
-  availableCounties,
+  COUNTIES_BY_STATE,
+  serviceAreaLabel,
 } from '../data/serviceAreas';
 import type {
   DirectoryCategory,
   HouseholdType,
   ResourceServiceTag,
-  SupportedState,
+  ServiceArea,
 } from '../types';
 
 // NOTE: program.status is intentionally not surfaced or filtered on the
@@ -73,11 +76,15 @@ export default function Resources() {
   const [selectedCategories, setSelectedCategories] = useState<DirectoryCategory[]>([]);
   const [selectedServiceTags, setSelectedServiceTags] = useState<ResourceServiceTag[]>([]);
   const [householdFilter, setHouseholdFilter] = useState<HouseholdType | null>(null);
-  const [state, setState] = useState<SupportedState | 'All'>('All');
-  const [county, setCounty] = useState<string | 'All'>('All');
+  // undefined follows the query; null explicitly searches all areas. Manual
+  // choices persist during typing and can be switched back to query location.
+  const [locationOverride, setLocationOverride] = useState<ServiceArea | null | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('relevance');
   const [showMoreCategories, setShowMoreCategories] = useState(false);
+  const searchContext = useMemo(() => resourceSearchContext(searchQuery, locationOverride), [searchQuery, locationOverride]);
+  const state = searchContext.location?.state ?? 'All';
+  const county = searchContext.location?.county ?? 'All';
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
@@ -111,13 +118,12 @@ export default function Resources() {
 
   function resetFilters() {
     clearTaxonomyFilters();
-    setState('All');
-    setCounty('All');
+    setLocationOverride(undefined);
     setSearchQuery('');
   }
 
   const filtered = useMemo(() => {
-    let ranked = searchPrograms(programs, searchQuery);
+    let ranked = searchPrograms(programs, searchQuery, { location: locationOverride });
     ranked = ranked.filter(({ program }) => matchesResourceFilters(program, {
       categories: selectedCategories, serviceTags: selectedServiceTags,
       household: householdFilter, state, county,
@@ -136,7 +142,7 @@ export default function Resources() {
       ranked = [...ranked].sort((a, b) =>
         a.program.program_name.localeCompare(b.program.program_name),
       );
-    } else if (sort === 'relevance' && !searchQuery.trim()) {
+    } else if (sort === 'relevance' && ranked.every(item => item.score === 0)) {
       // No query → searchPrograms preserves catalog order (all score 0).
       // Give the default view a deterministic, curated-first order instead
       // of whatever order the data source happened to return.
@@ -148,9 +154,11 @@ export default function Resources() {
       });
     }
     return ranked;
-  }, [programs, selectedCategories, selectedServiceTags, householdFilter, state, county, searchQuery, sort]);
+  }, [programs, selectedCategories, selectedServiceTags, householdFilter, state, county, searchQuery, locationOverride, sort]);
 
-  const visibleCounties = state === 'All' ? [] : availableCounties(programs, state);
+  // Show every supported county, including areas with only statewide services
+  // or no current listings. Lack of catalog coverage must not hide the filter.
+  const visibleCounties = state === 'All' ? [] : COUNTIES_BY_STATE[state];
 
   const noTaxonomyActive =
     selectedCategories.length === 0 && selectedServiceTags.length === 0 && householdFilter === null;
@@ -175,12 +183,14 @@ export default function Resources() {
               <Search className="w-5 h-5 text-on-surface-variant" />
             </div>
             <input
-              type="text"
+              type="search"
+              enterKeyHint="search"
               placeholder="Try “rent help in Spokane”, “section 8”, or “eviction notice”"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface-container-lowest rounded-2xl pl-12 pr-12 py-3 shadow-sm border border-surface-container-highest focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base"
+              className="w-full bg-surface-container-lowest rounded-2xl pl-12 pr-12 py-3 shadow-sm border border-surface-container-highest focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base [&::-webkit-search-cancel-button]:appearance-none"
               aria-label="Search resources"
+              aria-describedby="resource-location-notice"
               autoComplete="off"
             />
             {searchQuery && (
@@ -194,6 +204,8 @@ export default function Resources() {
               </button>
             )}
           </div>
+          <ResourceLocationNotice context={searchContext} onSelect={setLocationOverride}
+            onUseQuery={() => setLocationOverride(undefined)} />
         </div>
       </section>
 
@@ -288,7 +300,7 @@ export default function Resources() {
 
       {/* Results */}
       <section className="max-w-6xl mx-auto px-6 lg:px-12 py-6 lg:py-8 grid lg:grid-cols-[220px_1fr] gap-8 lg:gap-10">
-        <aside className="space-y-5">
+        <aside id="resource-area-filter" tabIndex={-1} aria-label="Service area filters" className="space-y-5 scroll-mt-40">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">
               State
@@ -301,8 +313,7 @@ export default function Resources() {
                     key={option}
                     type="button"
                     onClick={() => {
-                      setState(option);
-                      setCounty('All');
+                      setLocationOverride(option === 'All' ? null : { state: option, county: null });
                     }}
                     aria-pressed={active}
                     className={`text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
@@ -325,7 +336,7 @@ export default function Resources() {
               </span>
               <select
                 value={county}
-                onChange={(event) => setCounty(event.target.value)}
+                onChange={(event) => setLocationOverride({ state, county: event.target.value === 'All' ? null : event.target.value })}
                 className="w-full rounded-lg border border-surface-container-highest bg-surface-container-lowest px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               >
                 <option value="All">All {STATE_NAMES[state]} counties</option>
@@ -352,7 +363,7 @@ export default function Resources() {
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <p className="text-sm text-on-surface-variant">
-              {loading
+              {searchContext.needsChoice ? 'Choose an area to see matching resources.' : loading
                 ? 'Loading resources…'
                 : `${filtered.length} ${filtered.length === 1 ? 'resource' : 'resources'}${
                     searchQuery.trim() ? ` for “${searchQuery.trim()}”` : ''
@@ -388,12 +399,20 @@ export default function Resources() {
               <p className="text-error font-medium">Couldn't load resources right now.</p>
               <p className="text-on-surface-variant text-sm mt-2">{error.message}</p>
             </div>
+          ) : searchContext.needsChoice ? (
+            <p className="rounded-2xl border border-surface-container-highest bg-surface-container-lowest p-6 text-on-surface-variant">
+              Select an area above or use the state and county filters. We won't show resources from other areas as local matches.
+            </p>
           ) : !loading && filtered.length === 0 ? (
             <EmptyState
               query={searchQuery}
+              area={searchContext.location ? serviceAreaLabel(searchContext.location) : undefined}
               hasFilters={hasActiveFilters}
               onResetFilters={resetFilters}
-              onApplySuggestion={(text) => setSearchQuery(text)}
+              onApplySuggestion={(text) => {
+                if (searchContext.location) setLocationOverride(searchContext.location);
+                setSearchQuery(text);
+              }}
             />
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5">
@@ -410,6 +429,7 @@ export default function Resources() {
 
 interface EmptyStateProps {
   query: string;
+  area?: string;
   hasFilters: boolean;
   onResetFilters: () => void;
   onApplySuggestion: (text: string) => void;
@@ -417,11 +437,12 @@ interface EmptyStateProps {
 
 function EmptyState({
   query,
+  area,
   hasFilters,
   onResetFilters,
   onApplySuggestion,
 }: EmptyStateProps) {
-  const headline = query
+  const headline = area ? `No matching listings for ${area} yet.` : query
     ? `No results for “${query.trim()}”.`
     : 'No resources match these filters yet.';
   const lead = hasFilters
@@ -434,6 +455,9 @@ function EmptyState({
         {headline}
       </p>
       <p className="text-on-surface-variant text-sm mb-4">{lead}</p>
+      {area && <p className="text-on-surface-variant text-sm mb-4">
+        We don't have a listing matching these words and filters. That doesn't mean help is unavailable. Try different words or change the area.
+      </p>}
       <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
         {POPULAR_SUGGESTIONS.map((s) => (
           <button

@@ -27,6 +27,8 @@ function program(overrides: Partial<Program>): Program {
     source_type: overrides.source_type,
     directory_category: overrides.directory_category,
     raw_category: overrides.raw_category,
+    service_areas: overrides.service_areas,
+    service_tags: overrides.service_tags,
   };
 }
 
@@ -93,7 +95,7 @@ describe('searchPrograms', () => {
     });
     const dvHit = searchPrograms([target], 'domestic violence');
     expect(dvHit[0]?.program.id).toBe('target');
-    const cityHit = searchPrograms([target], 'portland');
+    const cityHit = searchPrograms([target], 'portland', { location: { state: 'OR', county: 'Multnomah' } });
     expect(cityHit[0]?.program.id).toBe('target');
   });
 
@@ -167,5 +169,67 @@ describe('searchPrograms', () => {
     });
     const results = searchPrograms([a, b, c], 'rent assistance');
     expect(results.map((r) => r.program.id)).toEqual(['b', 'c', 'a']);
+  });
+});
+
+describe('location-aware catalog regressions', () => {
+  // Public names and coverage observed September 6, 2026. Controlled fixtures
+  // isolate retrieval behavior; this is not a live availability assertion.
+  const access = program({ id: 'access', program_name: 'ACCESS - Rental and Utility Assistance',
+    notes: 'Rent help and utility help.', service_areas: [{ state: 'OR', county: 'Jackson' }] });
+  const clark = program({ id: 'clark', program_name: 'Clark Public Utilities - Operation Warm Heart',
+    description: 'Utilities, utility help, heating and electric bill assistance.',
+    service_areas: [{ state: 'WA', county: 'Clark' }] });
+  const neighborLink = program({ id: 'neighbor', program_name: 'NeighborLink PDX - Volunteer Moving Help',
+    description: 'Moving truck and movers.', service_areas: [{ state: 'OR', county: 'Multnomah' }] });
+  const spokane = program({ id: 'spokane', program_name: 'Spokane rent assistance',
+    service_areas: [{ state: 'WA', county: 'Spokane' }] });
+  const programs = [access, clark, neighborLink, spokane];
+
+  it('rent help in Spokane excludes ACCESS and Clark-only resources', () => {
+    expect(searchPrograms(programs, 'rent help in Spokane').map(r => r.program.id)).toEqual(['spokane']);
+  });
+
+  it('moving truck in Bend does not substitute a Portland moving provider', () => {
+    expect(searchPrograms(programs, 'moving truck in Bend')).toEqual([]);
+  });
+
+  it('utility help in Jackson County does not rank Clark Public Utilities as local', () => {
+    expect(searchPrograms(programs, 'utility help in Jackson County').map(r => r.program.id)).toEqual(['access']);
+  });
+
+  it('includes statewide coverage despite an out-of-area office and excludes an office-only match', () => {
+    const statewide = program({ id: 'statewide', program_name: 'Rent assistance', city: 'Vancouver', state: 'WA', county: 'Clark',
+      service_areas: [{ state: 'WA', county: null }] });
+    const officeOnly = program({ id: 'office', program_name: 'Spokane rent rent assistance', city: 'Spokane', county: 'Spokane', state: 'WA',
+      service_areas: [{ state: 'WA', county: 'Clark' }] });
+    expect(searchPrograms([officeOnly, statewide], 'rent in Spokane').map(r => r.program.id)).toEqual(['statewide']);
+  });
+
+  it('does not infer coverage from city/address fields when coverage is unknown', () => {
+    const unknown = program({ id: 'unknown', program_name: 'Spokane rent assistance', county: 'Other', city: 'Spokane' });
+    expect(searchPrograms([unknown], 'rent in Spokane')).toEqual([]);
+  });
+
+  it.each(['rent in Benton County', 'rent in Spokne', 'rent in Boston'])('does not return unfiltered results while %s needs clarification', query => {
+    expect(searchPrograms(programs, query)).toEqual([]);
+  });
+
+  it('an explicit manual filter takes precedence and removes the conflicting place from scoring', () => {
+    expect(searchPrograms(programs, 'utility in Spokane', { location: { state: 'OR', county: 'Jackson' } })
+      .map(r => r.program.id)).toEqual(['access']);
+    expect(searchPrograms(programs, 'utility in Spokane', { location: null }).map(r => r.program.id)).toContain('clark');
+  });
+
+  it('preserves service typo matching inside the selected area', () => {
+    expect(searchPrograms([access, spokane], 'rnet assistance in Spokane').map(r => r.program.id)).toEqual(['spokane']);
+  });
+
+  it('a place alone or with generic help browses that area without requiring a city keyword hit', () => {
+    const regional = program({ id: 'regional', program_name: 'Community Action', notes: '',
+      service_areas: [{ state: 'WA', county: 'Spokane' }] });
+    for (const query of ['Spokane', 'help in Spokane']) {
+      expect(searchPrograms([access, regional], query).map(r => r.program.id)).toEqual(['regional']);
+    }
   });
 });

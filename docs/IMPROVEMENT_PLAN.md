@@ -5,7 +5,11 @@ approval to begin improvements. It is ordered by completion criteria, not
 speculative weekly estimates. Preserve the existing framework, public layout,
 resource records, six excluded drafts, affordable properties, and waitlists.
 
-## 1. Reproducible release checks — remote checks verified; main protection enabled
+## 1. Reproducible release checks — released and verified
+
+Completed in [PR 40](https://github.com/hugosmoreira/HousingNavigator/pull/40#issuecomment-5564927982).
+Production matched the merge commit; all 67 published pages and the complete
+pre/post data comparison passed. Six drafts remain hidden.
 
 - [x] Declare the tested PGlite version as a locked development dependency;
   remove database-test imports from ignored temporary storage.
@@ -26,17 +30,22 @@ Acceptance: a fresh checkout needs no private credentials or temporary package
 folder to run the complete gate; failed checks stop release; required-check
 enforcement is verified separately after rollout.
 
-## 2. Location-aware resource search — next
+## 2. Location-aware resource search — locally verified; release next
 
-- [ ] Add regression cases from the published catalog: “rent help in Spokane,”
+Implementation, behavior, source references, limits and test results:
+[`LOCATION_SEARCH.md`](LOCATION_SEARCH.md). No production data changes.
+
+- [x] Add regression cases from the published catalog: “rent help in Spokane,”
   “moving truck in Bend,” and “utility help in Jackson County.”
-- [ ] Recognize supported, unambiguous locations and apply the existing
+- [x] Recognize supported, unambiguous locations and apply the existing
   service-area model; show an editable location filter rather than silently
   guessing. Handle ambiguous place names explicitly.
-- [ ] Keep service-area eligibility distinct from a provider office address.
-- [ ] Separate out-of-area alternatives; correctly report missing coverage.
-- [ ] Test statewide services, cross-state counties, manual filter precedence,
+- [x] Keep service-area eligibility distinct from a provider office address.
+- [x] Separate out-of-area alternatives; correctly report missing coverage.
+- [x] Test statewide services, cross-state counties, manual filter precedence,
   typos, ordinary keyword searches and mobile keyboard/filter behavior.
+- [ ] Publish the focused search release through required CI/preview checks
+  and repeat the public-page preservation verification after deployment.
 
 Acceptance: a requested location cannot rank an out-of-area-only provider as a
 local match. No availability or household-eligibility guarantee is invented.
