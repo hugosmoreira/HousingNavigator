@@ -1,5 +1,5 @@
 // Isolated PostgreSQL tests; no network, credentials or production records.
-import { PGlite } from '../tmp/source-check-tests/node_modules/@electric-sql/pglite/dist/index.js';
+import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const db = new PGlite();

@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "predev": "npm run catalog:build",
     "dev": "vite --port=3000 --host=0.0.0.0",
@@ -17,6 +20,8 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest run",
+    "test:database": "node scripts/testResourceSourceDatabase.mjs && node scripts/testResourcePublicationDatabase.mjs",
+    "check": "npm run lint && npm test && npm run test:database && npm run build",
     "test:watch": "vitest",
     "catalog:build": "tsx scripts/mergeCatalog.ts",
     "public-data:sync": "tsx scripts/syncPublicSnapshot.ts",
@@ -39,6 +44,7 @@
     "react-router-dom": "^7.14.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

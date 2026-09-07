@@ -1,6 +1,6 @@
 // Isolated real PostgreSQL (PGlite) tests. Never connects to Supabase.
-// Install locally: npm install --prefix tmp/source-check-tests --no-save @electric-sql/pglite
-import { PGlite } from '../tmp/source-check-tests/node_modules/@electric-sql/pglite/dist/index.js';
+// npm ci installs the lockfile-pinned development dependency.
+import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 const db=new PGlite();

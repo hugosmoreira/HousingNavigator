@@ -1,5 +1,9 @@
 # Housing Navigator
 
+The ordered development plan and release-check procedure are documented in
+[`docs/IMPROVEMENT_PLAN.md`](docs/IMPROVEMENT_PLAN.md). Run `npm ci` and
+`npm run check` on Node 22 before submitting a release.
+
 The additional financial, internet, and health-support resource filters and
 verified first batch are documented in [`docs/RESOURCE_SUPPORT_EXPANSION.md`](docs/RESOURCE_SUPPORT_EXPANSION.md).
 
@@ -48,14 +52,16 @@ Static content pages include mission, help, privacy, terms, accessibility, and a
 | `npm run build` | Production build |
 | `npm run lint` | Typecheck (`tsc --noEmit`) |
 | `npm test` | Run Vitest unit tests |
+| `npm run test:database` | Run isolated PostgreSQL source-review and publication checks; no live database |
+| `npm run check` | Typecheck, application tests, database checks, then production build and bundle budgets |
 | `npm run catalog:build` | Merge `src/data` JSON into the bundled catalog |
 | `npm run import:supabase` | Import catalog into Supabase (requires service role key; see `supabase/README.md`) |
 
 ## Run locally
 
-**Prerequisites:** Node.js
+**Prerequisites:** Node.js 22 (see `.nvmrc`; use the latest available 22.x patch)
 
-1. `npm install`
+1. `npm ci`
 2. Copy [.env.example](.env.example) to `.env.local` and set at least:
    - `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` if you use Supabase for auth or live data  
    - `VITE_USE_SUPABASE=true` only when pointing at a configured Supabase project  
