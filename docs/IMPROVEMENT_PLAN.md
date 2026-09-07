@@ -30,10 +30,13 @@ Acceptance: a fresh checkout needs no private credentials or temporary package
 folder to run the complete gate; failed checks stop release; required-check
 enforcement is verified separately after rollout.
 
-## 2. Location-aware resource search — locally verified; release next
+## 2. Location-aware resource search — release tracked in PR 41
 
 Implementation, behavior, source references, limits and test results:
 [`LOCATION_SEARCH.md`](LOCATION_SEARCH.md). No production data changes.
+[PR 41](https://github.com/hugosmoreira/HousingNavigator/pull/41) records the
+remote checks, preview verification, and final production-preservation receipt.
+That receipt is the completion record for the release checkbox below.
 
 - [x] Add regression cases from the published catalog: “rent help in Spokane,”
   “moving truck in Bend,” and “utility help in Jackson County.”

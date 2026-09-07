@@ -1,7 +1,9 @@
 # Location-aware resource search
 
 Implemented and locally verified September 6, 2026 (Pacific), on
-`codex/location-aware-resource-search`. Not yet pushed or deployed.
+`codex/location-aware-resource-search`. Release checks, preview verification,
+and the final production audit are tracked in
+[PR 41](https://github.com/hugosmoreira/HousingNavigator/pull/41).
 
 ## Problem and scope
 
@@ -125,8 +127,13 @@ tenant-rights help for rent queries; service-intent precision is separate work.
 
 ## Release handoff
 
-Next: review this focused diff, run the required GitHub and Netlify preview
-checks, repeat the browser cases on that preview, and release without bypassing
-main's required check. Compare the public publication manifest and preserve the
-six hidden drafts. Follow with the admin review-workflow step in
-`IMPROVEMENT_PLAN.md`; do not combine it into this search change.
+Release checklist for PR 41: run the required GitHub and Netlify preview checks,
+repeat the browser cases on that preview, and merge without bypassing main's
+required check. Match the production marker to the merge commit, compare the
+public publication manifest, and compare every resource, service-area,
+affordable-property and waitlist row against the private pre-release baseline.
+The baseline contains 67 published resources and six hidden drafts; it is never
+committed. Record the final deployment and preservation results on PR 41.
+
+After that production receipt is complete, follow with the admin review-workflow
+step in `IMPROVEMENT_PLAN.md`; do not combine it into this search change.
