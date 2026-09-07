@@ -16,6 +16,7 @@ import {
 } from '../data/categoryMap';
 import { serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
 import type { ApplicationMethod, Program } from '../types';
+import type { DirectoryReturn } from '../utils/resourceDirectoryState';
 
 const APPLICATION_METHOD_LABEL: Record<ApplicationMethod, string> = {
   walk_in: 'Walk in',
@@ -45,10 +46,11 @@ function formatDate(iso: string): string | null {
 }
 
 /** Shared public presentation. No data loading, authentication or writes. */
-export default function ResourceDetailView({ program, error, onBack }: {
+export default function ResourceDetailView({ program, error, onBack, returnTo }: {
   program: Program;
   error?: unknown;
   onBack?: () => void;
+  returnTo?: DirectoryReturn;
 }) {
   const directoryCategory =
     program.directory_category ?? legacyToDirectoryCategory(program.category);
@@ -72,10 +74,11 @@ export default function ResourceDetailView({ program, error, onBack }: {
               <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to card preview
             </button>
           ) : <Link
-            to="/resources/"
+            to={returnTo?.url ?? '/resources/'}
+            state={returnTo ? { resourceQuery: returnTo.query } : undefined}
             className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-dim"
           >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to all resources
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {returnTo ? 'Back to results' : 'Back to all resources'}
           </Link>}
           <div className="flex flex-wrap gap-2 mb-4">
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">

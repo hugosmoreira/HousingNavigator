@@ -5,6 +5,15 @@ approval to begin improvements. It is ordered by completion criteria, not
 speculative weekly estimates. Preserve the existing framework, public layout,
 resource records, six excluded drafts, affordable properties, and waitlists.
 
+## Current priority — resource directory UX correction (preview only)
+
+The September 7 user request supersedes the next admin-workflow step below.
+Remove the county-directory detour and generic guidance; use one searchable,
+filterable directory with direct results. Preserve data and existing shared
+URLs. See [`RESOURCE_DIRECTORY_UX.md`](RESOURCE_DIRECTORY_UX.md) for scope,
+behavior, tests, and the user-review boundary before production deployment.
+Do not start catalog expansion or admin changes as part of this correction.
+
 ## 1. Reproducible release checks — released and verified
 
 Completed in [PR 40](https://github.com/hugosmoreira/HousingNavigator/pull/40#issuecomment-5564927982).

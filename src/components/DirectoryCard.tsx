@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useUserData } from '../auth/UserDataContext';
 import type { Program } from '../types';
 import DirectoryCardView from './DirectoryCardView';
+import type { DirectoryReturn } from '../utils/resourceDirectoryState';
 
-export default function DirectoryCard({ program }: { program: Program }) {
+export default function DirectoryCard({ program, returnTo }: { program: Program; returnTo?: DirectoryReturn }) {
   const { isResourceSaved, toggleResource } = useUserData();
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savingPending, setSavingPending] = useState(false);
@@ -21,5 +22,5 @@ export default function DirectoryCard({ program }: { program: Program }) {
   }
 
   return <DirectoryCardView program={program} saved={isResourceSaved(program.id)}
-    savingPending={savingPending} saveError={saveError} onSave={handleSave} />;
+    savingPending={savingPending} saveError={saveError} onSave={handleSave} returnTo={returnTo} />;
 }
