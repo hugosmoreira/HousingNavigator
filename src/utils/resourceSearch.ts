@@ -15,9 +15,10 @@
  */
 
 import { directoryCategoryLabel } from '../data/categoryMap';
-import { serviceAreaLabel, serviceAreasForProgram } from '../data/serviceAreas';
+import { programServesArea, serviceAreaLabel, serviceAreasForProgram } from '../data/serviceAreas';
 import { resourceServiceLabels } from '../data/resourceServiceTags';
-import type { Program } from '../types';
+import { resourceSearchContext } from './resourceSearchLocation';
+import type { Program, ServiceArea } from '../types';
 
 // ---------------------------------------------------------------------------
 // Synonyms
@@ -286,12 +287,22 @@ export function scoreProgram(program: Program, query: string): number {
   return total;
 }
 
-export function searchPrograms(programs: Program[], query: string): ScoredProgram[] {
-  const trimmed = query.trim();
+export function searchPrograms(
+  programs: Program[], query: string, options: { location?: ServiceArea | null } = {},
+): ScoredProgram[] {
+  const context = resourceSearchContext(query, options.location);
+  if (context.needsChoice) return [];
+  const candidates = context.location
+    ? programs.filter(program => programServesArea(program, context.location.state, context.location.county))
+    : programs;
+  // "Spokane" and "help in Spokane" browse the coverage area, including
+  // statewide services whose descriptions may never mention the city.
+  const trimmed = context.mention && tokenize(context.text).every(token => STOPWORDS.has(token))
+    ? '' : context.text.trim();
   if (!trimmed) {
-    return programs.map((program) => ({ program, score: 0 }));
+    return candidates.map((program) => ({ program, score: 0 }));
   }
-  const scored: ScoredProgram[] = programs.map((program) => ({
+  const scored: ScoredProgram[] = candidates.map((program) => ({
     program,
     score: scoreProgram(program, trimmed),
   }));
