@@ -10,7 +10,6 @@ import RouteLoading from './components/RouteLoading';
 export interface PublicPageComponents {
   Home: ComponentType;
   Resources: ComponentType;
-  LocalHousingLanding: ComponentType;
   ResourceDetail: ComponentType;
   AffordableHousing: ComponentType;
   AffordablePropertyDetail: ComponentType;
@@ -56,7 +55,6 @@ export default function AppRoutes({
   const {
     Home,
     Resources,
-    LocalHousingLanding,
     ResourceDetail,
     AffordableHousing,
     AffordablePropertyDetail,
@@ -88,8 +86,8 @@ export default function AppRoutes({
           <Route path="resources/:slug" element={<DeferredRoute><ResourceDetail /></DeferredRoute>} />
           <Route path="affordable-housing" element={<DeferredRoute><AffordableHousing /></DeferredRoute>} />
           <Route path="affordable-housing/:slug" element={<DeferredRoute><AffordablePropertyDetail /></DeferredRoute>} />
-          <Route path="housing-help/:countySlug" element={<DeferredRoute><LocalHousingLanding /></DeferredRoute>} />
-          <Route path="housing-help/:countySlug/:serviceSlug" element={<DeferredRoute><LocalHousingLanding /></DeferredRoute>} />
+          <Route path="housing-help/:countySlug" element={<DeferredRoute><Resources /></DeferredRoute>} />
+          <Route path="housing-help/:countySlug/:serviceSlug" element={<DeferredRoute><Resources /></DeferredRoute>} />
           <Route path="waitlist" element={<DeferredRoute><Waitlist /></DeferredRoute>} />
           <Route path="waitlist/:slug" element={<DeferredRoute><WaitlistDetail /></DeferredRoute>} />
           <Route path="mission" element={<DeferredRoute><Mission /></DeferredRoute>} />

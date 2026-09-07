@@ -1,484 +1,171 @@
 import { useMemo, useState } from 'react';
-import { Info, ListFilter, Search, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { usePrograms } from '../hooks/usePrograms';
-import {
-  DIRECTORY_CATEGORIES,
-  DIRECTORY_CATEGORY_LABELS,
-} from '../data/categoryMap';
-import ResourceMoreFilters from '../components/ResourceMoreFilters';
+import { useClientReady } from '../hooks/useClientReady';
+import DirectoryCard from '../components/DirectoryCard';
+import ResourceLocationNotice from '../components/ResourceLocationNotice';
+import { findLocalLandingPage } from '../data/localLandingPages';
+import { COUNTIES_BY_STATE, STATE_NAMES, SUPPORTED_STATES, serviceAreaLabel } from '../data/serviceAreas';
 import { matchesResourceFilters } from '../utils/resourceFilters';
 import { searchPrograms } from '../utils/resourceSearch';
 import { resourceSearchContext } from '../utils/resourceSearchLocation';
-import ResourceLocationNotice from '../components/ResourceLocationNotice';
-import DirectoryCard from '../components/DirectoryCard';
-import { LOCAL_LANDING_PAGES } from '../data/localLandingPages';
 import {
-  STATE_NAMES,
-  SUPPORTED_STATES,
-  COUNTIES_BY_STATE,
-  serviceAreaLabel,
-} from '../data/serviceAreas';
-import type {
-  DirectoryCategory,
-  HouseholdType,
-  ResourceServiceTag,
-  ServiceArea,
-} from '../types';
+  areaValue, directoryUrl, needFilters, parseDirectoryArea, readDirectoryState,
+  RESOURCE_HOUSEHOLDS, RESOURCE_NEEDS, type DirectoryState, type ResourceNeed, type ResourceSort,
+} from '../utils/resourceDirectoryState';
+import type { HouseholdType } from '../types';
+import NotFound from './NotFound';
 
-// NOTE: program.status is intentionally not surfaced or filtered on the
-// public directory — we cannot reliably confirm whether each program is
-// currently open or funded. The field stays on the data model for
-// internal use (waitlist tracker, future admin tools, analytics). The
-// sort selector deliberately omits an "Open now" option for the same
-// reason.
-
-type SortKey = 'relevance' | 'recent' | 'alpha';
-
-interface Situation {
-  key: string;
-  label: string;
-  // Each situation translates into either a DirectoryCategory chip or a
-  // HouseholdType filter. The chip surface is intentionally conversational
-  // ("Senior housing") while the underlying state stays in the existing
-  // taxonomy so the search pipeline does not need to change.
-  category?: DirectoryCategory;
-  household?: HouseholdType;
-}
-
-const SITUATIONS: Situation[] = [
-  { key: 'rent_help', label: 'Rent help', category: 'rent_assistance' },
-  { key: 'eviction', label: 'Eviction notice', category: 'eviction_prevention' },
-  { key: 'shelter_tonight', label: 'Shelter tonight', category: 'emergency_shelter' },
-  { key: 'public_housing', label: 'Public housing', category: 'public_housing' },
-  { key: 'section8', label: 'Section 8', category: 'section8_waitlist' },
-  { key: 'senior', label: 'Senior housing', household: 'senior' },
-  { key: 'disability', label: 'Disability housing', household: 'disability' },
-  { key: 'veteran', label: 'Veteran help', household: 'veteran' },
-];
-
-const SITUATION_CATEGORIES = new Set<DirectoryCategory>(
-  SITUATIONS.filter((s) => s.category).map((s) => s.category as DirectoryCategory),
-);
-const EXTRA_CATEGORIES: DirectoryCategory[] = DIRECTORY_CATEGORIES.filter(
-  (c) => !SITUATION_CATEGORIES.has(c),
-);
-
-const POPULAR_SUGGESTIONS = [
-  'Rent help',
-  'Section 8',
-  'Eviction notice',
-  'Shelter tonight',
-];
+const controlClass = 'w-full min-w-0 h-12 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 text-base text-on-surface outline-none focus:border-primary focus:ring-2 focus:ring-primary/20';
 
 export default function Resources() {
   const { programs, loading, error } = usePrograms();
-  const [selectedCategories, setSelectedCategories] = useState<DirectoryCategory[]>([]);
-  const [selectedServiceTags, setSelectedServiceTags] = useState<ResourceServiceTag[]>([]);
-  const [householdFilter, setHouseholdFilter] = useState<HouseholdType | null>(null);
-  // undefined follows the query; null explicitly searches all areas. Manual
-  // choices persist during typing and can be switched back to query location.
-  const [locationOverride, setLocationOverride] = useState<ServiceArea | null | undefined>(undefined);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sort, setSort] = useState<SortKey>('relevance');
-  const [showMoreCategories, setShowMoreCategories] = useState(false);
-  const searchContext = useMemo(() => resourceSearchContext(searchQuery, locationOverride), [searchQuery, locationOverride]);
-  const state = searchContext.location?.state ?? 'All';
-  const county = searchContext.location?.county ?? 'All';
+  const location = useLocation();
+  const navigate = useNavigate();
+  const clientReady = useClientReady();
+  const filters = readDirectoryState(location.pathname, clientReady ? location.search : '', clientReady ? location.state : null);
+  const { query, need, area, household, sort, invalidLink } = filters;
+  const page = findLocalLandingPage(location.pathname);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const context = useMemo(() => resourceSearchContext(query, area), [query, area?.state, area?.county, area === undefined]);
+  const needsChoice = invalidLink || context.needsChoice;
+  const hasFilters = !!(query || need !== 'all' || context.location || household || invalidLink);
 
-  const hasActiveFilters =
-    selectedCategories.length > 0 ||
-    selectedServiceTags.length > 0 ||
-    householdFilter !== null ||
-    state !== 'All' ||
-    county !== 'All' ||
-    searchQuery.trim().length > 0;
-
-  function toggleCategory(cat: DirectoryCategory) {
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
-    );
+  function update(patch: Partial<DirectoryState>, replace = false) {
+    const next = { ...filters, ...patch, invalidLink: false };
+    navigate(directoryUrl(next), { replace, state: { resourceQuery: next.query }, preventScrollReset: true });
   }
 
-  function toggleHousehold(h: HouseholdType) {
-    setHouseholdFilter((prev) => (prev === h ? null : h));
+  function reset() {
+    update({ query: '', need: 'all', area: undefined, household: null, sort: 'relevance' });
+    setOptionsOpen(false);
   }
 
-  function toggleServiceTag(tag: ResourceServiceTag) {
-    setSelectedServiceTags((prev) =>
-      prev.includes(tag) ? prev.filter((value) => value !== tag) : [...prev, tag],
-    );
-  }
-
-  function clearTaxonomyFilters() {
-    setSelectedCategories([]);
-    setSelectedServiceTags([]);
-    setHouseholdFilter(null);
-  }
-
-  function resetFilters() {
-    clearTaxonomyFilters();
-    setLocationOverride(undefined);
-    setSearchQuery('');
-  }
-
-  const filtered = useMemo(() => {
-    let ranked = searchPrograms(programs, searchQuery, { location: locationOverride });
-    ranked = ranked.filter(({ program }) => matchesResourceFilters(program, {
-      categories: selectedCategories, serviceTags: selectedServiceTags,
-      household: householdFilter, state, county,
-    }));
-    if (sort === 'recent') {
-      // Empty dates sort last by using a min sentinel.
-      ranked = [...ranked].sort((a, b) => {
-        const da = a.program.last_verified || '';
-        const db = b.program.last_verified || '';
-        if (!da && !db) return 0;
-        if (!da) return 1;
-        if (!db) return -1;
-        return db.localeCompare(da);
-      });
-    } else if (sort === 'alpha') {
-      ranked = [...ranked].sort((a, b) =>
-        a.program.program_name.localeCompare(b.program.program_name),
-      );
-    } else if (sort === 'relevance' && ranked.every(item => item.score === 0)) {
-      // No query → searchPrograms preserves catalog order (all score 0).
-      // Give the default view a deterministic, curated-first order instead
-      // of whatever order the data source happened to return.
-      ranked = [...ranked].sort((a, b) => {
-        if (b.program.priority_score !== a.program.priority_score) {
-          return b.program.priority_score - a.program.priority_score;
-        }
-        return a.program.program_name.localeCompare(b.program.program_name);
-      });
-    }
+  const results = useMemo(() => {
+    if (needsChoice) return [];
+    const taxonomy = needFilters(need);
+    const ranked = searchPrograms(programs, query, { location: area }).filter(({ program }) =>
+      matchesResourceFilters(program, { ...taxonomy, household, state: 'All', county: 'All' }));
+    if (sort === 'alpha') ranked.sort((a, b) => a.program.program_name.localeCompare(b.program.program_name));
+    else if (sort === 'recent') ranked.sort((a, b) => (b.program.last_verified || '').localeCompare(a.program.last_verified || ''));
+    else if (ranked.every(item => item.score === 0)) ranked.sort((a, b) =>
+      b.program.priority_score - a.program.priority_score || a.program.program_name.localeCompare(b.program.program_name));
     return ranked;
-  }, [programs, selectedCategories, selectedServiceTags, householdFilter, state, county, searchQuery, locationOverride, sort]);
+  }, [programs, query, need, area?.state, area?.county, area === undefined, household, sort, needsChoice]);
 
-  // Show every supported county, including areas with only statewide services
-  // or no current listings. Lack of catalog coverage must not hide the filter.
-  const visibleCounties = state === 'All' ? [] : COUNTIES_BY_STATE[state];
+  if (location.pathname.startsWith('/housing-help/') && !page) return <NotFound />;
 
-  const noTaxonomyActive =
-    selectedCategories.length === 0 && selectedServiceTags.length === 0 && householdFilter === null;
+  return <div className="bg-surface min-h-[calc(100vh-80px)]">
+    <section aria-labelledby="resource-heading" className="border-b border-surface-container-highest bg-surface-container-lowest">
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-12 pt-6 pb-5 lg:pt-8">
+        <h1 id="resource-heading" className="text-2xl lg:text-3xl font-headline font-bold text-on-surface tracking-tight mb-5">
+          {page?.heading ?? 'Find resources'}
+        </h1>
 
-  return (
-    <div className="bg-surface min-h-[calc(100vh-80px)]">
-      {/* Compact search-first hero */}
-      <section className="bg-surface-container-low border-b border-surface-container-highest">
-        <div className="max-w-6xl mx-auto px-6 lg:px-12 py-6 lg:py-8">
-          <p className="text-xs font-semibold tracking-[0.18em] uppercase text-primary mb-2">
-            Resource directory
-          </p>
-          <h1 className="text-2xl lg:text-3xl font-headline font-bold text-on-surface tracking-tight mb-2">
-            Find housing help across Oregon and Washington.
-          </h1>
-          <p className="text-on-surface-variant text-sm lg:text-base max-w-2xl mb-5">
-            Search by need or program. Every listing shows when it was last verified.
-          </p>
-
-          <div className="relative max-w-3xl">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="w-5 h-5 text-on-surface-variant" />
+        <form role="search" aria-label="Find resources" onSubmit={event => event.preventDefault()}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1.15fr)] gap-3">
+            <div className="sm:col-span-2 lg:col-span-1 min-w-0">
+              <label htmlFor="resource-query" className="block text-sm font-semibold mb-1.5">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3.5 top-3.5 w-5 h-5 text-on-surface-variant pointer-events-none" aria-hidden />
+                <input id="resource-query" type="search" aria-label="Search resources" aria-describedby="resource-location-notice"
+                  enterKeyHint="search" autoComplete="off" placeholder="Name or keyword"
+                  value={query} onChange={event => update({ query: event.target.value }, true)}
+                  className={`${controlClass} pl-11 pr-11 [&::-webkit-search-cancel-button]:appearance-none`} />
+                {query && <button type="button" aria-label="Clear search" onClick={() => update({ query: '' }, true)}
+                  className="absolute right-0 top-0 h-12 w-11 flex items-center justify-center text-on-surface-variant hover:text-primary">
+                  <X className="w-4 h-4" aria-hidden />
+                </button>}
+              </div>
             </div>
-            <input
-              type="search"
-              enterKeyHint="search"
-              placeholder="Try “rent help in Spokane”, “section 8”, or “eviction notice”"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface-container-lowest rounded-2xl pl-12 pr-12 py-3 shadow-sm border border-surface-container-highest focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-base [&::-webkit-search-cancel-button]:appearance-none"
-              aria-label="Search resources"
-              aria-describedby="resource-location-notice"
-              autoComplete="off"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-                className="absolute inset-y-0 right-3 flex items-center text-on-surface-variant hover:text-on-surface"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-          <ResourceLocationNotice context={searchContext} onSelect={setLocationOverride}
-            onUseQuery={() => setLocationOverride(undefined)} />
-        </div>
-      </section>
 
-      <section className="bg-surface border-b border-surface-container-highest" aria-labelledby="browse-by-area-heading">
-        <div className="max-w-6xl mx-auto px-6 lg:px-12 py-4 flex flex-wrap items-center gap-3">
-          <h2 id="browse-by-area-heading" className="text-sm font-semibold text-on-surface mr-1">
-            Browse by area
-          </h2>
-          {LOCAL_LANDING_PAGES.filter((page) => !page.service).map((page) => (
-            <Link
-              key={page.path}
-              to={`${page.path}/`}
-              className="rounded-full border border-surface-container-highest bg-surface-container-lowest px-3.5 py-1.5 text-sm font-medium text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors"
-            >
-              {page.county} County
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="border-b border-surface-container-highest bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-12">
-          <p className="text-sm text-on-surface-variant">
-            Looking for a physical income-restricted apartment instead of an assistance program?
-          </p>
-          <Link to="/affordable-housing/" className="shrink-0 text-sm font-semibold text-primary hover:text-primary-dim">
-            Browse affordable housing →
-          </Link>
-        </div>
-      </section>
-
-      {/* Situation chips (sticky, scrollable on mobile) */}
-      <section className="bg-surface border-b border-surface-container-highest sticky top-20 z-40 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
-        <div className="max-w-6xl mx-auto px-6 lg:px-12 py-3">
-          <div className="flex items-start gap-2">
-          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 px-1 scroll-smooth">
-            <button
-              type="button"
-              onClick={clearTaxonomyFilters}
-              className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                noTaxonomyActive
-                  ? 'bg-primary text-on-primary border-primary'
-                  : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-highest hover:border-primary/40 hover:text-on-surface'
-              }`}
-              aria-pressed={noTaxonomyActive}
-            >
-              All
-            </button>
-
-            {SITUATIONS.map((s) => {
-              const active = s.category
-                ? selectedCategories.includes(s.category)
-                : s.household === householdFilter;
-              return (
-                <button
-                  key={s.key}
-                  type="button"
-                  onClick={() => {
-                    if (s.category) toggleCategory(s.category);
-                    else if (s.household) toggleHousehold(s.household);
-                  }}
-                  aria-pressed={active}
-                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    active
-                      ? 'bg-primary text-on-primary border-primary'
-                      : 'bg-surface-container-lowest text-on-surface-variant border-surface-container-highest hover:border-primary/40 hover:text-on-surface'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              );
-            })}
-
-          </div>
-            <button
-              type="button"
-              onClick={() => setShowMoreCategories((v) => !v)}
-              className="shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border border-surface-container-highest text-on-surface-variant hover:border-primary/40 hover:text-on-surface"
-              aria-expanded={showMoreCategories}
-              aria-controls="additional-resource-filters"
-            >
-              {showMoreCategories ? 'Close filters −' : 'More filters +'}
-            </button>
-
-
-          </div>
-          <ResourceMoreFilters expanded={showMoreCategories} extraCategories={EXTRA_CATEGORIES}
-            categories={selectedCategories} tags={selectedServiceTags}
-            onCategory={toggleCategory} onTag={toggleServiceTag} />
-        </div>
-      </section>
-
-      {/* Results */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-12 py-6 lg:py-8 grid lg:grid-cols-[220px_1fr] gap-8 lg:gap-10">
-        <aside id="resource-area-filter" tabIndex={-1} aria-label="Service area filters" className="space-y-5 scroll-mt-40">
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">
-              State
-            </h3>
-            <div className="flex flex-col gap-1">
-              {(['All', ...SUPPORTED_STATES] as const).map((option) => {
-                const active = state === option;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => {
-                      setLocationOverride(option === 'All' ? null : { state: option, county: null });
-                    }}
-                    aria-pressed={active}
-                    className={`text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                      active
-                        ? 'bg-primary/10 text-primary font-semibold'
-                        : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
-                    }`}
-                  >
-                    {option === 'All' ? 'Oregon and Washington' : STATE_NAMES[option]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {state !== 'All' && (
-            <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                County
-              </span>
-              <select
-                value={county}
-                onChange={(event) => setLocationOverride({ state, county: event.target.value === 'All' ? null : event.target.value })}
-                className="w-full rounded-lg border border-surface-container-highest bg-surface-container-lowest px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="All">All {STATE_NAMES[state]} counties</option>
-                {visibleCounties.map((option) => (
-                  <option key={option} value={option}>
-                    {option} County
-                  </option>
-                ))}
+            <label className="min-w-0">
+              <span className="block text-sm font-semibold mb-1.5">Help needed</span>
+              <select value={need} onChange={event => update({ need: event.target.value as ResourceNeed })} className={controlClass}>
+                <option value="all">All resources</option>
+                {RESOURCE_NEEDS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </label>
-          )}
 
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="text-sm text-primary font-semibold hover:underline"
-            >
-              Reset filters
-            </button>
-          )}
-        </aside>
-
-        <div>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <p className="text-sm text-on-surface-variant">
-              {searchContext.needsChoice ? 'Choose an area to see matching resources.' : loading
-                ? 'Loading resources…'
-                : `${filtered.length} ${filtered.length === 1 ? 'resource' : 'resources'}${
-                    searchQuery.trim() ? ` for “${searchQuery.trim()}”` : ''
-                  }`}
-            </p>
-            <label className="inline-flex items-center gap-2 text-sm text-on-surface-variant">
-              <ListFilter className="w-4 h-4" aria-hidden />
-              <span className="sr-only">Sort by</span>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-                className="bg-surface-container-lowest border border-surface-container-highest rounded-full px-3 py-1.5 text-sm font-medium focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
-              >
-                <option value="relevance">Most relevant</option>
-                <option value="recent">Recently verified</option>
-                <option value="alpha">Alphabetical</option>
+            <label className="min-w-0" id="resource-area-filter">
+              <span className="block text-sm font-semibold mb-1.5">Area</span>
+              <select value={needsChoice ? 'choose' : areaValue(context.location)}
+                onChange={event => update({ area: parseDirectoryArea(event.target.value) })} className={controlClass}>
+                {needsChoice && <option value="choose" disabled>Choose an area</option>}
+                <option value="all">Oregon &amp; Washington</option>
+                {SUPPORTED_STATES.map(state => <optgroup key={state} label={STATE_NAMES[state]}>
+                  <option value={state}>All {STATE_NAMES[state]} counties</option>
+                  {COUNTIES_BY_STATE[state].map(county => <option key={county} value={`${state}:${county}`}>
+                    {county} County, {state}
+                  </option>)}
+                </optgroup>)}
               </select>
             </label>
           </div>
 
-          <div
-            role="note"
-            className="flex items-start gap-2 mb-5 px-3 py-2 rounded-lg border border-surface-container-highest bg-surface-container-low text-on-surface-variant text-xs"
-          >
-            <Info className="w-3.5 h-3.5 mt-0.5 text-primary shrink-0" aria-hidden />
-            <p>
-              Availability can change. Contact the provider to confirm current access.
-            </p>
+          <ResourceLocationNotice context={context} onSelect={value => update({ area: value })}
+            onUseQuery={() => update({ area: undefined })} />
+          {invalidLink && <p role="alert" className="mt-3 text-sm text-error">
+            This link contains an unrecognized filter. Choose your filters above or clear them to continue.
+          </p>}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+            <button type="button" onClick={() => setOptionsOpen(!optionsOpen)} aria-expanded={optionsOpen}
+              aria-controls="resource-household-options" className="inline-flex items-center gap-2 min-h-11 text-sm font-semibold text-on-surface-variant hover:text-primary">
+              <SlidersHorizontal className="w-4 h-4" aria-hidden />
+              {household ? `Who it's for: ${RESOURCE_HOUSEHOLDS.find(option => option.value === household)?.label}` : 'Who it’s for (optional)'}
+            </button>
+            {hasFilters && <button type="button" onClick={reset} className="text-sm font-semibold text-primary min-h-11 px-2">Clear all</button>}
           </div>
-
-          {error ? (
-            <div className="bg-surface-container-lowest border border-error/30 rounded-2xl p-10 text-center">
-              <p className="text-error font-medium">Couldn't load resources right now.</p>
-              <p className="text-on-surface-variant text-sm mt-2">{error.message}</p>
-            </div>
-          ) : searchContext.needsChoice ? (
-            <p className="rounded-2xl border border-surface-container-highest bg-surface-container-lowest p-6 text-on-surface-variant">
-              Select an area above or use the state and county filters. We won't show resources from other areas as local matches.
-            </p>
-          ) : !loading && filtered.length === 0 ? (
-            <EmptyState
-              query={searchQuery}
-              area={searchContext.location ? serviceAreaLabel(searchContext.location) : undefined}
-              hasFilters={hasActiveFilters}
-              onResetFilters={resetFilters}
-              onApplySuggestion={(text) => {
-                if (searchContext.location) setLocationOverride(searchContext.location);
-                setSearchQuery(text);
-              }}
-            />
-          ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5">
-              {filtered.map(({ program }) => (
-                <DirectoryCard key={program.id} program={program} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-interface EmptyStateProps {
-  query: string;
-  area?: string;
-  hasFilters: boolean;
-  onResetFilters: () => void;
-  onApplySuggestion: (text: string) => void;
-}
-
-function EmptyState({
-  query,
-  area,
-  hasFilters,
-  onResetFilters,
-  onApplySuggestion,
-}: EmptyStateProps) {
-  const headline = area ? `No matching listings for ${area} yet.` : query
-    ? `No results for “${query.trim()}”.`
-    : 'No resources match these filters yet.';
-  const lead = hasFilters
-    ? 'Try removing a filter, or pick one of these starting points:'
-    : 'Try one of these popular searches:';
-
-  return (
-    <div className="bg-surface-container-lowest border border-surface-container-highest rounded-2xl p-8 text-center">
-      <p className="text-on-surface font-headline font-bold text-lg mb-2">
-        {headline}
-      </p>
-      <p className="text-on-surface-variant text-sm mb-4">{lead}</p>
-      {area && <p className="text-on-surface-variant text-sm mb-4">
-        We don't have a listing matching these words and filters. That doesn't mean help is unavailable. Try different words or change the area.
-      </p>}
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-        {POPULAR_SUGGESTIONS.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => onApplySuggestion(s)}
-            className="px-3.5 py-1.5 rounded-full text-sm font-medium border border-surface-container-highest text-on-surface-variant hover:border-primary/40 hover:text-on-surface"
-          >
-            {s}
-          </button>
-        ))}
+          {optionsOpen && <div id="resource-household-options" className="pt-2 max-w-sm">
+            <label className="block text-sm font-semibold">
+              Who it’s for
+              <select value={household ?? 'all'} onChange={event => update({ household: event.target.value === 'all' ? null : event.target.value as HouseholdType })}
+                className={`${controlClass} mt-1.5`}>
+                <option value="all">All households</option>
+                {RESOURCE_HOUSEHOLDS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+          </div>}
+        </form>
       </div>
-      {hasFilters && (
-        <button
-          type="button"
-          onClick={onResetFilters}
-          className="text-primary font-semibold text-sm hover:underline"
-        >
-          Reset all filters
-        </button>
-      )}
-    </div>
-  );
+    </section>
+
+    <section aria-labelledby="resource-results-heading" className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-12 py-5 lg:py-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 id="resource-results-heading" role="status" aria-live="polite" className="text-sm font-semibold text-on-surface">
+          {needsChoice ? 'Choose filters to see resources' : loading ? 'Loading resources…' : `${results.length} ${results.length === 1 ? 'resource' : 'resources'}`}
+        </h2>
+        <label className="flex items-center gap-2 text-sm text-on-surface-variant">
+          <span className="sr-only">Sort by</span>
+          <select value={sort} onChange={event => update({ sort: event.target.value as ResourceSort })}
+            className="min-h-11 rounded-lg border border-outline-variant bg-surface-container-lowest px-2 text-sm focus:ring-2 focus:ring-primary/20">
+            <option value="relevance">Most relevant</option>
+            <option value="recent">Recently verified</option>
+            <option value="alpha">Alphabetical</option>
+          </select>
+        </label>
+      </div>
+
+      {error && <p role="alert" className="mb-4 rounded-xl border border-error/30 p-4 text-sm text-error">
+        We couldn’t refresh the directory. Showing the last available listings; confirm details with the provider.
+      </p>}
+      {needsChoice ? <p className="text-sm text-on-surface-variant py-4">Select an area or clear the filters above to continue.</p>
+        : !loading && !results.length ? <div className="rounded-xl border border-surface-container-highest bg-surface-container-lowest p-6">
+          <h3 className="font-semibold text-lg mb-2">No matching resources{context.location ? ` for ${serviceAreaLabel(context.location)}` : ''}</h3>
+          <p className="text-sm text-on-surface-variant mb-4">Try another search or help type. No match in this directory does not mean help is unavailable.</p>
+          {query && <button type="button" onClick={() => update({ query: '', area: context.location ?? area })}
+            className="min-h-11 text-sm text-primary font-semibold mr-5">Clear search words</button>}
+          <button type="button" onClick={reset} className="min-h-11 text-sm text-primary font-semibold">Clear all filters</button>
+        </div>
+        : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+          {results.map(({ program }) => <DirectoryCard key={program.id} program={program}
+            returnTo={{ url: directoryUrl(filters), query }} />)}
+        </div>}
+      {!needsChoice && results.length > 0 && <p className="text-xs text-on-surface-variant mt-5">
+        Availability can change. Contact the provider to confirm current access.
+      </p>}
+    </section>
+  </div>;
 }

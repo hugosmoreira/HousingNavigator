@@ -9,6 +9,7 @@ import {
 import { resourcePath } from '../lib/entityRoutes';
 import { serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
 import type { ApplicationMethod, Program } from '../types';
+import type { DirectoryReturn } from '../utils/resourceDirectoryState';
 
 interface DirectoryCardViewProps {
   program: Program;
@@ -17,6 +18,7 @@ interface DirectoryCardViewProps {
   saveError?: string | null;
   onSave?: () => void;
   onViewDetails?: () => void;
+  returnTo?: DirectoryReturn;
 }
 
 // NOTE: `program.status` is intentionally not rendered here. The public
@@ -52,7 +54,7 @@ function formatLocation(program: Program): string {
 }
 
 /** Shared presentation; preview can omit the mutation callback entirely. */
-export default function DirectoryCardView({ program, saved = false, savingPending = false, saveError, onSave, onViewDetails }: DirectoryCardViewProps) {
+export default function DirectoryCardView({ program, saved = false, savingPending = false, saveError, onSave, onViewDetails, returnTo }: DirectoryCardViewProps) {
   const directoryCategory =
     program.directory_category ?? legacyToDirectoryCategory(program.category);
   const categoryLabel = DIRECTORY_CATEGORY_LABELS[directoryCategory];
@@ -95,7 +97,7 @@ export default function DirectoryCardView({ program, saved = false, savingPendin
       <h3 className="text-lg font-headline font-bold text-on-surface mb-2 tracking-tight">
         {onViewDetails ? (
           <button type="button" onClick={onViewDetails} className="text-left hover:text-primary transition-colors">{program.program_name}</button>
-        ) : <Link to={resourcePath(program)} className="hover:text-primary transition-colors">
+        ) : <Link to={resourcePath(program)} state={{ resourceDirectory: returnTo }} className="hover:text-primary transition-colors">
           {program.program_name}
         </Link>}
       </h3>
@@ -149,6 +151,7 @@ export default function DirectoryCardView({ program, saved = false, savingPendin
           {onViewDetails ? (
             <button type="button" onClick={onViewDetails} className="text-sm font-semibold text-primary hover:text-primary-dim">View details</button>
           ) : <Link
+            state={{ resourceDirectory: returnTo }}
             to={resourcePath(program)}
             className="text-sm font-semibold text-primary hover:text-primary-dim"
           >

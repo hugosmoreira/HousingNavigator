@@ -66,6 +66,7 @@ export default function Layout() {
   ];
 
   function isActive(path: string) {
+    if (path === '/resources/' && location.pathname.startsWith('/housing-help/')) return true;
     return location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
   }
 

@@ -1,7 +1,6 @@
 import AppRoutes, { type PublicPageComponents } from './AppRoutes';
 import Home from './pages/Home';
 import Resources from './pages/Resources';
-import LocalHousingLanding from './pages/LocalHousingLanding';
 import ResourceDetail from './pages/ResourceDetail';
 import AffordableHousing from './pages/AffordableHousing';
 import AffordablePropertyDetail from './pages/AffordablePropertyDetail';
@@ -17,7 +16,6 @@ import NotFound from './pages/NotFound';
 const publicPages: PublicPageComponents = {
   Home,
   Resources,
-  LocalHousingLanding,
   ResourceDetail,
   AffordableHousing,
   AffordablePropertyDetail,

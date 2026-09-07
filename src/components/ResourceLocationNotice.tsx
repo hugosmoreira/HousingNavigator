@@ -11,15 +11,19 @@ interface Props {
 export default function ResourceLocationNotice({ context, onSelect, onUseQuery }: Props) {
   const { mention, location, needsChoice, choices, status, manual } = context;
   const area = location ? serviceAreaLabel(location) : 'Oregon and Washington';
-  return <div id="resource-location-notice" className="mt-3 max-w-3xl text-sm text-on-surface-variant">
+  const matchesMention = choices.some(choice => choice.state === location?.state && choice.county === location?.county);
+  const conflict = manual && mention && !matchesMention;
+  // The adjacent Area control already shows the applied location. Only ask
+  // for attention when clarification or a conflicting override needs it.
+  return <div id="resource-location-notice" className={needsChoice || conflict ? 'mt-3 text-sm text-on-surface-variant' : 'sr-only'}>
     <p role="status" aria-live="polite" aria-atomic="true">
       {needsChoice
         ? status === 'suggestion' ? `Did you mean one of these areas for “${mention}”?`
-          : status === 'ambiguous' ? `Choose a state or county for “${mention}”.`
-            : `We couldn't match “${mention}” to an area. Choose a state and county below.`
+          : status === 'ambiguous' ? `Which area did you mean by “${mention}”?`
+            : `We couldn't match “${mention}”. Choose an area above.`
         : location ? `Searching services covering ${area}, including statewide services.`
           : 'Searching across Oregon and Washington.'}
-      {manual && mention && ` Your selected area is used instead of “${mention}” in the search.`}
+      {conflict && ` Your selected area is used instead of “${mention}” in the search.`}
     </p>
     {needsChoice && choices.length > 0 && <div className="mt-2 flex flex-wrap gap-2">
       {choices.map(choice => <button type="button" key={`${choice.state}:${choice.county}`}
@@ -28,12 +32,7 @@ export default function ResourceLocationNotice({ context, onSelect, onUseQuery }
         {serviceAreaLabel(choice)}
       </button>)}
     </div>}
-    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-2">
-      <a href="#resource-area-filter" className="font-semibold text-primary underline underline-offset-2">
-        {needsChoice ? 'Select area' : 'Change area'}
-      </a>
-      {manual && mention && <button type="button" onClick={onUseQuery}
-        className="font-semibold text-primary underline underline-offset-2">Use location from search</button>}
-    </div>
+    {conflict && <button type="button" onClick={onUseQuery}
+      className="font-semibold text-primary underline underline-offset-2 min-h-11">Use location from search</button>}
   </div>;
 }
