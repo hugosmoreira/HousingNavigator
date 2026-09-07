@@ -5,7 +5,7 @@ approval to begin improvements. It is ordered by completion criteria, not
 speculative weekly estimates. Preserve the existing framework, public layout,
 resource records, six excluded drafts, affordable properties, and waitlists.
 
-## 1. Reproducible release checks — locally verified; rollout pending
+## 1. Reproducible release checks — remote checks verified; main protection enabled
 
 - [x] Declare the tested PGlite version as a locked development dependency;
   remove database-test imports from ignored temporary storage.
@@ -18,9 +18,9 @@ resource records, six excluded drafts, affordable properties, and waitlists.
   controlled coverage/category/ranking fixtures and an empty-catalog test.
 - [x] Verify a fresh locked install, all tests, typechecking and the full build.
 - [x] Confirm a failed check prevents later build steps.
-- [ ] Release the workflow, see a successful remote check, and make **Quality
-  checks** required for `main`. A local workflow file alone does not enforce
-  GitHub branch protection. Re-read existing rules before any settings update.
+- [x] Obtain a successful remote **Quality checks** run and Netlify preview,
+  then make **Quality checks** required for `main`. Existing protection and
+  rules were read before applying the new required check; none existed.
 
 Acceptance: a fresh checkout needs no private credentials or temporary package
 folder to run the complete gate; failed checks stop release; required-check
@@ -135,8 +135,22 @@ Verified on Node **22.20.0** in a separate fresh temporary checkout:
   runtime source, production records, live publication flags, waitlists,
   scheduled jobs or provider communications were changed by this step.
 
-**Remaining rollout:** push/review this focused change, confirm the remote
-**Quality checks** and Netlify preview pass, then merge and make the check
-required on `main`, preserving any existing rules. Verify the deployed public
-manifest again. Remote CI execution, branch-protection activation and production
-rollout have **not** occurred yet. Continue with Step 2 after that handoff.
+### Remote release checkpoint — September 6, 2026 (Pacific)
+
+[PR 40](https://github.com/hugosmoreira/HousingNavigator/pull/40) tracks the
+release and its final production verification. The initial remote GitHub
+**Quality checks** run and Netlify deploy preview passed. The preview manifest
+matched all **67** current published resource records; every detail page and
+sitemap path passed verification, and anonymous refresh requests were rejected.
+
+The `main` protection settings were applied and read back: **Quality checks**
+must come from GitHub Actions (app 15368), branches must be up to date, and the
+requirement applies to administrators. Force pushes and branch deletion are
+disabled. No additional approving-review requirement was introduced.
+
+The release must merge without an administrator bypass. Before marking the
+rollout finished, match the production deployment marker to the merge commit,
+repeat the 67-resource public audit, and compare all resource, service-area,
+affordable-property and waitlist rows to the private pre-release snapshot.
+Record those final results on PR 40; do not commit the snapshot. Continue with
+Step 2 only after that release handoff.
