@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STATIC_PROGRAMS } from '../services/data/staticDataService';
+import type { Program } from '../types';
 import {
   findLocalLandingPage,
   LOCAL_LANDING_PAGES,
@@ -20,20 +20,41 @@ describe('local housing landing pages', () => {
     }
   });
 
-  it('keeps existing curated pages useful and requires three listings for other combinations', () => {
-    for (const page of LOCAL_LANDING_PAGES) {
-      const programs = localLandingPrograms(page, STATIC_PROGRAMS);
+  // Curation and the offline build both change catalog size. Test matching
+  // behavior against controlled records, not a quota of live providers that
+  // could prevent a legitimate removal or make a second build fail.
+  it.each(LOCAL_LANDING_PAGES)('filters actual coverage/category and ranks $path', (page) => {
+    const state = page.stateName === 'Oregon' ? 'OR' : 'WA';
+    const base: Program = {
+      id: 'local-a', program_name: 'A local provider', county: page.county, state,
+      service_areas: [{ state, county: page.county }],
+      category: 'comprehensive_support',
+      directory_category: page.service ?? 'supportive_services',
+      who_it_helps: [], application_method: 'phone', referral_required: false,
+      phone: '', website: '', status: 'unknown', status_confidence: 'low',
+      priority_score: 5, notes: '', last_verified: '',
+    };
+    const fixtures: Program[] = [
+      { ...base, id: 'local-b', program_name: 'B local provider' },
+      { ...base, id: 'wrong-state', priority_score: 100, service_areas: [
+        state === 'OR' ? { state: 'WA', county: 'Clark' } : { state: 'OR', county: 'Multnomah' },
+      ] },
+      { ...base, id: 'statewide', priority_score: 10, service_areas: [{ state, county: null }] },
+      { ...base, id: 'wrong-county', priority_score: 100,
+        service_areas: [{ state, county: state === 'OR' ? 'Jackson' : 'King' }] },
+      { ...base, id: 'different-service', priority_score: 0,
+        directory_category: base.directory_category === 'rent_assistance' ? 'legal_aid' : 'rent_assistance' },
+      base,
+    ];
+    const programs = localLandingPrograms(page, fixtures);
+    const expected = ['statewide', 'local-a', 'local-b'];
+    if (!page.service) expected.push('different-service');
+    expect(programs.map((program) => program.id)).toEqual(expected);
+    expect(programs.every((program) => programServesArea(program, state, page.county))).toBe(true);
+  });
 
-      // This established route has two published providers after manual
-      // curation. Preserve its useful links without requiring retired/draft
-      // records to be republished to satisfy the original launch threshold.
-      const minimum = page.path === '/housing-help/multnomah-county/rent-assistance' ? 2 : 3;
-      expect(programs.length, page.path).toBeGreaterThanOrEqual(minimum);
-      const state = page.stateName === 'Oregon' ? 'OR' : 'WA';
-      expect(
-        programs.every((program) => programServesArea(program, state, page.county)),
-      ).toBe(true);
-    }
+  it('does not manufacture matches for an empty curated catalog', () => {
+    for (const page of LOCAL_LANDING_PAGES) expect(localLandingPrograms(page, [])).toEqual([]);
   });
 
   it('keeps unsupported thin county combinations out of the indexable set', () => {

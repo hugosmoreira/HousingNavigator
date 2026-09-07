@@ -83,9 +83,10 @@ configuration and allowed production request origins enforce the deployment boun
 Official references: [Netlify build hooks](https://docs.netlify.com/build/configure-builds/build-hooks/)
 and [function environment variables](https://docs.netlify.com/build/functions/environment-variables/).
 
-Tests: `npm test`, `npm run lint`, `npm run build`, and
-`node scripts/testResourcePublicationDatabase.mjs` (uses the existing isolated
-PGlite dependency under ignored tmp/source-check-tests).
+Tests: `npm run check` runs typechecking, application tests, both isolated
+database suites, and the build. `npm ci` installs the pinned PGlite development
+dependency; no temporary-folder package installation is needed. To run only the
+publication database suite, use `node scripts/testResourcePublicationDatabase.mjs`.
 Use `scripts/auditPublicationRelease.mjs` before/after with an explicit local
 env and new ignored snapshot path; it performs no database writes.
 Run `scripts/verifyResourcePublication.ts` with the explicit local public

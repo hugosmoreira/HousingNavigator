@@ -161,10 +161,10 @@ this workflow. The older curator retains its separately documented date behavior
   drafts and their 17 service-area rows were added. Anonymous reads cannot access
   those drafts or private source-check data.
 
-Run npm run lint and npm test. For isolated database tests, install
-@electric-sql/pglite with npm install --prefix tmp/source-check-tests --no-save
---package-lock=false, then run node scripts/testResourceSourceDatabase.mjs.
-No Supabase credentials or network database are used by that test.
+Run `npm ci` followed by `npm run check` for the complete release gate. The
+lockfile now provides PGlite as a development dependency; no temporary-folder
+installation is needed. `npm run test:database` runs both isolated database
+suites. No Supabase credentials or network database are used by those tests.
 
 Release preservation audit: scripts/auditResourceSourceRelease.mjs accepts
 before, after or results plus explicit local env/baseline paths. The generated

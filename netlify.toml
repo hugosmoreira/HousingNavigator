@@ -1,10 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "npm run check"
   publish = "dist"
 
 [build.environment]
-  # Pin Node so builds stay reproducible on Vite 6 (needs Node 18+).
-  NODE_VERSION = "20"
+  # Match .nvmrc, package.json, and CI; use the latest supported Node 22 patch.
+  NODE_VERSION = "22"
   # Read the same live Supabase catalog that administrators curate. Without
   # this build-time flag, public pages fall back to the bundled JSON snapshot.
   VITE_USE_SUPABASE = "true"
