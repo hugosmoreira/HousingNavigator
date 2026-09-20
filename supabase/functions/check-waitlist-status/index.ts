@@ -53,6 +53,11 @@ import Anthropic from 'npm:@anthropic-ai/sdk';
 // @ts-expect-error — Deno std http
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import type { WaitlistStatus } from '../_shared/waitlistTransitions.ts';
+import {
+  buildAdminNudgePayloads,
+  fetchPublicHttpText,
+  verifyEvidenceQuote,
+} from '../_shared/checkerSecurity.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,6 +77,7 @@ interface Classification {
   status: WaitlistStatus;
   confidence: number;
   evidence: string;
+  evidenceVerified: boolean;
 }
 
 type CheckAction =
@@ -124,16 +130,6 @@ async function timingSafeEqual(a: string, b: string): Promise<boolean> {
   return diff === 0;
 }
 
-function safeHttpUrl(u: string | null): string | null {
-  if (!u) return null;
-  try {
-    const parsed = new URL(u);
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? u : null;
-  } catch {
-    return null;
-  }
-}
-
 // Crude but dependency-free HTML -> text. Good enough for classification:
 // the model tolerates leftover noise far better than a fetch tolerates a
 // heavyweight parser dependency in an edge runtime.
@@ -161,23 +157,14 @@ async function fetchPageText(url: string, appUrl: string): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    const { text } = await fetchPublicHttpText(url, {
       signal: controller.signal,
-      redirect: 'follow',
       headers: {
         'User-Agent': `HousingNavigatorStatusBot/1.0 (+${appUrl}; automated waitlist status verification)`,
         'Accept': 'text/html,application/xhtml+xml',
       },
     });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    const length = Number(res.headers.get('content-length') ?? '0');
-    if (length > 3_000_000) {
-      throw new Error(`page too large (${length} bytes)`);
-    }
-    const html = await res.text();
-    return htmlToText(html).slice(0, MAX_PAGE_CHARS);
+    return htmlToText(text).slice(0, MAX_PAGE_CHARS);
   } finally {
     clearTimeout(timer);
   }
@@ -257,11 +244,16 @@ async function classifyPage(
   if (!textBlock) {
     throw new Error('classifier returned no text block');
   }
-  const parsed = JSON.parse(textBlock.text) as Classification;
+  const parsed = JSON.parse(textBlock.text) as Omit<Classification, 'evidenceVerified'>;
+  const evidence = verifyEvidenceQuote(pageText, String(parsed.evidence ?? ''));
+  if (parsed.status !== 'unknown' && !evidence) {
+    return { status: 'unknown', confidence: 0, evidence: '', evidenceVerified: false };
+  }
   return {
     status: parsed.status,
     confidence: Math.min(1, Math.max(0, Number(parsed.confidence) || 0)),
-    evidence: String(parsed.evidence ?? '').slice(0, 1000),
+    evidence: evidence ?? '',
+    evidenceVerified: evidence !== null,
   };
 }
 
@@ -282,7 +274,7 @@ async function checkOne(
   appUrl: string,
   wl: CheckableWaitlist,
 ): Promise<CheckOutcome> {
-  const url = safeHttpUrl(wl.source_url) ?? safeHttpUrl(wl.application_link);
+  const url = wl.source_url ?? wl.application_link;
   const now = new Date().toISOString();
 
   // Every attempt moves the scheduling cursor, so a failing row cannot
@@ -295,6 +287,7 @@ async function checkOne(
       detected_status: WaitlistStatus;
       confidence: number;
       evidence: string;
+      evidence_verified: boolean;
       error: string;
     }> = {},
   ) {
@@ -355,6 +348,7 @@ async function checkOne(
     detected_status: detected,
     confidence: result.confidence,
     evidence: result.evidence,
+    evidence_verified: result.evidenceVerified,
   };
 
   // The URL works and the page was readable — clear the failure counter.
@@ -401,6 +395,7 @@ async function checkOne(
           suggested_status: detected,
           confidence: result.confidence,
           evidence: result.evidence,
+          evidence_verified: result.evidenceVerified,
           checked_url: url,
           updated_at: now,
         })
@@ -412,6 +407,7 @@ async function checkOne(
         suggested_status: detected,
         confidence: result.confidence,
         evidence: result.evidence,
+        evidence_verified: result.evidenceVerified,
         checked_url: url,
       });
       if (error) {
@@ -462,31 +458,36 @@ async function notifyAdmins(
 
   const reviewUrl = `${appUrl.replace(/\/+$/, '')}/admin/review`;
   const noun = newSuggestionCount === 1 ? 'change' : 'changes';
-  try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'authorization': `Bearer ${RESEND_API_KEY}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM,
-        to: emails,
-        subject: `Housing Navigator: ${newSuggestionCount} waitlist status ${noun} detected`,
-        text: [
-          `The automated status checker detected ${newSuggestionCount} possible waitlist status ${noun}.`,
-          '',
-          'Nothing has been published and no subscriber has been emailed —',
-          'each change is waiting for your one-click review:',
-          '',
-          reviewUrl,
-        ].join('\n'),
-      }),
-    });
-  } catch (err) {
-    console.error(
-      `[check-waitlist-status] admin nudge email failed: ${err instanceof Error ? err.message : err}`,
-    );
+  const sharedPayload = {
+    from: RESEND_FROM,
+    subject: `Housing Navigator: ${newSuggestionCount} waitlist status ${noun} detected`,
+    text: [
+      `The automated status checker detected ${newSuggestionCount} possible waitlist status ${noun}.`,
+      '',
+      'Nothing has been published and no subscriber has been emailed —',
+      'each change is waiting for your one-click review:',
+      '',
+      reviewUrl,
+    ].join('\n'),
+  };
+  const payloads = buildAdminNudgePayloads(emails, sharedPayload);
+  const results = await Promise.allSettled(
+    payloads.map(async (payload) => {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'authorization': `Bearer ${RESEND_API_KEY}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error(`Resend HTTP ${response.status}`);
+    }),
+  );
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      console.error(`[check-waitlist-status] admin nudge email failed: ${result.reason}`);
+    }
   }
 }
 

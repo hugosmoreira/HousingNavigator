@@ -6,7 +6,7 @@
 //     (RFC 8058 one-click, sent by mail clients on the user's behalf)
 //
 // The token is profiles.unsubscribe_token (migration 0011): a per-user
-// random uuid that grants exactly one capability — turning that user's own
+// random, single-use uuid that grants exactly one capability — turning that user's own
 // email_notifications_enabled off. It cannot read data, re-enable alerts,
 // or touch any other account, so a leaked link is at worst a self-DoS on
 // one inbox. Re-enabling is done signed-in from the dashboard.
@@ -28,6 +28,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 // @ts-expect-error — Deno std http
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import {
+  singleUseUnsubscribePatch,
+  unsubscribeActionForMethod,
+} from '../_shared/unsubscribePolicy.ts';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,12 +49,30 @@ function htmlPage(title: string, body: string, status = 200): Response {
   );
 }
 
+function confirmationPage(): Response {
+  return new Response(
+    `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirm unsubscribe — Housing Navigator</title></head>
+<body style="font-family: -apple-system, system-ui, sans-serif; max-width: 480px; margin: 15vh auto 0; padding: 0 24px; color: #1c1b1f; text-align: center;">
+  <h2 style="margin: 0 0 12px;">Turn off email alerts?</h2>
+  <p style="color: #545458; line-height: 1.5;">No settings have changed yet. Confirm below to stop Housing Navigator waitlist alert emails.</p>
+  <form method="post">
+    <input type="hidden" name="List-Unsubscribe" value="One-Click">
+    <button type="submit" style="border:0; border-radius:999px; padding:10px 18px; background:#1d4ed8; color:white; font-weight:600; cursor:pointer;">Turn off email alerts</button>
+  </form>
+</body></html>`,
+    { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } },
+  );
+}
+
 serve(async (req: Request) => {
-  // GET = human clicking the footer link; POST = RFC 8058 one-click from
-  // the mail client. Both do the same thing.
+  // GET is read-only so link scanners and prefetchers cannot consume the
+  // capability. POST is explicit confirmation or RFC 8058 one-click.
   if (req.method !== 'GET' && req.method !== 'POST') {
     return new Response('method not allowed', { status: 405 });
   }
+  const action = unsubscribeActionForMethod(req.method);
 
   // @ts-expect-error — Deno-only global
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -69,13 +91,15 @@ serve(async (req: Request) => {
     );
   }
 
+  if (action === 'confirm') return confirmationPage();
+
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   const { error } = await admin
     .from('profiles')
-    .update({ email_notifications_enabled: false })
+    .update(singleUseUnsubscribePatch(crypto.randomUUID()))
     .eq('unsubscribe_token', token);
 
   if (error) {
@@ -83,12 +107,7 @@ serve(async (req: Request) => {
     return htmlPage('Something went wrong', 'We could not process this right now. Please try again later.', 500);
   }
 
-  // Deliberately identical whether or not the token matched a profile.
-  if (req.method === 'POST') {
-    return new Response(null, { status: 200 });
-  }
-  return htmlPage(
-    'Email alerts turned off',
-    'You will no longer receive waitlist alert emails from Housing Navigator. You can turn alerts back on any time from your dashboard notification settings.',
-  );
+  // Deliberately identical whether the token matched, was already used, or
+  // belonged to a user who was already unsubscribed.
+  return new Response(null, { status: 200 });
 });

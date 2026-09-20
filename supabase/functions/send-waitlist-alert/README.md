@@ -3,9 +3,10 @@
 Supabase Edge Function that fans out waitlist status-change emails to
 subscribers via [Resend](https://resend.com).
 
-Called only from `src/admin/notifyWaitlistAlert.ts`, which is only
-reachable from the admin waitlist editor after a meaningful status
-upgrade (e.g. `closed → open`).
+Accepts either a validated administrator JWT or the internal shared secret
+used by the database status-change trigger. Only meaningful status upgrades
+(e.g. `closed → open`) on published waitlists are eligible. The frontend
+wrapper, when used, is `src/admin/notifyWaitlistAlert.ts`.
 
 ## Prerequisites
 
@@ -15,8 +16,16 @@ upgrade (e.g. `closed → open`).
 
 ## Database
 
-Apply migration `0006_notification_events_metadata.sql` first — the
-function needs `notification_events.metadata` for the 24h dedupe lookup:
+Apply the repository migrations in order before deploying. In particular:
+
+- `0010_codex_scan_fixes.sql`: atomic per-waitlist/status send claim.
+- `0011_alert_ops_improvements.sql`: unsubscribe tokens and invocation ledger.
+- `0016_edge_function_service_role_grants.sql`: service-role table grants.
+- `0023_security_fix_handoff.sql`: atomic admin quota RPC and unsubscribe
+  token rotation on re-enable.
+
+`notification_events.metadata` remains audit/history data, not the dedupe lock.
+Review the target project and migration plan before running:
 
 ```
 supabase db push
@@ -38,6 +47,8 @@ supabase secrets set APP_URL="https://your-production-url"
 - `RESEND_FROM` — must be a verified Resend sender. Default falls back to
   the Resend playground `onboarding@resend.dev` for local testing.
 - `APP_URL` — used to build the "manage alerts" link in email bodies.
+- `INTERNAL_TRIGGER_SECRET` — must match the database trigger's Vault secret.
+  Required for internal trigger requests; never put it in browser configuration.
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are auto-injected by the
 Supabase runtime; do not set them yourself.
@@ -45,10 +56,13 @@ Supabase runtime; do not set them yourself.
 ## Deploy
 
 ```
-supabase functions deploy send-waitlist-alert
+supabase functions deploy send-waitlist-alert --no-verify-jwt
 ```
 
-Re-run after any change to `index.ts`.
+The handler performs authentication itself; the internal trigger has no user
+JWT. Run tests and compare deployed source before an explicitly approved
+deployment. This reconciliation does not require redeploying an unchanged
+live handler. See [backend reconciliation](../../../docs/BACKEND_RECONCILIATION.md).
 
 ## Local development (optional)
 
@@ -65,12 +79,14 @@ dev path.
 | Layer | Guarantee |
 |---|---|
 | Frontend bundle | Has the anon key only. Cannot call Resend directly. Cannot insert into `notification_events`. |
-| Edge Function — AuthN | Reads `Authorization: Bearer <jwt>`, calls `auth.getUser()`. Rejects 401 without a valid user. |
+| Edge Function — AuthN | Constant-time internal-secret comparison, or `auth.getUser(token)` with explicit JWT validation. |
 | Edge Function — AuthZ | Looks up the caller in `public.admin_users` via the service-role client. Rejects 403 for non-admins. |
-| Subscriber data | Loaded with the service-role client AFTER the admin gate. Subscribers' RLS is preserved for every other caller. |
+| Subscriber data | Loaded with the service-role client AFTER the internal/admin gate. Subscribers' RLS is preserved for every other caller. |
 | Master opt-out | `profiles.email_notifications_enabled = false` → recipient skipped. |
 | Per-alert prefs | `notify_on_open` and `notify_on_status_change` honored. |
-| Dedupe | 24h window per `(waitlist_id, new_status)` via `notification_events.metadata`. |
+| Admin quota | Atomic `claim_admin_alert_invocation`: ten real endpoint invocations per administrator per rolling hour; fails closed. Dry runs and internal calls are exempt. This is not a global cap on all admin-caused status-change notifications. |
+| Dedupe | Atomic `claim_waitlist_alert_send`: 24h window per `(waitlist_id, new_status)` before delivery; fails closed. |
+| Unsubscribe | GET displays confirmation only; POST atomically opts out and replaces the token. Re-enable rotates it again via migration 0023. |
 
 ## Request / response shape
 
