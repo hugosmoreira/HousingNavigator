@@ -39,17 +39,17 @@ const TOPICS: Topic[] = [
   {
     icon: <ListChecks className="w-5 h-5" />,
     title: 'Waitlist information',
-    body: 'The waitlist tracker shows whether a housing authority is currently accepting applications. Status changes quickly — always confirm directly with the authority before you apply.',
+    body: 'The waitlist tracker shows recorded application statuses for housing authorities. Status changes quickly — always confirm directly with the authority before you apply.',
   },
   {
     icon: <RefreshCw className="w-5 h-5" />,
     title: 'How often information is updated',
-    body: 'Volunteers and partner agencies review listings on a rolling basis. Most active listings are checked at least every few weeks; some change more often than we can keep up with.',
+    body: 'Update timing varies by listing. Recorded checks may be manual or automated, and provider availability can change between checks. Confirm current details directly with the provider.',
   },
   {
     icon: <CalendarCheck className="w-5 h-5" />,
     title: 'What "Last verified" means',
-    body: 'The date shows when a human last confirmed the listing was accurate. If a "last verified" date is months old, treat the details as a starting point and call the agency to confirm.',
+    body: 'The date shows the latest recorded check, which may be manual or automated. It is not a guarantee of current accuracy or availability. Treat the details as a starting point and call the agency to confirm.',
   },
   {
     icon: <HelpCircle className="w-5 h-5" />,
@@ -62,7 +62,7 @@ const FAQS: Faq[] = [
   {
     question: 'Do I need an account to use Housing Navigator?',
     answer:
-      'No. The directory and waitlist tracker are completely public — search, browse, and view everything without signing up. A free account is optional and only adds convenience: save resources for later, follow waitlists, and get an email alert when a waitlist you follow changes status.',
+      'No. The directory and waitlist tracker are completely public — search, browse, and view everything without signing up. A free account is optional and only adds convenience: save resources for later, follow waitlists, and receive email alerts for recorded openings or meaningful improvements in availability.',
   },
   {
     question: 'Can you tell me if I qualify for a program?',
@@ -77,12 +77,12 @@ const FAQS: Faq[] = [
   {
     question: 'Why is a program I know about not listed?',
     answer:
-      'The directory grows as volunteers add and verify entries. If something is missing, let us know — we add new programs frequently.',
+      'The directory does not include every program. Coverage varies by location and resource type, so check other local directories and official provider websites as well.',
   },
   {
     question: 'Is Housing Navigator only for Portland and Vancouver?',
     answer:
-      'For now, yes. Our focus is the Portland metro area and Vancouver, WA so we can keep the directory accurate. We may expand later if we have help maintaining other regions.',
+      'No. The directory includes resources in Oregon and Washington, including Portland and Vancouver. Coverage varies by county and resource type; check each listing for its service area.',
   },
 ];
 

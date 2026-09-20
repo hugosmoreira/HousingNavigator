@@ -8,12 +8,27 @@ import {
   ListChecks,
   ArrowRight,
   CheckCircle2,
-  Bookmark,
   Clock,
   Building2,
 } from 'lucide-react';
+import { usePrograms } from '../hooks/usePrograms';
+import { useWaitlists } from '../hooks/useWaitlists';
+import { DIRECTORY_CATEGORY_LABELS, legacyToDirectoryCategory } from '../data/categoryMap';
+import { serviceAreaSummary, serviceAreasForProgram } from '../data/serviceAreas';
+import { resourceServiceLabels } from '../data/resourceServiceTags';
+import { WAITLIST_TYPE_LABELS } from '../data/affordableHousing';
+import { resourcePath, waitlistPath } from '../lib/entityRoutes';
+import { formatPreviewDate, homeResourcePreview, homeWaitlistPreviews, previewStatus } from '../lib/homePreviews';
+import type { WaitlistEntry, WaitlistStatus } from '../types';
 
 export default function Home() {
+  const { programs, error: programsError, loading: programsLoading } = usePrograms();
+  const { waitlists, error: waitlistsError, loading: waitlistsLoading } = useWaitlists();
+  const resource = homeResourcePreview(programs);
+  const resourceDate = resource && formatPreviewDate(resource.last_verified);
+  const previews = homeWaitlistPreviews(waitlists);
+  const featuredWaitlist = previews[0];
+
   return (
     <>
       {/* Hero Section */}
@@ -25,7 +40,7 @@ export default function Home() {
             </h1>
             <p className="text-lg text-on-surface-variant font-body mb-8 leading-relaxed max-w-xl">
               Search a verified directory of rent assistance, shelter, and legal aid —
-              and track housing waitlists so you never miss an application window.
+              and follow housing waitlist application updates.
               Expanding across Oregon and Washington, without the 211 runaround.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -40,7 +55,7 @@ export default function Home() {
             {/* Trust microline */}
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-8 text-sm text-on-surface-variant">
               <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-primary" aria-hidden="true" /> Every listing dated
+                <ShieldCheck className="w-4 h-4 text-primary" aria-hidden="true" /> Recorded review dates
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-primary" aria-hidden="true" /> Oregon &amp; Washington
@@ -51,44 +66,49 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Self-contained hero visual — a composed app mock, no external image */}
-          <div className="relative h-[460px] w-full lg:block hidden">
+          {/* Previews use the same published records as the directory and tracker. */}
+          <div className="relative min-h-[460px] w-full lg:flex hidden flex-col justify-center gap-4 p-8">
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-surface-container-low to-surface-container-high border border-surface-container-highest shadow-[0px_12px_40px_rgba(45,51,55,0.08)]" />
 
             {/* Primary resource card */}
-            <div className="absolute top-10 left-8 right-16 bg-surface-container-lowest rounded-2xl shadow-[0px_12px_32px_rgba(45,51,55,0.10)] border border-surface-container-highest p-6">
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">Rent assistance</span>
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium border border-surface-container-highest text-on-surface-variant">Multnomah County</span>
+            <div className="relative mr-8 bg-surface-container-lowest rounded-2xl shadow-[0px_12px_32px_rgba(45,51,55,0.10)] border border-surface-container-highest p-6 [overflow-wrap:anywhere]">
+              {resource ? <>
+              <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">{resourceServiceLabels(resource.service_tags).slice(0, 2).join(' · ') || DIRECTORY_CATEGORY_LABELS[resource.directory_category ?? legacyToDirectoryCategory(resource.category)]}</span>
+                <span className="px-2.5 py-1 rounded-full text-xs font-medium border border-surface-container-highest text-on-surface-variant line-clamp-1">{serviceAreaSummary(serviceAreasForProgram(resource))}</span>
               </div>
-              <h3 className="font-headline font-bold text-on-surface text-lg mb-1">Emergency Rent Assistance</h3>
-              <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
-                Short-term help covering past-due rent for households facing eviction.
+              <h3 className="font-headline font-bold text-on-surface text-lg mb-1 line-clamp-2">{resource.program_name}</h3>
+              <p className="text-sm text-on-surface-variant leading-relaxed mb-4 line-clamp-3">
+                {resource.description || resource.notes}
               </p>
-              <div className="flex items-center justify-between pt-3 border-t border-surface-container-highest/60">
+              <div className="flex flex-wrap gap-2 items-center justify-between pt-3 border-t border-surface-container-highest/60">
                 <span className="inline-flex items-center gap-1.5 text-xs text-on-surface-variant">
-                  <Clock className="w-3.5 h-3.5 text-primary" aria-hidden="true" /> Last verified May 2026
+                  <Clock className="w-3.5 h-3.5 text-primary" aria-hidden="true" /> {resourceDate ? `Last verified ${resourceDate}` : 'Verification date unavailable'}
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-                  <Bookmark className="w-4 h-4" aria-hidden="true" /> Saved
-                </span>
+                <Link to={resourcePath(resource)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+                  View resource <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
               </div>
+              </> : <Link to="/resources/" className="font-semibold text-primary hover:underline">{programsLoading ? 'Loading resources…' : 'Find housing resources'}</Link>}
+              {programsError && <p className="mt-2 text-xs text-on-surface-variant">Could not refresh resources.{resource ? ' Showing previously loaded information.' : ' Please try the directory again later.'}</p>}
             </div>
 
-            {/* Floating waitlist alert chip */}
-            <div className="absolute bottom-10 right-6 bg-surface-container-lowest rounded-2xl shadow-[0px_12px_32px_rgba(45,51,55,0.12)] border border-surface-container-highest p-4 max-w-[15rem]">
+            {/* Recorded status, not a simulated notification or a promise of availability. */}
+            <div className="relative self-end bg-surface-container-lowest rounded-2xl shadow-[0px_12px_32px_rgba(45,51,55,0.12)] border border-surface-container-highest p-4 max-w-[15rem] [overflow-wrap:anywhere]">
+              {featuredWaitlist ? <Link to={waitlistPath(featuredWaitlist)} className="block hover:underline">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <BellRing className="w-4 h-4" aria-hidden="true" />
+                <div className="w-9 h-9 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <ListChecks className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs text-on-surface-variant leading-tight">Waitlist alert</p>
-                  <p className="font-headline font-bold text-on-surface text-sm leading-tight">Vancouver Housing Authority</p>
+                  <p className="text-xs text-on-surface-variant leading-tight">Recorded waitlist status</p>
+                  <p className="font-headline font-bold text-on-surface text-sm leading-tight">{featuredWaitlist.agency}</p>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700">
-                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> NOW OPEN
-              </span>
+              <WaitlistPreviewStatus waitlist={featuredWaitlist} />
+              <p className="mt-2 text-xs text-on-surface-variant">{checkedLabel(featuredWaitlist)}</p>
+              <p className="mt-1 text-xs text-on-surface-variant">{waitlistsError ? 'Could not refresh. Confirm with provider.' : 'Confirm with provider.'}</p>
+              </Link> : <Link to="/waitlist/" className="font-semibold text-primary hover:underline">{waitlistsLoading ? 'Loading waitlists…' : 'Browse housing waitlists'}</Link>}
             </div>
           </div>
         </div>
@@ -156,7 +176,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-headline font-bold text-on-surface mb-3">Verified, not vibes</h3>
               <p className="text-on-surface-variant leading-relaxed text-sm">
-                Every listing shows when it was last verified, so you can trust what is current and skip dead phone numbers.
+                See each listing’s source and recorded review date. Confirm current availability with the provider.
               </p>
             </div>
           </div>
@@ -169,9 +189,9 @@ export default function Home() {
           <div className="order-2 lg:order-1 min-w-0">
             {/* Self-contained waitlist preview list */}
             <div className="bg-surface-container-lowest rounded-3xl border border-surface-container-highest shadow-[0px_12px_40px_rgba(45,51,55,0.06)] p-6 lg:p-8 space-y-3">
-              <WaitlistPreviewRow agency="Washington County Housing Services" status="open" label="OPEN" checked="Apr 2026" />
-              <WaitlistPreviewRow agency="Vancouver Housing Authority" status="limited" label="LIMITED" checked="Apr 2026" />
-              <WaitlistPreviewRow agency="Clackamas Housing Authority" status="closed" label="CLOSED" checked="Mar 2026" />
+              {previews.map(waitlist => <WaitlistPreviewRow key={waitlist.id} waitlist={waitlist} />)}
+              {previews.length === 0 && <p className="text-sm text-on-surface-variant">{waitlistsLoading ? 'Loading waitlist information…' : 'No waitlist information to preview. Check the tracker for updates.'}</p>}
+              <p className="text-xs text-on-surface-variant">{waitlistsError ? 'Could not refresh waitlists. Confirm any previously loaded information with the provider.' : 'Recorded statuses — confirm current applications with the provider.'}</p>
             </div>
           </div>
 
@@ -182,13 +202,13 @@ export default function Home() {
             </h2>
             <p className="text-on-surface-variant text-lg leading-relaxed mb-6">
               Section 8, public housing, and affordable housing waitlists open and close
-              with little warning. Follow the ones that matter to you and get an email the
-              moment their status changes.
+              with little warning. Follow the ones that matter to you and receive email
+              alerts when we record an opening or expanded application access.
             </p>
             <ul className="space-y-4 mb-8">
               <li className="flex items-start gap-3">
                 <BellRing className="w-5 h-5 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-                <span className="text-on-surface-variant"><span className="font-semibold text-on-surface">Get notified</span> when a waitlist you follow opens — no daily refreshing.</span>
+                <span className="text-on-surface-variant"><span className="font-semibold text-on-surface">Get notified</span> about recorded openings on waitlists you follow.</span>
               </li>
               <li className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-primary mt-0.5 shrink-0" aria-hidden="true" />
@@ -240,7 +260,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-headline font-bold text-on-surface text-lg">Verified resources</h3>
-                  <p className="text-sm text-on-surface-variant mt-1 leading-relaxed">Every listing shows when it was last verified, so you can tell what's still current.</p>
+                  <p className="text-sm text-on-surface-variant mt-1 leading-relaxed">Check recorded review dates and official sources before relying on a listing. Availability can change between reviews.</p>
                 </div>
               </div>
             </div>
@@ -263,31 +283,34 @@ export default function Home() {
   );
 }
 
-interface WaitlistPreviewRowProps {
-  agency: string;
-  status: 'open' | 'limited' | 'closed';
-  label: string;
-  checked: string;
-}
-
-const PREVIEW_STATUS_CLASS: Record<WaitlistPreviewRowProps['status'], string> = {
+const PREVIEW_STATUS_CLASS: Record<WaitlistStatus, string> = {
   open: 'bg-emerald-50 text-emerald-700',
   limited: 'bg-amber-50 text-amber-700',
   closed: 'bg-surface-container-highest text-on-surface-variant',
+  unknown: 'bg-surface-container-high text-on-surface-variant',
 };
 
-function WaitlistPreviewRow({ agency, status, label, checked }: WaitlistPreviewRowProps) {
+function checkedLabel(waitlist: WaitlistEntry): string {
+  const checked = formatPreviewDate(waitlist.last_checked);
+  return checked ? `Last checked ${checked}` : 'Check date unavailable';
+}
+
+function WaitlistPreviewStatus({ waitlist }: { waitlist: WaitlistEntry }) {
+  const { status, label } = previewStatus(waitlist);
+  return <span className={`shrink-0 px-2.5 py-1 rounded-md text-xs font-bold ${PREVIEW_STATUS_CLASS[status]}`}>{label}</span>;
+}
+
+function WaitlistPreviewRow({ waitlist }: { waitlist: WaitlistEntry }) {
   return (
-    <div className="flex items-center justify-between gap-4 bg-surface-container-low rounded-xl px-4 py-3 border border-surface-container-highest/60">
+    <Link to={waitlistPath(waitlist)} className="flex flex-wrap items-center justify-between gap-4 bg-surface-container-low rounded-xl px-4 py-3 border border-surface-container-highest/60 hover:border-primary/40">
       <div className="min-w-0">
-        <p className="font-headline font-bold text-on-surface text-sm truncate">{agency}</p>
+        <p className="font-headline font-bold text-on-surface text-sm [overflow-wrap:anywhere]">{waitlist.agency}</p>
+        <p className="text-xs text-on-surface-variant line-clamp-2">{waitlist.program_name && !waitlist.agency.includes(waitlist.program_name) ? waitlist.program_name : (waitlist.waitlist_type && WAITLIST_TYPE_LABELS[waitlist.waitlist_type])}</p>
         <p className="text-xs text-on-surface-variant inline-flex items-center gap-1 mt-0.5">
-          <Clock className="w-3 h-3" aria-hidden="true" /> Last checked {checked}
+          <Clock className="w-3 h-3" aria-hidden="true" /> {checkedLabel(waitlist)}
         </p>
       </div>
-      <span className={`shrink-0 px-2.5 py-1 rounded-md text-xs font-bold ${PREVIEW_STATUS_CLASS[status]}`}>
-        {label}
-      </span>
-    </div>
+      <WaitlistPreviewStatus waitlist={waitlist} />
+    </Link>
   );
 }

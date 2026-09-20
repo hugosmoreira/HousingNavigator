@@ -141,13 +141,13 @@ export default function Waitlist() {
             Track housing waitlists in one place.
           </h1>
           <p className="text-on-surface-variant text-base leading-relaxed">
-            Monitor open waitlists across local housing authorities and turn on alerts so
-            you never miss an application window.
+            Browse recorded waitlist statuses across local housing authorities and turn
+            on alerts for recorded opening updates.
             {!loading && !error && waitlists.length > 0 && (
               <>
                 {' '}
                 <span className="font-semibold text-on-surface">
-                  {openCount} {openCount === 1 ? 'waitlist is' : 'waitlists are'} open right now.
+                  {openCount} {openCount === 1 ? 'waitlist is' : 'waitlists are'} listed as open.
                 </span>
               </>
             )}
