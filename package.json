@@ -20,7 +20,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "test:database": "node scripts/testResourceSourceDatabase.mjs && node scripts/testResourcePublicationDatabase.mjs",
+    "test:database": "node scripts/testResourceSourceDatabase.mjs && node scripts/testResourcePublicationDatabase.mjs && node scripts/testWaitlistSecurityDatabase.mjs",
     "check": "npm run lint && npm test && npm run test:database && npm run build",
     "test:watch": "vitest",
     "catalog:build": "tsx scripts/mergeCatalog.ts",

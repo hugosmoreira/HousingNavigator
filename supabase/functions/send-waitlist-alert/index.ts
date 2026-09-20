@@ -331,25 +331,16 @@ serve(async (req: Request) => {
   // CLOSED — if the ledger can't be read or written, nothing is sent.
   const ADMIN_SENDS_PER_HOUR = 10;
   if (adminUserId && !dry_run) {
-    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count, error: rateErr } = await admin
-      .from('alert_invocations')
-      .select('id', { count: 'exact', head: true })
-      .eq('admin_user_id', adminUserId)
-      .gt('invoked_at', hourAgo);
+    const { data: quotaClaimed, error: rateErr } = await admin.rpc(
+      'claim_admin_alert_invocation',
+      { p_admin_user_id: adminUserId, p_limit: ADMIN_SENDS_PER_HOUR },
+    );
     if (rateErr) {
-      console.error(`[send-waitlist-alert] rate-limit lookup failed: ${rateErr.message}`);
+      console.error(`[send-waitlist-alert] rate-limit claim failed: ${rateErr.message}`);
       return json({ error: 'rate limit check failed; nothing sent' }, 500);
     }
-    if ((count ?? 0) >= ADMIN_SENDS_PER_HOUR) {
+    if (quotaClaimed !== true) {
       return json({ error: 'rate limit exceeded; try again later' }, 429);
-    }
-    const { error: recordErr } = await admin
-      .from('alert_invocations')
-      .insert({ admin_user_id: adminUserId });
-    if (recordErr) {
-      console.error(`[send-waitlist-alert] rate-limit record failed: ${recordErr.message}`);
-      return json({ error: 'rate limit check failed; nothing sent' }, 500);
     }
   }
 

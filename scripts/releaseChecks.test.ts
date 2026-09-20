@@ -15,6 +15,7 @@ describe('release-check configuration', () => {
     expect(pkg.scripts['test:database'].split(' && ')).toEqual([
       'node scripts/testResourceSourceDatabase.mjs',
       'node scripts/testResourcePublicationDatabase.mjs',
+      'node scripts/testWaitlistSecurityDatabase.mjs',
     ]);
   });
 
@@ -33,13 +34,13 @@ describe('release-check configuration', () => {
     expect(read('.github/workflows/indexnow.yml')).toContain('node-version-file: .nvmrc');
   });
 
-  it('uses a pinned root development dependency for both database suites', () => {
+  it('uses a pinned root development dependency for every database suite', () => {
     const version = pkg.devDependencies['@electric-sql/pglite'];
     expect(version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(pkg.dependencies).not.toHaveProperty('@electric-sql/pglite');
     expect(lock.packages['node_modules/@electric-sql/pglite'].version).toBe(version);
     expect(lock.packages['node_modules/@electric-sql/pglite'].dev).toBe(true);
-    for (const file of ['testResourceSourceDatabase.mjs', 'testResourcePublicationDatabase.mjs']) {
+    for (const file of ['testResourceSourceDatabase.mjs', 'testResourcePublicationDatabase.mjs', 'testWaitlistSecurityDatabase.mjs']) {
       const source = read('scripts/' + file);
       expect(source).toContain("from '@electric-sql/pglite'");
       expect(source).not.toContain('tmp/source-check-tests/node_modules');
