@@ -6,7 +6,7 @@ import {
   Scale,
 } from 'lucide-react';
 
-const LAST_UPDATED = 'May 2026';
+const LAST_UPDATED = 'September 19, 2026';
 
 export default function Terms() {
   return (
@@ -33,9 +33,9 @@ export default function Terms() {
           title="Informational use only"
         >
           <p>
-            Housing Navigator is a community-maintained directory of housing
-            resources and waitlists in the Portland and Vancouver metro area.
-            Everything here is for general information.
+            Housing Navigator is a directory of housing resources and waitlists
+            in Oregon and Washington. Coverage varies by county and resource
+            type. Everything here is for general information.
           </p>
           <p>
             Nothing on the site is legal, medical, or financial advice. We do
@@ -65,10 +65,10 @@ export default function Terms() {
           title="Verify before you act"
         >
           <p>
-            Resource information is contributed and reviewed by volunteers and
-            partner organizations. We label each entry with a "last verified"
-            date so you can see how recently we checked it. Even so, the most
-            up-to-date source is always the organization itself.
+            A listing's "last verified" date reflects its latest recorded check,
+            which may be manual or automated. It does not guarantee current
+            accuracy or availability. Confirm current details with the
+            organization itself.
           </p>
           <p>
             Before traveling to an address, applying, or relying on a program,
