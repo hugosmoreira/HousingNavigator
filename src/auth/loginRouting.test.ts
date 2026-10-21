@@ -50,4 +50,25 @@ describe('post-login routing', () => {
       DEFAULT_PUBLIC_LOGIN_DESTINATION,
     );
   });
+
+  it('rejects paths a browser would resolve to another site or to /admin', () => {
+    for (const from of [
+      '/\\evil.test',
+      '/\\/evil.test',
+      '/\tevil.test',
+      '/\n/evil.test',
+      '/./admin/review',
+      '/%2e%2e/admin',
+      '/resources/../admin/users',
+    ]) {
+      expect(resolvePublicLoginTarget(from), from).toBe(DEFAULT_PUBLIC_LOGIN_DESTINATION);
+    }
+  });
+
+  it('keeps the query string and fragment of a same-site path', () => {
+    expect(resolvePublicLoginTarget('/resources/?household=family#results')).toBe(
+      '/resources/?household=family#results',
+    );
+    expect(resolvePublicLoginTarget(undefined)).toBe(DEFAULT_PUBLIC_LOGIN_DESTINATION);
+  });
 });

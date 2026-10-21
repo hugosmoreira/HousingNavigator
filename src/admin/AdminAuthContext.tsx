@@ -6,6 +6,10 @@
  * confirmed via an RLS-gated lookup). All admin pages depend on
  * `isAdmin` being true; non-admin authenticated users get bounced to
  * the login page with an error.
+ *
+ * The flag is bound to the user it was verified for. A different user in
+ * the same tab (another tab signed in, or a sign-out and sign-in) resets it
+ * at once, and a slow lookup started for the previous user is discarded.
  */
 
 import {
@@ -22,8 +26,15 @@ import {
   getSupabaseClient,
   isSupabaseConfigured,
   requireSupabase,
+  supabaseUrl,
 } from '../lib/supabaseClient';
 import { resetAnalytics } from '../lib/analytics';
+import {
+  RemoteSignOutError,
+  remoteRevokeIncomplete,
+  signOutSafely,
+} from '../lib/authSession';
+import { AdminAccessTracker } from './adminAccessTracker';
 
 interface AdminAuthValue {
   session: Session | null;
@@ -31,14 +42,30 @@ interface AdminAuthValue {
   loading: boolean;
   configured: boolean;
   /**
+   * True when the signed-in user has not been verified yet and the last
+   * admin lookup failed (network, timeout, server error). Guards show a
+   * retry instead of "not an admin", because the answer is unknown.
+   */
+  adminCheckFailed: boolean;
+  /**
    * Sign in with email + password and refresh the admin flag.
    * Resolves to `true` when the signed-in user is in `admin_users`,
    * `false` otherwise. Throws on auth failure (bad password, network,
-   * timeout, etc.) with the original Supabase error preserved.
+   * timeout, etc.) with the original Supabase error preserved, or
+   * `AdminVerificationError` when sign-in worked but the lookup failed.
    */
   signIn(email: string, password: string, captchaToken?: string): Promise<boolean>;
   signOut(): Promise<void>;
   refreshAdminFlag(): Promise<boolean>;
+}
+
+/** Sign-in succeeded, but admin membership could not be checked. */
+export class AdminVerificationError extends Error {
+  constructor(cause: unknown) {
+    super('Signed in, but admin access could not be verified.');
+    this.name = 'AdminVerificationError';
+    (this as { cause?: unknown }).cause = cause;
+  }
 }
 
 const AdminAuthContext = createContext<AdminAuthValue | null>(null);
@@ -55,7 +82,6 @@ function debug(...args: unknown[]) {
 
 const SIGN_IN_TIMEOUT_MS = 12_000;
 const ADMIN_CHECK_TIMEOUT_MS = 8_000;
-const SIGN_OUT_TIMEOUT_MS = 6_000;
 
 function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -75,23 +101,21 @@ function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Pro
   });
 }
 
-async function checkIsAdmin(): Promise<boolean> {
+async function checkIsAdmin(userId: string): Promise<boolean> {
   const supabase = await getSupabaseClient();
   if (!supabase) return false;
   const start = performance.now();
   debug('checkIsAdmin: querying admin_users');
+  // RLS already limits admin_users to the caller's own row; filtering by the
+  // user id as well ties the answer to the user we are asking about.
   const { data, error } = await withTimeout(
-    supabase.from('admin_users').select('user_id').limit(1),
+    supabase.from('admin_users').select('user_id').eq('user_id', userId).limit(1),
     ADMIN_CHECK_TIMEOUT_MS,
     'admin_users lookup',
   );
   const elapsed = Math.round(performance.now() - start);
   if (error) {
     debug('checkIsAdmin: error', { elapsed, code: error.code, message: error.message });
-    // Surface the failure instead of silently returning false. The login
-    // path treats a thrown error as "could not verify admin status" and
-    // shows it to the user, which is much more debuggable than a stuck
-    // spinner.
     throw new Error(
       `Admin lookup failed (${error.code ?? 'no-code'}): ${error.message}`,
     );
@@ -105,28 +129,44 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured();
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminCheckFailed, setAdminCheckFailed] = useState(false);
   const [loading, setLoading] = useState(configured);
+  const [tracker] = useState(() => new AdminAccessTracker());
+
+  const applySession = useCallback((next: Session | null) => {
+    // A different user resets the flag at once; a lookup still running for
+    // the previous user is then ignored when it finishes.
+    const reset = tracker.setUser(next?.user.id ?? null);
+    if (reset) {
+      setIsAdmin(reset.isAdmin);
+      setAdminCheckFailed(reset.adminCheckFailed);
+    }
+    setSession(next);
+  }, [tracker]);
 
   const refreshAdminFlag = useCallback(async (): Promise<boolean> => {
-    if (!configured) {
+    const ticket = tracker.begin();
+    if (!configured || !ticket) {
       setIsAdmin(false);
       return false;
     }
     try {
-      const ok = await checkIsAdmin();
-      setIsAdmin(ok);
-      return ok;
+      const ok = await checkIsAdmin(ticket.userId);
+      const snapshot = tracker.succeed(ticket, ok);
+      if (!snapshot) return false;
+      setIsAdmin(snapshot.isAdmin);
+      setAdminCheckFailed(snapshot.adminCheckFailed);
+      return snapshot.isAdmin;
     } catch (err) {
-      // Preserve the last-known-good admin state on transient failures
-      // (token refresh races, network blips, RLS hiccups). A confirmed
-      // admin should not get demoted because a single admin_users lookup
-      // failed — only an explicit sign-out / empty-row response should.
-      // Bubble up so the login form can still surface the failure if it
-      // initiated the call.
-      debug('refreshAdminFlag error — preserving previous isAdmin', err);
-      throw err;
+      // A user already verified keeps their last answer on a transient
+      // failure (token refresh races, network blips). A user never verified
+      // gets "could not verify", not "not an admin".
+      const failure = tracker.fail(ticket);
+      if (failure) setAdminCheckFailed(failure.adminCheckFailed);
+      debug('refreshAdminFlag error', err);
+      throw new AdminVerificationError(err);
     }
-  }, [configured]);
+  }, [configured, tracker]);
 
   useEffect(() => {
     if (!configured) {
@@ -136,6 +176,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
     let active = true;
     let unsubscribe: (() => void) | null = null;
+    let eventSeen = false;
 
     const initialize = async () => {
       try {
@@ -146,8 +187,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           .getSession()
           .then(async ({ data }) => {
             if (!active) return;
-            setSession(data.session);
-            if (data.session) {
+            // An auth event that already arrived is newer than this snapshot.
+            if (!eventSeen) applySession(data.session);
+            if (tracker.userId) {
               try {
                 await refreshAdminFlag();
               } catch (err) {
@@ -165,17 +207,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         const { data: subscription } = supabase.auth.onAuthStateChange(
           (event, nextSession) => {
             debug('auth state change', event, { hasSession: !!nextSession });
-            setSession(nextSession);
-            // Demote `isAdmin` only when the session actually ended. Silent
-            // token refreshes and metadata updates keep the last-known flag.
-            if (event === 'SIGNED_OUT' || !nextSession) {
-              setIsAdmin(false);
-              return;
-            }
+            if (!active) return;
+            eventSeen = true;
+            applySession(nextSession);
+            if (event === 'SIGNED_OUT' || !nextSession) return;
             // Defer the RLS query until Supabase releases its auth lock.
             setTimeout(() => {
               void refreshAdminFlag().catch((err) => {
-                debug('refreshAdminFlag (listener) failed — keeping previous isAdmin', err);
+                debug('refreshAdminFlag (listener) failed', err);
               });
             }, 0);
           },
@@ -193,7 +232,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       active = false;
       unsubscribe?.();
     };
-  }, [configured, refreshAdminFlag]);
+  }, [configured, applySession, refreshAdminFlag, tracker]);
 
   const signIn = useCallback(
     async (email: string, password: string, captchaToken?: string): Promise<boolean> => {
@@ -220,35 +259,42 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
       debug('signIn: success', { elapsed, userId: data.session?.user.id });
+      // The SIGNED_IN listener normally ran already; this is idempotent.
+      applySession(data.session);
       return refreshAdminFlag();
     },
-    [refreshAdminFlag],
+    [applySession, refreshAdminFlag],
   );
 
   const signOut = useCallback(async () => {
     debug('signOut: start');
-    // Always clear local state first so the UI updates even if the
-    // remote call hangs or fails. Supabase's listener will fire later
-    // and reaffirm.
-    setIsAdmin(false);
-    setSession(null);
+    const accessToken = session?.access_token ?? null;
+    // Clear local state first so the UI updates at once.
+    applySession(null);
     resetAnalytics();
-    try {
-      const supabase = await getSupabaseClient();
-      if (!supabase) return;
-      await withTimeout(supabase.auth.signOut(), SIGN_OUT_TIMEOUT_MS, 'signOut');
-      debug('signOut: success');
-    } catch (err) {
-      debug('signOut: error (local state already cleared)', err);
-      // Re-throw so the layout can surface a toast, but local session
-      // is already gone — the user will land on /admin/login either way.
-      throw err;
+    const supabase = await getSupabaseClient().catch(() => null);
+    if (!supabase || !supabaseUrl) return;
+    // Removes the stored session before any network call (handoff AUTH-001),
+    // so a failed request can no longer leave this browser signed in.
+    const result = await signOutSafely(supabase, supabaseUrl, { accessToken });
+    debug('signOut: done', result.remote);
+    if (remoteRevokeIncomplete(result)) {
+      throw new RemoteSignOutError(result.remote, result.error);
     }
-  }, []);
+  }, [applySession, session]);
 
   const value = useMemo<AdminAuthValue>(
-    () => ({ session, isAdmin, loading, configured, signIn, signOut, refreshAdminFlag }),
-    [session, isAdmin, loading, configured, signIn, signOut, refreshAdminFlag],
+    () => ({
+      session,
+      isAdmin,
+      loading,
+      configured,
+      adminCheckFailed,
+      signIn,
+      signOut,
+      refreshAdminFlag,
+    }),
+    [session, isAdmin, loading, configured, adminCheckFailed, signIn, signOut, refreshAdminFlag],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

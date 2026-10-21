@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { usePublicAuth } from './PublicAuthContext';
 
@@ -45,5 +46,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  return <>{children}</>;
+  // Keyed on the user, so an account switch in another tab remounts the
+  // dashboard and every panel reloads for the new user instead of keeping
+  // the previous user's alert history on screen.
+  return <Fragment key={session.user.id}>{children}</Fragment>;
 }
