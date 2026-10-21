@@ -16,6 +16,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
+/** Public project URL (not a secret). Sign-out uses it to find auth-js's storage key. */
+export const supabaseUrl: string | null = url ?? null;
+
 let client: SupabaseClient | null = null;
 let clientPromise: Promise<SupabaseClient> | null = null;
 

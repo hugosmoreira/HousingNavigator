@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAdminAuth } from '../AdminAuthContext';
+import { AdminVerificationError, useAdminAuth } from '../AdminAuthContext';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 import TurnstileChallenge, {
   isTurnstileConfigured,
@@ -22,6 +22,8 @@ interface DiagnosticsReport {
 }
 
 const NOT_ADMIN_MESSAGE = 'This account does not have admin access.';
+const VERIFY_FAILED_MESSAGE =
+  "You're signed in, but we couldn't confirm admin access. Check your connection and try again.";
 
 // Diagnostics + verbose auth errors are only useful while wiring up a new
 // Supabase project. In production we surface a generic message and skip
@@ -79,7 +81,9 @@ export default function AdminLogin() {
         setError(NOT_ADMIN_MESSAGE);
       }
     } catch (err) {
-      setError(formatAuthError(err));
+      // The password was accepted; only the admin lookup failed. Don't
+      // blame the credentials or sign the user back out.
+      setError(err instanceof AdminVerificationError ? VERIFY_FAILED_MESSAGE : formatAuthError(err));
     } finally {
       setSubmitting(false);
       if (isTurnstileConfigured) {

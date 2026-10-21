@@ -18,6 +18,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -26,8 +27,15 @@ import {
   getSupabaseClient,
   isSupabaseConfigured,
   requireSupabase,
+  supabaseUrl,
 } from '../lib/supabaseClient';
 import { resetAnalytics } from '../lib/analytics';
+import {
+  ProfileRequestTracker,
+  RemoteSignOutError,
+  remoteRevokeIncomplete,
+  signOutSafely,
+} from '../lib/authSession';
 import { scheduleIdleWork } from '../lib/scheduleIdleWork';
 
 export interface PublicProfile {
@@ -90,7 +98,6 @@ function debug(...args: unknown[]) {
 const SIGN_IN_TIMEOUT_MS = 12_000;
 const SIGN_UP_TIMEOUT_MS = 15_000;
 const PROFILE_TIMEOUT_MS = 8_000;
-const SIGN_OUT_TIMEOUT_MS = 6_000;
 
 function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -141,15 +148,30 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(configured);
+  // Handoff AUTH-003: a slow profile response for user A must never be shown,
+  // or written to, as user B. The tracker commits only the newest request
+  // for the signed-in user (see ProfileRequestTracker).
+  const [profiles] = useState(() => new ProfileRequestTracker());
+  // Advances on every auth event and on sign-out. The startup getSession()
+  // snapshot is applied only if nothing newer happened before it resolved.
+  const authEpoch = useRef(0);
+
+  const commitProfile = useCallback(
+    (generation: number, userId: string, next: PublicProfile | null) => {
+      if (profiles.canCommit(generation, userId, next?.id ?? null)) setProfile(next);
+    },
+    [profiles],
+  );
 
   const refreshProfile = useCallback(async () => {
-    const uid = session?.user.id;
+    const uid = profiles.currentUserId;
     if (!uid) {
       setProfile(null);
       return;
     }
-    setProfile(await fetchProfile(uid));
-  }, [session]);
+    const generation = profiles.begin();
+    commitProfile(generation, uid, await fetchProfile(uid));
+  }, [commitProfile, profiles]);
 
   useEffect(() => {
     if (!configured) {
@@ -169,11 +191,23 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
     // on the lock. Deferring to a macrotask runs the query after the
     // lock is released.
     const loadProfile = (userId: string) => {
+      const generation = profiles.begin();
       setTimeout(() => {
         void fetchProfile(userId).then((p) => {
-          if (active) setProfile(p);
+          if (active) commitProfile(generation, userId, p);
         });
       }, 0);
+    };
+
+    // Record which user the session belongs to and apply what the event means
+    // for the profile: a different user (or none) drops the old profile at
+    // once and invalidates its requests; the same user keeps it on screen.
+    const applySession = (event: string, nextSession: Session | null) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      const action = profiles.applyEvent(event, nextUserId);
+      if (action.clearProfile) setProfile(null);
+      setSession(nextSession);
+      if (action.reloadProfile && nextUserId) loadProfile(nextUserId);
     };
 
     const initialize = async () => {
@@ -181,12 +215,13 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
         const supabase = await getSupabaseClient();
         if (!active || !supabase) return;
 
+        const bootstrapEpoch = authEpoch.current;
         supabase.auth
           .getSession()
           .then(({ data }) => {
-            if (!active) return;
-            setSession(data.session);
-            if (data.session) loadProfile(data.session.user.id);
+            // An auth event or sign-out that came first is newer than this snapshot.
+            if (!active || authEpoch.current !== bootstrapEpoch) return;
+            applySession('INITIAL_SESSION', data.session);
           })
           .catch((err) => {
             debug('getSession failed', err);
@@ -196,14 +231,10 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
           });
 
         const { data: subscription } = supabase.auth.onAuthStateChange(
-          (_event, nextSession) => {
+          (event, nextSession) => {
             if (!active) return;
-            setSession(nextSession);
-            if (nextSession) {
-              loadProfile(nextSession.user.id);
-            } else {
-              setProfile(null);
-            }
+            authEpoch.current += 1;
+            applySession(event, nextSession);
           },
         );
         unsubscribe = () => subscription.subscription.unsubscribe();
@@ -235,7 +266,7 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
       unsubscribe?.();
       cancelScheduledInitialization();
     };
-  }, [configured]);
+  }, [configured, commitProfile, profiles]);
 
   const signIn = useCallback(async (email: string, password: string, captchaToken?: string) => {
     const supabase = await requireSupabase();
@@ -277,20 +308,23 @@ export function PublicAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    const accessToken = session?.access_token ?? null;
+    // Invalidate in-flight profile requests and clear the UI immediately.
+    authEpoch.current += 1;
+    profiles.signOut();
     setProfile(null);
     setSession(null);
     resetAnalytics();
-    try {
-      const supabase = await getSupabaseClient();
-      if (!supabase) return;
-      await withTimeout(supabase.auth.signOut(), SIGN_OUT_TIMEOUT_MS, 'signOut');
-    } catch (err) {
-      // Local state is already cleared; surface the failure but don't
-      // strand the UI in a half-signed-out state.
-      debug('signOut error', err);
-      throw err;
+    const supabase = await getSupabaseClient().catch(() => null);
+    if (!supabase || !supabaseUrl) return;
+    // Removes the stored session before any network call (handoff AUTH-002),
+    // so a failed request can no longer leave this browser signed in.
+    const result = await signOutSafely(supabase, supabaseUrl, { accessToken });
+    if (remoteRevokeIncomplete(result)) {
+      debug('signOut: remote revoke incomplete', result);
+      throw new RemoteSignOutError(result.remote, result.error);
     }
-  }, []);
+  }, [session]);
 
   const requestPasswordReset = useCallback(async (email: string, captchaToken?: string) => {
     const supabase = await requireSupabase();
