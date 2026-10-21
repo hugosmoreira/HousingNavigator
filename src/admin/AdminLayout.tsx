@@ -138,7 +138,9 @@ export default function AdminLayout() {
 
         {signOutError && (
           <div className="border-b border-error/30 bg-error/10 px-6 py-2 text-sm text-error lg:px-10">
-            Sign out had trouble: {signOutError}. Your local session was cleared.
+            {/* signOut() throws only after this browser's session is already
+                removed, when the server could not end the other sessions. */}
+            {signOutError}
           </div>
         )}
 

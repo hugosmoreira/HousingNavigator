@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
-import { useAdminAuth } from '../admin/AdminAuthContext';
+import { AdminVerificationError, useAdminAuth } from '../admin/AdminAuthContext';
 import { usePublicAuth } from '../auth/PublicAuthContext';
 import {
   resolvePostLoginDestination,
@@ -79,6 +79,12 @@ export default function Login() {
         }),
       );
     } catch (err) {
+      if (err instanceof AdminVerificationError) {
+        // The password was accepted; only the optional admin lookup failed.
+        // Continue as a regular account instead of showing an internal error.
+        setPostLoginDestination(target);
+        return;
+      }
       const raw = err instanceof Error ? err.message : '';
       // Map internal/implementation messages to user-facing copy; let
       // already-friendly Supabase messages (e.g. "Invalid login credentials")

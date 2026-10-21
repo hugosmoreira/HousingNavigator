@@ -21,6 +21,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -63,20 +64,37 @@ interface UserDataValue {
 
 const UserDataContext = createContext<UserDataValue | null>(null);
 
+const NO_SAVED_IDS: ReadonlySet<string> = new Set();
+const NO_ALERTS: ReadonlyMap<string, WaitlistAlertRow> = new Map();
+
 export function UserDataProvider({ children }: { children: ReactNode }) {
   const { session, isAuthed } = usePublicAuth();
   const { promptToSignIn } = useAuthPrompt();
+  const userId = session && isAuthed ? session.user.id : null;
 
-  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
-  const [alerts, setAlerts] = useState<Map<string, WaitlistAlertRow>>(
+  const [savedIdsState, setSavedIds] = useState<Set<string>>(() => new Set());
+  const [alertsState, setAlerts] = useState<Map<string, WaitlistAlertRow>>(
     () => new Map(),
   );
+  // The user the loaded sets belong to. Until a refresh for the current user
+  // finishes, nothing is shown, so a sign-out or account switch on a shared
+  // device never displays the previous person's saved and followed items.
+  const [owner, setOwner] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const refreshGeneration = useRef(0);
+
+  const savedIds: ReadonlySet<string> = owner !== null && owner === userId ? savedIdsState : NO_SAVED_IDS;
+  const alerts: ReadonlyMap<string, WaitlistAlertRow> =
+    owner !== null && owner === userId ? alertsState : NO_ALERTS;
 
   const refresh = useCallback(async () => {
-    if (!session || !isAuthed) {
+    // A newer refresh (or a sign-out) supersedes any request still in flight.
+    const generation = ++refreshGeneration.current;
+    if (!userId) {
       setSavedIds(new Set());
       setAlerts(new Map());
+      setOwner(null);
+      setLoading(false);
       return;
     }
     setLoading(true);
@@ -85,15 +103,17 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         listSavedResources(),
         listWaitlistAlerts(),
       ]);
+      if (generation !== refreshGeneration.current) return;
       setSavedIds(new Set(saved.map((row) => row.resource_id)));
       setAlerts(new Map(alertRows.map((row) => [row.waitlist_id, row])));
+      setOwner(userId);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn('[user-data] initial load failed', err);
     } finally {
-      setLoading(false);
+      if (generation === refreshGeneration.current) setLoading(false);
     }
-  }, [session, isAuthed]);
+  }, [userId]);
 
   useEffect(() => {
     void refresh();
