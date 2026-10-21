@@ -3,17 +3,27 @@
  *
  * Reads one or more CSV files, dedupes across them by a deterministic id
  * derived from (housing_authority, program_name, source_url), normalizes
- * fields, and UPSERTs into Supabase. Never deletes; preserves existing
- * rows (and therefore preserves every `waitlist_alerts` row pointing at
- * them via FK cascade).
+ * fields, and plans changes against the live table. Never deletes.
  *
- * Usage:
- *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *     npx tsx scripts/importWaitlistsCsv.ts \
- *       --csv "/path/navigator_waitlists.csv" \
- *       --csv "/path/comprehensive_waitlists.csv"
+ *   - New ids are inserted.
+ *   - Existing ids keep every admin edit: the CSV only fills columns that
+ *     are empty live. `internal_notes`, `published` and identity columns are
+ *     never changed. `status` changes only with `--overwrite-status`,
+ *     because moving a published list to open emails its followers.
  *
- * Defaults to **dry run**. Pass `--apply` to actually write to Supabase.
+ * Usage (credentials from the shell, `.env.local` or `.env`):
+ *   npm run import:waitlists -- \
+ *     --csv "/path/navigator_waitlists.csv" \
+ *     --csv "/path/comprehensive_waitlists.csv"
+ *
+ * Defaults to **dry run**, which reads the live table (when credentials are
+ * set) and prints every insert and every changed field. To write:
+ *   ... --apply --expected-project-ref <ref> --confirm APPLY:<ref>
+ * An intentional replacement of a live row's exact source identity also
+ * requires `--allow-identity-change <id>`.
+ *
+ * The CSV `published` column is ignored. A new row is published only when
+ * it has a known status, a source URL, a check date and a primary county.
  *
  * Supported CSV column shapes:
  *   1. navigator_waitlists.csv:
@@ -31,10 +41,21 @@
 
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
-import 'dotenv/config';
+import './loadScriptEnv.ts';
 import { createClient } from '@supabase/supabase-js';
 
 import type { County, WaitlistStatus } from '../src/types/index.ts';
+import {
+  assertApplyTarget,
+  assertCompatibleIdentity,
+  deterministicWaitlistId,
+  exactWaitlistIdentity,
+} from './importIdentity.ts';
+import {
+  planWaitlistPatch,
+  type LiveWaitlistRow,
+  type WaitlistPatchPlan,
+} from './importPlans.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -145,31 +166,6 @@ function emptyToNull(v: string | undefined | null): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
-function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function urlKey(rawUrl: string): string {
-  if (!rawUrl) return '';
-  try {
-    const u = new URL(rawUrl);
-    const path = u.pathname.replace(/\/+$/, '');
-    return slug(`${u.host}${path}`);
-  } catch {
-    return slug(rawUrl);
-  }
-}
-
-function deterministicId(authority: string, program: string, sourceUrl: string): string {
-  const parts = [slug(authority), slug(program), urlKey(sourceUrl)].filter(Boolean);
-  return parts.join('__').slice(0, 200);
-}
-
 const PRIMARY_COUNTIES: County[] = ['Multnomah', 'Clark', 'Washington', 'Clackamas'];
 
 function normalizeCounty(raw: string): { county: County; original: string | null } {
@@ -224,7 +220,7 @@ function csvRowToWaitlist(src: SourceRow): WaitlistRowInsert | null {
     return null;
   }
 
-  const id = deterministicId(authority, program, sourceUrl || applicationLink);
+  const id = deterministicWaitlistId(authority, program, sourceUrl || applicationLink);
   if (!id) {
     console.warn(`[skip] could not derive id for "${authority}" / "${program}" in ${src.source}`);
     return null;
@@ -313,17 +309,44 @@ function merge(a: WaitlistRowInsert, b: WaitlistRowInsert): WaitlistRowInsert {
 interface CliOptions {
   csvPaths: string[];
   apply: boolean;
+  allowIdentityChanges: string[];
+  overwriteStatus: boolean;
+  expectedProjectRef: string | undefined;
+  confirm: string | undefined;
 }
 
 function parseArgs(argv: string[]): CliOptions {
-  const opts: CliOptions = { csvPaths: [], apply: false };
+  const opts: CliOptions = {
+    csvPaths: [],
+    apply: false,
+    allowIdentityChanges: [],
+    overwriteStatus: false,
+    expectedProjectRef: undefined,
+    confirm: undefined,
+  };
+  const valueOf = (flag: string, i: number): string => {
+    const next = argv[i];
+    if (!next || next.startsWith('--')) throw new Error(`${flag} requires a value`);
+    return next;
+  };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--apply') opts.apply = true;
-    else if (a === '--csv') {
-      const next = argv[++i];
-      if (!next) throw new Error('--csv requires a path');
-      opts.csvPaths.push(next);
+    else if (a === '--overwrite-status') opts.overwriteStatus = true;
+    else if (a === '--allow-identity-change') {
+      opts.allowIdentityChanges.push(valueOf(a, ++i));
+    } else if (a.startsWith('--allow-identity-change=')) {
+      opts.allowIdentityChanges.push(a.slice('--allow-identity-change='.length));
+    } else if (a === '--expected-project-ref') {
+      opts.expectedProjectRef = valueOf(a, ++i);
+    } else if (a.startsWith('--expected-project-ref=')) {
+      opts.expectedProjectRef = a.slice('--expected-project-ref='.length);
+    } else if (a === '--confirm') {
+      opts.confirm = valueOf(a, ++i);
+    } else if (a.startsWith('--confirm=')) {
+      opts.confirm = a.slice('--confirm='.length);
+    } else if (a === '--csv') {
+      opts.csvPaths.push(valueOf(a, ++i));
     } else if (a.startsWith('--csv=')) {
       opts.csvPaths.push(a.slice('--csv='.length));
     } else if (!a.startsWith('--')) {
@@ -341,8 +364,20 @@ function parseArgs(argv: string[]): CliOptions {
   return opts;
 }
 
+const LIVE_COLUMNS =
+  'id, housing_authority, program_name, county, city, state, status, application_link, source_url, last_checked, notes, public_notes, published';
+
+type LiveWaitlist = LiveWaitlistRow & { housing_authority: string };
+
 async function main() {
-  const { csvPaths, apply } = parseArgs(process.argv);
+  const {
+    csvPaths,
+    apply,
+    allowIdentityChanges,
+    overwriteStatus,
+    expectedProjectRef,
+    confirm,
+  } = parseArgs(process.argv);
 
   // Load + parse each CSV; flag-tag every row with its source filename.
   const allRows: SourceRow[] = [];
@@ -355,7 +390,10 @@ async function main() {
   }
 
   // Map CSV rows to DB inserts, dedupe + merge by deterministic id.
-  const byId = new Map<string, WaitlistRowInsert>();
+  const byId = new Map<
+    string,
+    { row: WaitlistRowInsert; identity: string; label: string }
+  >();
   let skipped = 0;
   for (const src of allRows) {
     const row = csvRowToWaitlist(src);
@@ -363,20 +401,35 @@ async function main() {
       skipped++;
       continue;
     }
+    const label = `${src.source}: "${row.housing_authority}"`;
+    const identity = exactWaitlistIdentity(
+      row.housing_authority,
+      row.program_name,
+      row.source_url ?? row.application_link ?? '',
+      label,
+    );
     const existing = byId.get(row.id);
-    byId.set(row.id, existing ? merge(existing, row) : row);
+    if (existing) {
+      assertCompatibleIdentity(row.id, existing.identity, identity, existing.label, label);
+    }
+    byId.set(row.id, {
+      row: existing ? merge(existing.row, row) : row,
+      identity,
+      label: existing?.label ?? label,
+    });
   }
 
-  const merged = Array.from(byId.values());
+  const mergedEntries = Array.from(byId.values());
+  const merged = mergedEntries.map((entry) => entry.row);
   const publishCount = merged.filter((r) => r.published).length;
   console.log(
     `Merged ${allRows.length} CSV rows → ${merged.length} unique waitlists ` +
       `(${publishCount} publishable, ${merged.length - publishCount} drafts, ${skipped} skipped)`,
   );
 
-  // Compare against the live table so the operator sees insert vs. update.
-  // Skipped if credentials are missing or invalid in dry-run mode so the
-  // mapping can be reviewed without any network round-trip.
+  // Compare against the live table so the operator sees the exact plan.
+  // Without credentials (dry run only) the mapping can still be reviewed
+  // offline, but insert vs. update cannot be decided.
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const haveCreds = !!url && !!serviceKey;
@@ -386,54 +439,124 @@ async function main() {
       'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars. Service-role key is required to bypass RLS for --apply.',
     );
   }
+  if (apply) assertApplyTarget(url!, expectedProjectRef, confirm);
 
-  const client = haveCreds
-    ? createClient(url!, serviceKey!, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-    : null;
-
-  let willInsert: WaitlistRowInsert[] = merged;
-  let willUpdate: WaitlistRowInsert[] = [];
-
-  if (client) {
-    const ids = merged.map((r) => r.id);
-    const { data: existingRows, error: existErr } = await client
-      .from('waitlists')
-      .select('id')
-      .in('id', ids);
-    if (existErr) {
-      console.warn(
-        `Could not query existing rows (${existErr.message}). Plan will not split insert vs. update.`,
-      );
-    } else {
-      const existingIds = new Set((existingRows ?? []).map((r) => r.id as string));
-      willInsert = merged.filter((r) => !existingIds.has(r.id));
-      willUpdate = merged.filter((r) => existingIds.has(r.id));
-    }
-  } else {
-    console.log('(no Supabase credentials — skipping insert/update breakdown)');
-  }
-
-  console.log(
-    `Plan: ${willInsert.length} insert, ${willUpdate.length} update, 0 delete (deletes are not allowed).`,
-  );
-  console.log(`Sample row: ${JSON.stringify(merged[0] ?? null, null, 2)}`);
-
-  if (!apply) {
-    console.log('\nDry run — no changes written. Re-run with --apply to upsert.');
+  if (!haveCreds) {
+    console.log('(no Supabase credentials, so the live table was not read)');
+    console.log(
+      `Offline summary: ${merged.length} waitlists would be inserted if new; existing ids ` +
+        'would only have empty columns filled. 0 deletes.',
+    );
+    console.log(`Sample row: ${JSON.stringify(merged[0] ?? null, null, 2)}`);
+    console.log('\nDry run: no changes written.');
     return;
   }
 
-  // Single batch upsert. onConflict='id' makes existing rows UPDATE rather
-  // than fail, preserving any waitlist_alerts FK references.
-  const { error } = await client!
+  console.log(`Target: ${new URL(url!).host}`);
+  const client = createClient(url!, serviceKey!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: existingRows, error: existErr } = await client
     .from('waitlists')
-    .upsert(merged, { onConflict: 'id' });
-  if (error) throw error;
+    .select(LIVE_COLUMNS)
+    .in('id', merged.map((r) => r.id));
+  if (existErr) throw existErr;
+  const existingById = new Map(
+    ((existingRows ?? []) as LiveWaitlist[]).map((r) => [r.id, r]),
+  );
+
+  const willInsert: WaitlistRowInsert[] = [];
+  const willUpdate: Array<{ id: string; label: string; plan: WaitlistPatchPlan }> = [];
+  let unchanged = 0;
+  for (const entry of mergedEntries) {
+    const live = existingById.get(entry.row.id);
+    if (!live) {
+      willInsert.push(entry.row);
+      continue;
+    }
+    const liveIdentity = exactWaitlistIdentity(
+      live.housing_authority,
+      live.program_name,
+      live.source_url ?? live.application_link ?? '',
+      `live waitlist ${live.id}`,
+    );
+    if (liveIdentity !== entry.identity) {
+      if (!allowIdentityChanges.includes(entry.row.id)) {
+        assertCompatibleIdentity(
+          entry.row.id,
+          liveIdentity,
+          entry.identity,
+          `live waitlist ${entry.row.id}`,
+          entry.label,
+        );
+      }
+      console.warn(
+        `[override] intentional identity change allowed for waitlist ${entry.row.id}`,
+      );
+    }
+    const plan = planWaitlistPatch(live, entry.row, { overwriteStatus });
+    if (plan) willUpdate.push({ id: live.id, label: entry.label, plan });
+    else unchanged++;
+  }
 
   console.log(
-    `\nApplied: upserted ${merged.length} waitlists (${willInsert.length} new, ${willUpdate.length} updated).`,
+    `Plan: ${willInsert.length} insert, ${willUpdate.length} update (empty columns` +
+      `${overwriteStatus ? ' + status' : ''} only), ${unchanged} unchanged, 0 delete.`,
+  );
+  if (!overwriteStatus) {
+    console.log(
+      'Live statuses, internal_notes and published are never changed. ' +
+        'Pass --overwrite-status to also apply CSV statuses.',
+    );
+  }
+  for (const row of willInsert) {
+    console.log(JSON.stringify({ action: 'insert', row }, null, 2));
+  }
+  for (const update of willUpdate) {
+    console.log(`update ${update.id} (${update.label})`);
+    for (const change of update.plan.changes) {
+      console.log(`  ${change.field}: ${JSON.stringify(change.from)} -> ${JSON.stringify(change.to)}`);
+    }
+  }
+  const alerting = willUpdate.filter((update) => update.plan.publishedStatusChange);
+  if (alerting.length > 0) {
+    console.warn(
+      `\nWARNING: ${alerting.length} published waitlist(s) change status. A move to ` +
+        'open or limited emails their followers as soon as it is written:',
+    );
+    for (const update of alerting) console.warn(`  - ${update.id}`);
+  }
+
+  if (!apply) {
+    console.log(
+      '\nDry run: no changes written. To write, re-run with --apply ' +
+        '--expected-project-ref <ref> --confirm APPLY:<ref>.',
+    );
+    return;
+  }
+
+  if (willInsert.length > 0) {
+    // Plain insert: if a row with the same id appeared since the plan was
+    // read, the insert fails instead of overwriting it.
+    const { error } = await client.from('waitlists').insert(willInsert);
+    if (error) throw error;
+  }
+  let updatedCount = 0;
+  for (const update of willUpdate) {
+    const { error } = await client
+      .from('waitlists')
+      .update(update.plan.patch)
+      .eq('id', update.id);
+    if (error) {
+      console.error(`[update failed] ${update.id}: ${error.message}`);
+      throw error;
+    }
+    updatedCount++;
+  }
+
+  console.log(
+    `\nApplied: ${willInsert.length} inserted, ${updatedCount} updated, ${unchanged} unchanged.`,
   );
 }
 
