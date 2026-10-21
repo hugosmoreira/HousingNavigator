@@ -97,6 +97,11 @@
   status = 200
 
 [[redirects]]
+  from = "/admin/verify"
+  to = "/spa.html"
+  status = 200
+
+[[redirects]]
   from = "/admin/dashboard"
   to = "/spa.html"
   status = 200

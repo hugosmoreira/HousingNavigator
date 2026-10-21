@@ -25,7 +25,7 @@ interface NavItem {
 }
 
 export default function AdminLayout() {
-  const { session, isAdmin, signOut, configured } = useAdminAuth();
+  const { session, isAdmin, mfaEnrolled, signOut, configured } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -141,6 +141,19 @@ export default function AdminLayout() {
             {/* signOut() throws only after this browser's session is already
                 removed, when the server could not end the other sessions. */}
             {signOutError}
+          </div>
+        )}
+
+        {session && isAdmin && !mfaEnrolled && location.pathname !== '/admin/verify' && (
+          <div className="border-b border-yellow-200 bg-yellow-50 px-6 py-2.5 text-sm text-yellow-900 lg:px-10">
+            Protect this admin account: two-factor sign-in is not set up yet.{' '}
+            <Link
+              to="/admin/verify"
+              state={{ from: location.pathname }}
+              className="font-semibold underline"
+            >
+              Set it up now
+            </Link>
           </div>
         )}
 
@@ -309,5 +322,6 @@ function currentPageTitle(pathname: string): string {
   if (pathname.startsWith('/admin/review')) return 'Review queue';
   if (pathname.startsWith('/admin/alerts')) return 'Alert history';
   if (pathname.startsWith('/admin/users')) return 'Users';
+  if (pathname.startsWith('/admin/verify')) return 'Two-factor sign-in';
   return 'Overview';
 }

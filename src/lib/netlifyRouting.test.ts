@@ -21,6 +21,7 @@ const applicationRoutes = [
   '/dashboard',
   '/admin',
   '/admin/login',
+  '/admin/verify',
   '/admin/dashboard',
   '/admin/resources',
   '/admin/resources/new',

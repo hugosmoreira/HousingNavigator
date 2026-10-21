@@ -17,7 +17,9 @@ interface LocationState {
 
 export default function Login() {
   const { session, isAuthed, configured } = usePublicAuth();
-  const { signIn, isAdmin, loading: adminLoading } = useAdminAuth();
+  // Membership, not full access: an admin who still needs a two-factor code
+  // goes to the admin area, where RequireAdmin forwards to /admin/verify.
+  const { signIn, isAdminMember, loading: adminLoading } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
@@ -41,14 +43,14 @@ export default function Login() {
       postLoginDestination ??
       resolvePostLoginDestination({
         hasSession: Boolean(session),
-        isAdmin,
+        isAdmin: isAdminMember,
         publicTarget: target,
       });
 
     if (destination) navigate(destination, { replace: true });
   }, [
     adminLoading,
-    isAdmin,
+    isAdminMember,
     isAuthed,
     navigate,
     postLoginDestination,

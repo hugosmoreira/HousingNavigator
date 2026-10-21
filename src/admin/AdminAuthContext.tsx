@@ -7,9 +7,13 @@
  * `isAdmin` being true; non-admin authenticated users get bounced to
  * the login page with an error.
  *
- * The flag is bound to the user it was verified for. A different user in
+ * Membership is bound to the user it was verified for. A different user in
  * the same tab (another tab signed in, or a sign-out and sign-in) resets it
  * at once, and a slow lookup started for the previous user is discarded.
+ *
+ * `isAdmin` also depends on two-factor sign-in (see adminAccess.ts): it is
+ * computed from membership plus the assurance level of the current session,
+ * so it updates as soon as a verified-code session arrives.
  */
 
 import {
@@ -35,10 +39,20 @@ import {
   signOutSafely,
 } from '../lib/authSession';
 import { AdminAccessTracker } from './adminAccessTracker';
+import { decideAdminAccess, readAssurance } from './adminAccess';
 
 interface AdminAuthValue {
   session: Session | null;
+  /** May use the admin pages now: a member, past two-factor when required. */
   isAdmin: boolean;
+  /** Has a row in admin_users (may still need to enter a two-factor code). */
+  isAdminMember: boolean;
+  /** Has a verified authenticator. */
+  mfaEnrolled: boolean;
+  /** This session passed two-factor sign-in (AAL2). */
+  mfaVerified: boolean;
+  /** A member who must enter a two-factor code before using the admin pages. */
+  needsMfaVerification: boolean;
   loading: boolean;
   configured: boolean;
   /**
@@ -48,14 +62,16 @@ interface AdminAuthValue {
    */
   adminCheckFailed: boolean;
   /**
-   * Sign in with email + password and refresh the admin flag.
-   * Resolves to `true` when the signed-in user is in `admin_users`,
-   * `false` otherwise. Throws on auth failure (bad password, network,
-   * timeout, etc.) with the original Supabase error preserved, or
-   * `AdminVerificationError` when sign-in worked but the lookup failed.
+   * Sign in with email + password and refresh admin membership.
+   * Resolves to `true` when the signed-in user is in `admin_users`
+   * (a two-factor code may still be needed), `false` otherwise. Throws on
+   * auth failure (bad password, network, timeout, etc.) with the original
+   * Supabase error preserved, or `AdminVerificationError` when sign-in
+   * worked but the lookup failed.
    */
   signIn(email: string, password: string, captchaToken?: string): Promise<boolean>;
   signOut(): Promise<void>;
+  /** Re-check membership; resolves to whether the user is in admin_users. */
   refreshAdminFlag(): Promise<boolean>;
 }
 
@@ -128,17 +144,22 @@ async function checkIsAdmin(userId: string): Promise<boolean> {
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured();
   const [session, setSession] = useState<Session | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminMember, setIsAdminMember] = useState(false);
   const [adminCheckFailed, setAdminCheckFailed] = useState(false);
   const [loading, setLoading] = useState(configured);
   const [tracker] = useState(() => new AdminAccessTracker());
+  // Recomputed from the session itself, so it follows every new token.
+  const access = useMemo(
+    () => decideAdminAccess(isAdminMember, readAssurance(session)),
+    [isAdminMember, session],
+  );
 
   const applySession = useCallback((next: Session | null) => {
-    // A different user resets the flag at once; a lookup still running for
+    // A different user resets membership at once; a lookup still running for
     // the previous user is then ignored when it finishes.
     const reset = tracker.setUser(next?.user.id ?? null);
     if (reset) {
-      setIsAdmin(reset.isAdmin);
+      setIsAdminMember(reset.isMember);
       setAdminCheckFailed(reset.adminCheckFailed);
     }
     setSession(next);
@@ -147,16 +168,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const refreshAdminFlag = useCallback(async (): Promise<boolean> => {
     const ticket = tracker.begin();
     if (!configured || !ticket) {
-      setIsAdmin(false);
+      setIsAdminMember(false);
       return false;
     }
     try {
       const ok = await checkIsAdmin(ticket.userId);
       const snapshot = tracker.succeed(ticket, ok);
       if (!snapshot) return false;
-      setIsAdmin(snapshot.isAdmin);
+      setIsAdminMember(snapshot.isMember);
       setAdminCheckFailed(snapshot.adminCheckFailed);
-      return snapshot.isAdmin;
+      return snapshot.isMember;
     } catch (err) {
       // A user already verified keeps their last answer on a transient
       // failure (token refresh races, network blips). A user never verified
@@ -286,7 +307,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AdminAuthValue>(
     () => ({
       session,
-      isAdmin,
+      isAdmin: access.isAdmin,
+      isAdminMember,
+      mfaEnrolled: access.mfaEnrolled,
+      mfaVerified: access.mfaVerified,
+      needsMfaVerification: access.needsMfaVerification,
       loading,
       configured,
       adminCheckFailed,
@@ -294,7 +319,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       signOut,
       refreshAdminFlag,
     }),
-    [session, isAdmin, loading, configured, adminCheckFailed, signIn, signOut, refreshAdminFlag],
+    [
+      session,
+      access,
+      isAdminMember,
+      loading,
+      configured,
+      adminCheckFailed,
+      signIn,
+      signOut,
+      refreshAdminFlag,
+    ],
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
