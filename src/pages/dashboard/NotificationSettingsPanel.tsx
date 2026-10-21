@@ -5,11 +5,10 @@ import { updateProfile } from '../../services/userData';
 
 /**
  * Email-notifications toggle persists to `profiles.email_notifications_enabled`.
+ * send-waitlist-alert skips users with it off, and because the in-app history
+ * is written only for sent emails, turning it off also stops new history
+ * entries. The copy below says so.
  * SMS row is intentionally disabled — placeholder for the next phase.
- *
- * TODO(notifications): the email toggle here only stores the preference.
- * Actual delivery will be wired through a Supabase Edge Function calling
- * Resend (see notification_events table in migration 0004).
  */
 export default function NotificationSettingsPanel() {
   const { profile, session, refreshProfile } = usePublicAuth();
@@ -43,7 +42,8 @@ export default function NotificationSettingsPanel() {
             Notification settings
           </h2>
           <p className="text-sm text-on-surface-variant leading-relaxed mt-1">
-            Email is the only channel today. SMS is on the roadmap.
+            Email is the only channel today. SMS is on the roadmap. Turning
+            email off also stops new alerts from appearing in your dashboard.
           </p>
         </div>
       </div>

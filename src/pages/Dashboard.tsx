@@ -22,6 +22,10 @@ export default function Dashboard() {
             Track waitlists you care about, save resources for later, and
             choose how you want to be notified.
           </p>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            Using a shared or public computer? Choose Sign out when you&apos;re done,
+            or the next person can open your dashboard.
+          </p>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-2">

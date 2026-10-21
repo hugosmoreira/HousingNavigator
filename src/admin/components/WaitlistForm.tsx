@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabaseClient';
@@ -7,6 +7,14 @@ import { COUNTIES_BY_STATE, SUPPORTED_STATES, isSupportedState } from '../../dat
 import type { AffordablePropertyRow, WaitlistRow } from '../../services/data/dbTypes';
 import type { SupportedState, WaitlistStatus, WaitlistType } from '../../types';
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
+
+/** Today's date in the admin's own time zone, as YYYY-MM-DD for a date input. */
+function todayLocalIsoDate(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
 
 const STATUSES: Array<{ value: WaitlistStatus; label: string }> = [
   { value: 'open', label: 'Open' },
@@ -47,6 +55,10 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [properties, setProperties] = useState<AffordablePropertyRow[]>([]);
+  // The saved status and check date, so a status edit can move "Last
+  // checked" to today and a reverted status can restore the saved date.
+  const loaded = useRef<{ status: WaitlistStatus; lastChecked: string | null } | null>(null);
+  const lastCheckedTouched = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -82,6 +94,8 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
         if (!data) throw new Error('Waitlist not found');
         if (!active) return;
         const row = data as WaitlistRow;
+        loaded.current = { status: row.status, lastChecked: row.last_checked ?? null };
+        lastCheckedTouched.current = false;
         setDraft({
           housing_authority: row.housing_authority,
           program_name: row.program_name ?? '',
@@ -112,6 +126,22 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
 
   function update<K extends keyof WaitlistDraft>(key: K, value: WaitlistDraft[K]) {
     setDraft((prev) => ({ ...prev, [key]: value }));
+  }
+
+  // A status change is a fresh check, so the public "Checked" date should
+  // say today unless the admin entered a date themselves.
+  function updateStatus(next: WaitlistStatus) {
+    const saved = loaded.current;
+    setDraft((prev) => {
+      if (mode !== 'edit' || !saved || lastCheckedTouched.current) {
+        return { ...prev, status: next };
+      }
+      return {
+        ...prev,
+        status: next,
+        last_checked: next === saved.status ? saved.lastChecked : todayLocalIsoDate(),
+      };
+    });
   }
 
   const selectedState: SupportedState = isSupportedState(draft.state) ? draft.state : 'OR';
@@ -281,7 +311,7 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
             >
               <Select
                 value={draft.status}
-                onChange={(e) => update('status', e.target.value as WaitlistStatus)}
+                onChange={(e) => updateStatus(e.target.value as WaitlistStatus)}
               >
                 {STATUSES.map((s) => (
                   <option key={s.value} value={s.value}>
@@ -290,11 +320,17 @@ export default function WaitlistForm({ mode, waitlistId }: WaitlistFormProps) {
                 ))}
               </Select>
             </Field>
-            <Field label="Last checked">
+            <Field
+              label="Last checked"
+              hint={mode === 'edit' ? 'Moves to today when you change the status.' : undefined}
+            >
               <TextInput
                 type="date"
                 value={draft.last_checked ?? ''}
-                onChange={(e) => update('last_checked', e.target.value || null)}
+                onChange={(e) => {
+                  lastCheckedTouched.current = true;
+                  update('last_checked', e.target.value || null);
+                }}
               />
             </Field>
           </div>

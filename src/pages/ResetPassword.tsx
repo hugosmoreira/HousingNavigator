@@ -92,8 +92,10 @@ export default function ResetPassword() {
         ) : noRecoverySession ? (
           <div className="bg-surface-container-lowest border border-surface-container-highest rounded-2xl p-6 lg:p-8">
             <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
-              This password-reset link is invalid or has expired. Reset links are
-              single-use and time-limited.
+              This password-reset link did not work. It may have expired or
+              already been used, or it was opened in a different browser than
+              the one that asked for it. Request a new link from the device and
+              browser you will use to open it.
             </p>
             <Link
               to="/forgot-password"

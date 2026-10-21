@@ -1,6 +1,6 @@
 import { Shield, Database, Cookie, KeyRound, Mail } from 'lucide-react';
 
-const LAST_UPDATED = 'July 2026';
+const LAST_UPDATED = 'October 2026';
 
 export default function Privacy() {
   return (
@@ -43,10 +43,11 @@ export default function Privacy() {
           title="Analytics and cookies"
         >
           <p>
-            We use a small amount of standard browser storage to remember UI
-            choices (for example, which county you last filtered to) so the
-            site feels less repetitive across visits. This information stays in
-            your browser.
+            If you sign in, your browser stores a login session so you stay
+            signed in, even after you close the window, until you choose Sign
+            out. On a shared or public computer, always sign out when you are
+            done. Directory filters live in the page address and are not saved
+            between visits.
           </p>
           <p>
             We use PostHog in cookieless mode to count visits to a short list of

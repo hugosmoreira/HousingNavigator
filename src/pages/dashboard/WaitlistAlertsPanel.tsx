@@ -32,7 +32,10 @@ function formatDate(value: string | null): string {
   if (!value) return '—';
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
-  return parsed.toLocaleDateString(undefined, {
+  // `last_checked` is a date-only value that parses as UTC midnight. Format
+  // it in UTC too, or US time zones show the previous day.
+  return parsed.toLocaleDateString('en-US', {
+    timeZone: 'UTC',
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -206,13 +209,13 @@ export default function WaitlistAlertsPanel() {
                 {alert && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-surface-container-highest/60">
                     <PrefRow
-                      label="Notify when it opens"
+                      label="Email me when it opens"
                       checked={alert.notify_on_open}
                       disabled={pendingId === row.id}
                       onChange={(v) => handlePrefChange(row.id, 'notify_on_open', v)}
                     />
                     <PrefRow
-                      label="Notify on any status change"
+                      label="Also when it partly opens (limited)"
                       checked={alert.notify_on_status_change}
                       disabled={pendingId === row.id}
                       onChange={(v) =>
@@ -225,12 +228,14 @@ export default function WaitlistAlertsPanel() {
             );
           })}
           </ul>
+          {/* Mirrors isMeaningfulUpgrade + send-waitlist-alert: emails go out
+              only when a list moves to open or limited, never when it closes. */}
+          <p className="mt-4 text-xs text-on-surface-variant leading-relaxed">
+            We email you when a list you follow opens or partly opens. We don&apos;t
+            email when a list closes, so check the provider&apos;s site for deadlines.
+          </p>
         </>
       )}
-
-      {/* TODO(notifications): when the Edge Function dispatch worker is wired
-          up via Resend, the prefs above will start firing real emails.
-          Until then, these toggles only persist preferences. */}
     </section>
   );
 }

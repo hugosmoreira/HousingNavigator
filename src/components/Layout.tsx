@@ -3,6 +3,11 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { usePublicAuth } from '../auth/PublicAuthContext';
 
+// Build-time constant (vite.config.ts) so prerendered HTML and the hydrated
+// page always agree. The fallback covers code run outside Vite.
+const FOOTER_YEAR =
+  typeof __BUILD_YEAR__ === 'number' ? __BUILD_YEAR__ : new Date().getUTCFullYear();
+
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -219,7 +224,7 @@ export default function Layout() {
           <div className="flex flex-col items-center md:items-start gap-2">
             <span className="font-headline font-bold text-on-surface text-lg tracking-tight">Housing Navigator</span>
             <p className="text-on-surface-variant font-body text-sm leading-relaxed text-center md:text-left">
-              © {new Date().getFullYear()} Housing Navigator. Empowering communities through stable housing.
+              © {FOOTER_YEAR} Housing Navigator. Empowering communities through stable housing.
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-8">

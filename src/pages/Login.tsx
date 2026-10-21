@@ -183,6 +183,10 @@ export default function Login() {
             <LogIn className="w-4 h-4" />
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
+          <p className="text-xs text-on-surface-variant text-center">
+            You stay signed in on this browser until you sign out. On a shared
+            computer, sign out when you&apos;re done.
+          </p>
         </form>
 
         <p className="text-sm text-on-surface-variant mt-6 text-center">

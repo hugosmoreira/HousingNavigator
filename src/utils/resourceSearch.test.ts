@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { searchPrograms, tokenize } from './resourceSearch';
+import { levenshtein1, searchPrograms, tokenize } from './resourceSearch';
 import type { Program } from '../types';
 
 function program(overrides: Partial<Program>): Program {
@@ -31,6 +31,36 @@ function program(overrides: Partial<Program>): Program {
     service_tags: overrides.service_tags,
   };
 }
+
+describe('levenshtein1', () => {
+  it('accepts one swap of adjacent letters, the most common typing slip', () => {
+    expect(levenshtein1('shleter', 'shelter')).toBe(true);
+    expect(levenshtein1('evcition', 'eviction')).toBe(true);
+    expect(levenshtein1('vetreans', 'veterans')).toBe(true);
+  });
+
+  it('still accepts one substitution, insertion or deletion', () => {
+    expect(levenshtein1('shelner', 'shelter')).toBe(true);
+    expect(levenshtein1('evicton', 'eviction')).toBe(true);
+    expect(levenshtein1('shelters', 'shelter')).toBe(true);
+  });
+
+  it('rejects two edits, including a swap of non-adjacent letters', () => {
+    expect(levenshtein1('hselter', 'shelner')).toBe(false);
+    expect(levenshtein1('rhelset', 'shelter')).toBe(false);
+    expect(levenshtein1('shltere', 'shelter')).toBe(false);
+  });
+});
+
+describe('typo-tolerant search', () => {
+  it('finds a shelter when "shelter" is typed with two letters swapped', () => {
+    const shelter = program({ id: 'shelter', program_name: 'Family Shelter Program' });
+    const other = program({ id: 'legal', program_name: 'Tenant Legal Help' });
+    const results = searchPrograms([shelter, other], 'shleter');
+    expect(results.map((r) => r.program.id)).toContain('shelter');
+    expect(results.map((r) => r.program.id)).not.toContain('legal');
+  });
+});
 
 describe('tokenize', () => {
   it('lowercases, strips punctuation, and splits on whitespace', () => {

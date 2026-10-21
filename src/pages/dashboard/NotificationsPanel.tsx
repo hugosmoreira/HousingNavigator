@@ -8,9 +8,9 @@ import {
 } from '../../services/userData';
 
 /**
- * In-app alert history. Every email the alert pipeline sends also writes a
- * `notification_events` row, so users can see status changes here even when
- * the email lands in spam or notifications are turned off.
+ * In-app alert history. send-waitlist-alert writes a `notification_events`
+ * row only for emails it actually sent, so this list helps when an email
+ * lands in spam. It stays empty for users with email notifications off.
  */
 export default function NotificationsPanel() {
   const [events, setEvents] = useState<NotificationEventRow[]>([]);
@@ -110,8 +110,8 @@ export default function NotificationsPanel() {
         <p className="text-sm text-on-surface-variant">Loading…</p>
       ) : events.length === 0 ? (
         <p className="text-sm text-on-surface-variant">
-          No alerts yet. Follow a waitlist and you will see its status changes
-          here as soon as they are confirmed.
+          No alerts yet. When a waitlist you follow opens and we email you, a
+          copy of that alert appears here too.
         </p>
       ) : (
         <ul className="space-y-2">
