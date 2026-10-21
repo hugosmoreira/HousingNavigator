@@ -17,7 +17,13 @@ export function matchesResourceFilters(program: Program, filters: ResourceFilter
   if (filters.categories.length && !filters.categories.includes(category)) return false;
   const tags = normalizeResourceServiceTags(program.service_tags);
   if (filters.serviceTags.length && !filters.serviceTags.some((tag) => tags.includes(tag))) return false;
-  if (filters.household && !program.who_it_helps.includes(filters.household)) return false;
+  // An empty `who_it_helps` means the record does not restrict who it serves
+  // (the admin form has no control for it), so it must stay visible under
+  // every household filter rather than disappear from all of them.
+  const households = program.who_it_helps ?? [];
+  if (filters.household && households.length > 0 && !households.includes(filters.household)) {
+    return false;
+  }
   return filters.state === 'All' || programServesArea(
     program, filters.state, filters.county === 'All' ? null : filters.county,
   );

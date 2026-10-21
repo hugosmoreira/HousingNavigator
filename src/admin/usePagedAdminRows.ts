@@ -29,6 +29,9 @@ export function usePagedAdminRows<T>(view: 'resources_admin' | 'waitlists_admin'
         .from(view)
         .select('*', { count: 'exact' })
         .order('updated_at', { ascending: false })
+        // Rows inserted in one statement share updated_at. Without a unique
+        // tiebreaker, "Load more" pages can repeat or skip those rows.
+        .order('id', { ascending: true })
         .range(offset, offset + ADMIN_PAGE_SIZE - 1);
       if (err) throw err;
       return { page: (data ?? []) as T[], count: count ?? 0 };
@@ -55,7 +58,12 @@ export function usePagedAdminRows<T>(view: 'resources_admin' | 'waitlists_admin'
     setLoadingMore(true);
     try {
       const { page, count } = await fetchPage(rows.length);
-      setRows((prev) => [...prev, ...page]);
+      // An edit between pages bumps updated_at and can move a row into the
+      // next page; skip anything already shown so React keys stay unique.
+      setRows((prev) => {
+        const seen = new Set(prev.map((row) => (row as { id?: unknown }).id));
+        return [...prev, ...page.filter((row) => !seen.has((row as { id?: unknown }).id))];
+      });
       setTotalCount(count);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load more');

@@ -76,6 +76,11 @@ describe('privacy-limited analytics', () => {
     expect(classifyApplicationSurface('/login')).toBe('auth');
     expect(classifyApplicationSurface('/admin/resources')).toBe('admin');
     expect(classifyApplicationSurface('/private/value')).toBe('unknown');
+    // Published URLs carry a trailing slash.
+    expect(classifyApplicationSurface('/resources/')).toBe('resources');
+    expect(classifyApplicationSurface('/login/')).toBe('auth');
+    expect(classifyApplicationSurface('/')).toBe('home');
+    expect(classifyApplicationSurface('/waitlist//')).toBe('waitlist');
 
     expect(normalizeApplicationErrorName(new TypeError('private value'))).toBe(
       'TypeError',

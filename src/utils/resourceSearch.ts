@@ -196,9 +196,27 @@ function buildFieldBag(program: Program): FieldBag {
 // Scoring helpers
 // ---------------------------------------------------------------------------
 
-function levenshtein1(a: string, b: string): boolean {
+/**
+ * True when `a` and `b` are at most one edit apart: one substitution,
+ * insertion, deletion, or swap of two adjacent letters ("shleter").
+ */
+export function levenshtein1(a: string, b: string): boolean {
   if (a === b) return true;
   if (Math.abs(a.length - b.length) > 1) return false;
+  if (a.length === b.length) {
+    const diffs: number[] = [];
+    for (let k = 0; k < a.length && diffs.length <= 2; k += 1) {
+      if (a[k] !== b[k]) diffs.push(k);
+    }
+    if (
+      diffs.length === 2 &&
+      diffs[1] === diffs[0] + 1 &&
+      a[diffs[0]] === b[diffs[1]] &&
+      a[diffs[1]] === b[diffs[0]]
+    ) {
+      return true;
+    }
+  }
 
   const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
   let i = 0;

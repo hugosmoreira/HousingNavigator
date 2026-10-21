@@ -22,6 +22,9 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     define: {
+      // Same value in the prerendered HTML and the hydrated client, so the
+      // footer year never causes a hydration mismatch after New Year.
+      __BUILD_YEAR__: JSON.stringify(new Date().getUTCFullYear()),
       'import.meta.env.VITE_POSTHOG_KEY': JSON.stringify(posthogKey),
       'import.meta.env.VITE_POSTHOG_HOST': JSON.stringify(posthogHost),
     },

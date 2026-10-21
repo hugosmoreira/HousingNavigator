@@ -95,16 +95,18 @@ export function sanitizeApplicationErrorProperties(
 }
 
 export function classifyApplicationSurface(pathname: string): ApplicationSurface {
-  const publicPage =
-    PUBLIC_ANALYTICS_PAGES[pathname as keyof typeof PUBLIC_ANALYTICS_PAGES];
+  // Public URLs are published with a trailing slash (/resources/), so
+  // normalize the same way analyticsPageForPath does before looking up.
+  const path = pathname === '/' ? '/' : pathname.replace(/\/+$/, '');
+  const publicPage = analyticsPageForPath(path);
   if (publicPage) return publicPage;
-  if (pathname.startsWith('/admin')) return 'admin';
-  if (pathname.startsWith('/dashboard')) return 'dashboard';
+  if (path.startsWith('/admin')) return 'admin';
+  if (path.startsWith('/dashboard')) return 'dashboard';
   if (
-    pathname === '/login' ||
-    pathname === '/signup' ||
-    pathname === '/forgot-password' ||
-    pathname === '/reset-password'
+    path === '/login' ||
+    path === '/signup' ||
+    path === '/forgot-password' ||
+    path === '/reset-password'
   ) {
     return 'auth';
   }

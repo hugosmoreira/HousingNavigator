@@ -79,6 +79,13 @@ export default function ForgotPassword() {
               we've sent a link to reset your password. It may take a few minutes
               to arrive — check your spam folder too.
             </p>
+            {/* The browser client uses PKCE: only the browser that asked for the
+                link holds the code that completes the reset. */}
+            <p className="text-sm text-on-surface-variant leading-relaxed mt-3">
+              Open the link on this same device and in this same browser. A link
+              opened on another device, or inside an email app&apos;s built-in
+              browser, will not work.
+            </p>
           </div>
         ) : (
           <form

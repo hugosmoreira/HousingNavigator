@@ -278,7 +278,9 @@ export default function Waitlist() {
                         {wl.agency}
                       </Link>
                     </h2>
-                    {wl.program_name && (
+                    {/* `agency` already reads "Authority — Program" when a program
+                        name exists, so only repeat it when the heading lacks it. */}
+                    {wl.program_name && !wl.agency.includes(wl.program_name) && (
                       <p className="text-sm text-on-surface-variant mt-0.5">{wl.program_name}</p>
                     )}
                   </div>

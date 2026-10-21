@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+/** UTC year at build time, injected by `define` in vite.config.ts. */
+declare const __BUILD_YEAR__: number;
+
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;

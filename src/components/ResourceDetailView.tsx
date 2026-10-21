@@ -45,6 +45,25 @@ function formatDate(iso: string): string | null {
   });
 }
 
+/**
+ * Most records store a readable source type ("Official nonprofit website").
+ * The curation workflow can write the internal SourceType code instead, so
+ * map those codes to words before showing them to the public.
+ */
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  agency_website: 'Provider website',
+  manual_entry: 'Entered by Housing Navigator',
+  email: 'Email from the provider',
+  social_post: 'Provider social media post',
+  pasted_text: 'Provider-supplied information',
+};
+
+export function sourceTypeLabel(sourceType: string | null | undefined): string {
+  const value = sourceType?.trim();
+  if (!value) return 'Provider website';
+  return SOURCE_TYPE_LABELS[value] ?? value;
+}
+
 /** Shared public presentation. No data loading, authentication or writes. */
 export default function ResourceDetailView({ program, error, onBack, returnTo }: {
   program: Program;
@@ -57,7 +76,7 @@ export default function ResourceDetailView({ program, error, onBack, returnTo }:
   const categoryLabel = DIRECTORY_CATEGORY_LABELS[directoryCategory];
   const verified = formatDate(program.last_verified);
   const verificationSourceUrl = program.source_url || program.website;
-  const verificationSourceType = program.source_type || 'Provider website';
+  const verificationSourceType = sourceTypeLabel(program.source_type);
   const serviceAreas = serviceAreasForProgram(program);
   const areaSummary = serviceAreaSummary(serviceAreas);
   const location = [program.address, program.city, program.state]
