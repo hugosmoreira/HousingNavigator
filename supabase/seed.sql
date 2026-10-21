@@ -2,8 +2,9 @@
 -- Re-run with: `npm run seed:generate`
 --
 -- Inserts the bundled MVP seed data (src/data/*.json) into the schema
--- defined in supabase/migrations/0001_init.sql. Safe to re-run thanks
--- to ON CONFLICT clauses.
+-- defined in supabase/migrations/0001_init.sql. For local or fresh projects
+-- only: ON CONFLICT DO NOTHING means a rerun never overwrites an existing
+-- row, so curated statuses and notes in a live database are left alone.
 
 begin;
 
@@ -54,27 +55,7 @@ insert into public.programs (
   ('mult-transition-projects', 'Transition Projects Shelter Intake', 'emergency_shelter', 'Multnomah', null, null, null, '{"single_adult","veteran"}', null, 'walk_in', false, '(503) 280-4700', 'https://www.tprojects.org', null, 'limited', 'high', null, null, '2026-04-17'::date, 'Walk-in shelter for single adults. Limited beds; arrive early.', 85),
   ('csv-o9nfbf', 'Urban League of Portland - Housing Department', 'rental_assistance', 'Multnomah', 'Portland', 'OR', 'Culturally specific rent assistance and eviction prevention.', '{"single_adult","family"}', 'Income-based; Multnomah County resident.', 'phone', false, '503-280-2600', 'https://ulpdx.org/', '10 N Russell St, Portland, OR 97227', 'open', 'high', 'https://ulpdx.org/', 'Nonprofit', '2026-05-06'::date, 'Focus on housing stability and advocacy.', 8),
   ('csv-12oi571', 'VA Portland Health Care - Homeless Veteran Care', 'comprehensive_support', 'Multnomah', 'Portland', 'OR', 'Comprehensive services for homeless veterans including HUD-VASH vouchers.', '{"veteran"}', 'Veteran status; homeless or at risk.', 'phone', false, '877-424-3838', 'https://www.va.gov/portland-health-care/health-services/homeless-veteran-care/', '308 SW 1st Ave, Portland, OR 97204 (CRRC)', 'open', 'high', 'https://www.va.gov/portland-health-care/health-services/homeless-veteran-care/', 'Government', '2026-05-06'::date, 'CRRC is the Community Resource and Referral Center.', 10)
-on conflict (id) do update set
-  name                = excluded.name,
-  category            = excluded.category,
-  county              = excluded.county,
-  city                = excluded.city,
-  state               = excluded.state,
-  description         = excluded.description,
-  who_it_helps        = excluded.who_it_helps,
-  eligibility_summary = excluded.eligibility_summary,
-  application_method  = excluded.application_method,
-  referral_required   = excluded.referral_required,
-  phone               = excluded.phone,
-  website             = excluded.website,
-  address             = excluded.address,
-  status              = excluded.status,
-  status_confidence   = excluded.status_confidence,
-  source_url          = excluded.source_url,
-  source_type         = excluded.source_type,
-  last_verified       = excluded.last_verified,
-  notes               = excluded.notes,
-  priority_score      = excluded.priority_score;
+on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- decision_rules
@@ -87,12 +68,7 @@ insert into public.decision_rules (
   ('eviction_notice', 'stay_housed', 'Contact a legal aid eviction defense line TODAY. In Multnomah call Oregon Law Center at (503) 295-2760; in Clark call Northwest Justice Project at (360) 693-6130.', '{"legal_aid","eviction_prevention","rental_assistance"}', '{"comprehensive_support","emergency_shelter"}', '{"The eviction notice (all pages and envelope)","Your lease or rental agreement","Proof of rent payments (receipts, bank statements)","Photo ID","Proof of income (last 30 days)"}', '{"Do NOT ignore the notice. Deadlines are short (often 72 hours to 10 days).","Do not move out voluntarily before talking to legal aid — you may have more rights than you think.","Keep every document and envelope you receive from your landlord."}'),
   ('at_risk', 'stay_housed', 'Apply for short-term rent assistance before you fall further behind. Start with 211 (Multnomah) or Council for the Homeless (Clark).', '{"rental_assistance","eviction_prevention"}', '{"legal_aid","comprehensive_support"}', '{"Current lease","Proof of income (last 30 days)","Past-due rent notice or ledger from landlord","Photo ID","Bills showing hardship (medical, utilities, etc.)"}', '{"Most rent assistance programs require you to apply BEFORE an eviction is filed.","Talk to your landlord in writing about a payment plan — put everything in email or text."}'),
   ('at_risk', 'long_term_housing', 'Get on every open housing authority waitlist you qualify for. Use the waitlist tracker to see which county lists are open today.', '{"long_term_housing_waitlist","transitional_housing"}', '{"rental_assistance","comprehensive_support"}', '{"Photo ID for every adult in the household","Social Security cards or numbers for all household members","Birth certificates for children","Proof of income for all adults","Current address and 2 years of address history"}', '{"Waitlists can take months or years. Apply to multiple simultaneously.","Update your contact info with each authority regularly — missed letters are a common reason people get dropped.","Some waitlists are only open for short windows — check status frequently."}')
-on conflict (intake_state, goal) do update set
-  primary_action        = excluded.primary_action,
-  priority_categories   = excluded.priority_categories,
-  secondary_categories  = excluded.secondary_categories,
-  recommended_documents = excluded.recommended_documents,
-  caution_notes         = excluded.caution_notes;
+on conflict (intake_state, goal) do nothing;
 
 -- ---------------------------------------------------------------------------
 -- waitlists
@@ -105,14 +81,6 @@ insert into public.waitlists (
   ('clackamas-housing', 'Clackamas County Housing Authority', null, 'Clackamas', 'unknown', 'https://www.clackamas.us/housingauthority', null, '2026-03-24'::date, 'Status last confirmed in March; call (503) 655-8267 to verify.'),
   ('washington-housing', 'Washington County Dept. of Housing Services', null, 'Washington', 'closed', 'https://www.washingtoncountyor.gov/housing', null, '2026-04-18'::date, 'Waitlist closed. Project-based waitlists open periodically — check site.'),
   ('council-for-homeless', 'Council for the Homeless Coordinated Entry', null, 'Clark', 'open', 'https://www.councilforthehomeless.org', null, '2026-04-18'::date, 'Single front door for shelter and housing in Clark County.')
-on conflict (id) do update set
-  housing_authority = excluded.housing_authority,
-  program_name      = excluded.program_name,
-  county            = excluded.county,
-  status            = excluded.status,
-  application_link  = excluded.application_link,
-  source_url        = excluded.source_url,
-  last_checked      = excluded.last_checked,
-  notes             = excluded.notes;
+on conflict (id) do nothing;
 
 commit;

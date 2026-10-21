@@ -11,8 +11,11 @@ staging project first:
 ```bash
 supabase link --project-ref <project-ref>
 supabase db push
-npm run verify:rls
+SUPABASE_PROJECT_REF=<project-ref> SUPABASE_ACCESS_TOKEN=<token> npm run verify:rls
 ```
+
+`verify:rls` has no default project. It creates and then deletes test rows,
+so give it the staging ref unless you mean to check production.
 
 Migration `0013_security_invoker_admin_views.sql` converts all three flagged
 admin views to `security_invoker=true`. It preserves their existing browser

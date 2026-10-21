@@ -37,17 +37,30 @@ supabase/
    VITE_USE_SUPABASE=true
    ```
 
-4. Import the bundled catalog into Supabase using the service-role key.
-   The key must NOT use a `VITE_` prefix — it stays server-side:
+4. Import the bundled catalog into a new project using the service-role
+   key. The key must NOT use a `VITE_` prefix — it stays server-side. Put
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` (or the
+   shell), then review the dry run before writing:
 
    ```bash
-   SUPABASE_URL=https://<project>.supabase.co \
-   SUPABASE_SERVICE_ROLE_KEY=<service role key> \
-   npm run import:supabase
+   npm run import:supabase          # dry run: reads live tables, prints the full plan
+   npm run import:supabase -- --apply \
+     --expected-project-ref <project-ref> \
+     --confirm APPLY:<project-ref>
    ```
 
-   Pass `--dry` to preview without writing, or `--reset` to clear the
-   `resources` table first.
+   The import only adds rows that do not exist yet, and every added row
+   starts unpublished; publish them in the admin CMS. Existing resources
+   and waitlists are never updated or deleted, so it is safe against a live
+   project. `--reset` is not supported, because deleting resources would
+   also delete users' saved bookmarks.
+
+   Later CSV imports (`npm run import:resources -- --csv <file>` and
+   `npm run import:waitlists -- --csv <file>`) follow the same rules: dry
+   run by default, `--apply` needs the same two confirmation flags, and
+   existing rows only get empty columns filled. The waitlist import changes
+   a live status only with `--overwrite-status`, because moving a published
+   list to open emails its followers.
 
 ## Creating the first admin
 
@@ -118,8 +131,11 @@ published resources; all area mutations remain admin-only. See
 
 ## Re-running the static seed (optional)
 
-The legacy `programs` table still exists. If you want to keep it in
-sync with the bundled JSON for ad-hoc queries:
+The legacy `programs` table still exists. To seed it from the bundled
+JSON on a local or fresh project, run the commands below. The seed also
+inserts `decision_rules` and `waitlists` rows. Every insert uses
+`ON CONFLICT DO NOTHING`, so a rerun adds missing rows but never
+overwrites existing ones:
 
 ```bash
 npm run seed:generate

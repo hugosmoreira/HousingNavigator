@@ -13,22 +13,32 @@
  *      never overwrite an admin's edits. UUID is preserved, so every
  *      `saved_resources.resource_id` FK stays valid.
  *
- * Usage:
- *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *     npm run import:resources -- \
- *       --csv "/path/navigator_resources.csv"
+ * Usage (credentials from the shell, `.env.local` or `.env`):
+ *   npm run import:resources -- \
+ *     --csv "/path/navigator_resources.csv"
  *
- * Defaults to **dry run**. Pass `--apply` to actually write.
+ * Defaults to **dry run**, which reads the live table (when credentials are
+ * set) and prints every insert and every filled field. To write:
+ *   ... --apply --expected-project-ref <ref> --confirm APPLY:<ref>
+ * If a CSV row's name and URL slug to the same key as a live resource but
+ * its exact name or URL differs, the import stops. After checking that it
+ * really is the same resource, allow it with `--allow-identity-change <uuid>`.
  *
  * Never DELETEs anything.
  */
 
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
-import 'dotenv/config';
+import './loadScriptEnv.ts';
 import { createClient } from '@supabase/supabase-js';
 
 import { csvToDirectoryCategory } from '../src/data/categoryMap.ts';
+import {
+  assertApplyTarget,
+  assertCompatibleIdentity,
+  exactResourceIdentity,
+  lossyResourceKey,
+} from './importIdentity.ts';
 import type {
   ApplicationMethod,
   County,
@@ -170,31 +180,6 @@ function emptyToNull(v: string | undefined | null): string | null {
   if (v === null || v === undefined) return null;
   const trimmed = v.trim();
   return trimmed === '' ? null : trimmed;
-}
-
-function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function urlKey(rawUrl: string): string {
-  if (!rawUrl) return '';
-  try {
-    const u = new URL(rawUrl);
-    const path = u.pathname.replace(/\/+$/, '');
-    return slug(`${u.host}${path}`);
-  } catch {
-    return slug(rawUrl);
-  }
-}
-
-function normKey(name: string, websiteOrSource: string): string {
-  const parts = [slug(name), urlKey(websiteOrSource)].filter(Boolean);
-  return parts.join('__');
 }
 
 const PRIMARY_COUNTIES: County[] = ['Multnomah', 'Clark', 'Washington', 'Clackamas'];
@@ -396,17 +381,41 @@ function fillNullsOnlyPatch(
 interface CliOptions {
   csvPaths: string[];
   apply: boolean;
+  allowIdentityChanges: string[];
+  expectedProjectRef: string | undefined;
+  confirm: string | undefined;
 }
 
 function parseArgs(argv: string[]): CliOptions {
-  const opts: CliOptions = { csvPaths: [], apply: false };
+  const opts: CliOptions = {
+    csvPaths: [],
+    apply: false,
+    allowIdentityChanges: [],
+    expectedProjectRef: undefined,
+    confirm: undefined,
+  };
+  const valueOf = (flag: string, i: number): string => {
+    const next = argv[i];
+    if (!next || next.startsWith('--')) throw new Error(`${flag} requires a value`);
+    return next;
+  };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--apply') opts.apply = true;
-    else if (a === '--csv') {
-      const next = argv[++i];
-      if (!next) throw new Error('--csv requires a path');
-      opts.csvPaths.push(next);
+    else if (a === '--allow-identity-change') {
+      opts.allowIdentityChanges.push(valueOf(a, ++i));
+    } else if (a.startsWith('--allow-identity-change=')) {
+      opts.allowIdentityChanges.push(a.slice('--allow-identity-change='.length));
+    } else if (a === '--expected-project-ref') {
+      opts.expectedProjectRef = valueOf(a, ++i);
+    } else if (a.startsWith('--expected-project-ref=')) {
+      opts.expectedProjectRef = a.slice('--expected-project-ref='.length);
+    } else if (a === '--confirm') {
+      opts.confirm = valueOf(a, ++i);
+    } else if (a.startsWith('--confirm=')) {
+      opts.confirm = a.slice('--confirm='.length);
+    } else if (a === '--csv') {
+      opts.csvPaths.push(valueOf(a, ++i));
     } else if (a.startsWith('--csv=')) {
       opts.csvPaths.push(a.slice('--csv='.length));
     } else if (!a.startsWith('--')) {
@@ -424,7 +433,8 @@ function parseArgs(argv: string[]): CliOptions {
 }
 
 async function main() {
-  const { csvPaths, apply } = parseArgs(process.argv);
+  const { csvPaths, apply, allowIdentityChanges, expectedProjectRef, confirm } =
+    parseArgs(process.argv);
 
   // Load + parse every CSV; tag rows with source filename for traceability.
   const allRows: SourceRow[] = [];
@@ -437,7 +447,10 @@ async function main() {
   }
 
   // Map CSV → DB shape, dedupe intra-CSV by normalized name+url key.
-  const byKey = new Map<string, { key: string; row: ResourceInsert }>();
+  const byKey = new Map<
+    string,
+    { key: string; identity: string; label: string; row: ResourceInsert }
+  >();
   let skippedParse = 0;
   for (const src of allRows) {
     const row = csvRowToResource(src);
@@ -445,15 +458,23 @@ async function main() {
       skippedParse++;
       continue;
     }
-    const key = normKey(row.name, row.website ?? row.source_url ?? '');
+    const identityUrl = row.website ?? row.source_url ?? '';
+    const key = lossyResourceKey(row.name, identityUrl);
     if (!key) {
       skippedParse++;
       console.warn(`[skip] could not derive dedupe key for "${row.name}"`);
       continue;
     }
     const existing = byKey.get(key);
+    const label = `${src.source}: "${row.name}"`;
+    const identity = exactResourceIdentity(row.name, identityUrl, label);
+    if (existing) {
+      assertCompatibleIdentity(key, existing.identity, identity, existing.label, label);
+    }
     byKey.set(key, {
       key,
+      identity,
+      label: existing?.label ?? label,
       row: existing ? mergeIntra(existing.row, row) : row,
     });
   }
@@ -473,14 +494,17 @@ async function main() {
     );
   }
 
+  if (apply) assertApplyTarget(url!, expectedProjectRef, confirm);
+
   if (!haveCreds) {
     console.log('(no Supabase credentials — dry run will skip live-table compare)');
     console.log('Plan: would insert up to', merged.length, 'rows (no DB lookup).');
     console.log(`Sample row: ${JSON.stringify(merged[0]?.row ?? null, null, 2)}`);
-    console.log('\nDry run — no changes written. Re-run with --apply to upsert.');
+    console.log('\nDry run — no changes written.');
     return;
   }
 
+  console.log(`Target: ${new URL(url!).host}`);
   const client = createClient(url!, serviceKey!, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -496,10 +520,22 @@ async function main() {
   if (existErr) throw existErr;
 
   const existing: ExistingResource[] = (existingRows ?? []) as ExistingResource[];
-  const existingByKey = new Map<string, ExistingResource>();
+  const existingByKey = new Map<
+    string,
+    { row: ExistingResource; identity: string; label: string }
+  >();
   for (const r of existing) {
-    const k = normKey(r.name, r.website ?? r.source_url ?? '');
-    if (k && !existingByKey.has(k)) existingByKey.set(k, r);
+    const identityUrl = r.website ?? r.source_url ?? '';
+    const k = lossyResourceKey(r.name, identityUrl);
+    if (!k) continue;
+    const identity = exactResourceIdentity(r.name, identityUrl, `live resource ${r.id}`);
+    const prior = existingByKey.get(k);
+    if (prior) {
+      throw new Error(
+        `Duplicate live normalized key "${k}" for resource UUIDs ${prior.row.id} and ${r.id}; resolve it before import.`,
+      );
+    }
+    existingByKey.set(k, { row: r, identity, label: `live resource ${r.id}` });
   }
 
   interface PlanInsert {
@@ -520,13 +556,19 @@ async function main() {
   type PlanEntry = PlanInsert | PlanUpdate | PlanSkip;
 
   const plan: PlanEntry[] = [];
-  for (const { key, row } of merged) {
+  for (const { key, identity, label, row } of merged) {
     const match = existingByKey.get(key);
     if (!match) {
       plan.push({ kind: 'insert', row });
       continue;
     }
-    const patch = fillNullsOnlyPatch(match, row);
+    if (match.identity !== identity) {
+      if (!allowIdentityChanges.includes(match.row.id)) {
+        assertCompatibleIdentity(key, match.identity, identity, match.label, label);
+      }
+      console.warn(`[override] identity change allowed for resource ${match.row.id} (${label})`);
+    }
+    const patch = fillNullsOnlyPatch(match.row, row);
     if (!patch) {
       plan.push({
         kind: 'skip',
@@ -535,7 +577,7 @@ async function main() {
       });
       continue;
     }
-    plan.push({ kind: 'update', id: match.id, name: row.name, patch });
+    plan.push({ kind: 'update', id: match.row.id, name: row.name, patch });
   }
 
   const inserts = plan.filter((p): p is PlanInsert => p.kind === 'insert');
@@ -548,18 +590,20 @@ async function main() {
   );
 
   if (inserts.length > 0) {
-    console.log('\nFirst INSERT preview:');
-    console.log(JSON.stringify(inserts[0]!.row, null, 2));
+    console.log('\nINSERT plan:');
+    for (const insert of inserts) console.log(JSON.stringify(insert.row, null, 2));
   }
   if (updates.length > 0) {
-    console.log('\nFirst UPDATE preview:');
-    console.log(
-      JSON.stringify(
-        { id: updates[0]!.id, name: updates[0]!.name, patch: updates[0]!.patch },
-        null,
-        2,
-      ),
-    );
+    console.log('\nUPDATE plan:');
+    for (const update of updates) {
+      console.log(
+        JSON.stringify(
+          { id: update.id, name: update.name, patch: update.patch },
+          null,
+          2,
+        ),
+      );
+    }
   }
   if (skips.length > 0) {
     console.log(`\nSkipped rows (${skips.length}):`);

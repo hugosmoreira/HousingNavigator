@@ -11,24 +11,35 @@
  * stores after `supabase login`). Never commit it; it is read from the
  * environment only.
  *
- *   SUPABASE_ACCESS_TOKEN=sbp_xxx npm run verify:rls
+ *   SUPABASE_PROJECT_REF=<ref> SUPABASE_ACCESS_TOKEN=sbp_xxx npm run verify:rls
  *
- * Optional: SUPABASE_PROJECT_REF overrides the default project.
+ * SUPABASE_PROJECT_REF is required and has no default. The suite creates and
+ * then deletes throwaway rows (a test user, test waitlists and a test
+ * resource), so point it at a staging project whenever one exists, and at
+ * production only on purpose.
  */
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PROJECT_REF = process.env.SUPABASE_PROJECT_REF ?? 'tlazsywswoapcrzxbqnu';
-
 async function main(): Promise<void> {
+  const PROJECT_REF = process.env.SUPABASE_PROJECT_REF?.trim();
+  if (!PROJECT_REF) {
+    console.error(
+      'SUPABASE_PROJECT_REF is not set. There is no default target.\n' +
+        'Run:  SUPABASE_PROJECT_REF=<ref> SUPABASE_ACCESS_TOKEN=sbp_... npm run verify:rls',
+    );
+    process.exit(2);
+  }
+  console.log(`Target project: ${PROJECT_REF} (creates and deletes test rows)`);
+
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   if (!token) {
     console.error(
       'SUPABASE_ACCESS_TOKEN is not set.\n' +
         'Create a personal access token at https://supabase.com/dashboard/account/tokens\n' +
-        'then run:  SUPABASE_ACCESS_TOKEN=sbp_... npm run verify:rls',
+        'then run:  SUPABASE_PROJECT_REF=<ref> SUPABASE_ACCESS_TOKEN=sbp_... npm run verify:rls',
     );
     process.exit(2);
   }

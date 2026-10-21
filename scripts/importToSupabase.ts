@@ -1,23 +1,39 @@
 /**
- * One-shot import: bundled JSON catalog + waitlists → Supabase tables
+ * Bootstrap import: bundled JSON catalog + waitlists → Supabase tables
  * created by `0002_admin_catalog.sql`.
  *
- * Run with the service-role key so we bypass RLS and can seed `published=true`
- * rows without first signing in:
+ * Intended for seeding an EMPTY or staging project. Against a live project it
+ * only adds rows that do not exist yet; it never updates or deletes anything.
  *
- *   SUPABASE_URL=...                       \
- *   SUPABASE_SERVICE_ROLE_KEY=...          \
+ *   # Dry run (default). With credentials it reads the live tables and prints
+ *   # the complete plan; without credentials it prints an offline summary.
  *   npm run import:supabase
  *
- * Re-running is safe: rows are upserted on `id`. The script also takes
- * `--dry` to print row counts without writing.
+ *   # Write, after reviewing the dry-run plan:
+ *   npm run import:supabase -- --apply \
+ *     --expected-project-ref <project-ref> \
+ *     --confirm APPLY:<project-ref>
+ *
+ * Credentials come from SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (shell,
+ * `.env.local`, or `.env`). Never commit them.
+ *
+ * Safety rules:
+ *   - Resources that already exist (exact or near-identical name + URL) are
+ *     skipped, so curated rows and their UUIDs (and users' saved bookmarks)
+ *     are untouched.
+ *   - Waitlists are insert-only: an existing id is never overwritten, so a
+ *     rerun cannot revert a curated status or trigger subscriber alerts.
+ *   - Every inserted row starts unpublished. Review and publish it in the CMS.
+ *   - `--reset` is not supported.
  */
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
+import './loadScriptEnv.ts';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { assertApplyTarget, cliOption } from './importIdentity.ts';
+import { planCatalogResources, type LiveResourceIdentity } from './importPlans.ts';
 
 import {
   DIRECTORY_CATEGORIES,
@@ -112,7 +128,7 @@ function programToResource(program: Program): ResourceInsert {
     public_notes: emptyToNull(program.notes),
     internal_notes: null,
     priority_score: program.priority_score ?? 0,
-    published: true,
+    published: false,
   };
 }
 
@@ -131,19 +147,46 @@ function waitlistToInsert(entry: WaitlistEntry): WaitlistInsert {
     notes: emptyToNull(entry.notes),
     public_notes: emptyToNull(entry.notes),
     internal_notes: null,
-    published: true,
+    published: false,
   };
 }
 
+/** Reads every row (PostgREST caps a single response), so the plan is never built on a partial table. */
+async function fetchAll<T>(client: SupabaseClient, table: string, columns: string): Promise<T[]> {
+  const pageSize = 1000;
+  const rows: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await client
+      .from(table)
+      .select(columns)
+      .order('id')
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    rows.push(...((data ?? []) as T[]));
+    if (!data || data.length < pageSize) return rows;
+  }
+}
+
 async function main() {
-  const dryRun = process.argv.includes('--dry');
+  const argv = process.argv.slice(2);
+  const apply = argv.includes('--apply');
+  if (argv.includes('--reset')) {
+    throw new Error(
+      '--reset is not supported: deleting resources cascades into users\' saved bookmarks. ' +
+        'Existing rows are skipped instead.',
+    );
+  }
+
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceKey) {
+  const haveCreds = !!url && !!serviceKey;
+  if (apply && !haveCreds) {
     throw new Error(
       'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (do not commit). The service role key is required to bypass RLS for the import.',
     );
+  }
+  if (apply) {
+    assertApplyTarget(url!, cliOption(argv, '--expected-project-ref'), cliOption(argv, '--confirm'));
   }
 
   let programs: Program[];
@@ -153,44 +196,81 @@ async function main() {
     programs = read<Program[]>('src/data/programs.json');
   }
   const waitlists = read<WaitlistEntry[]>('src/data/waitlists.json');
-
   const resourceRows = programs.map(programToResource);
   const waitlistRows = waitlists.map(waitlistToInsert);
 
   console.log(
-    `Importing ${resourceRows.length} resources and ${waitlistRows.length} waitlists${
-      dryRun ? ' (dry run)' : ''
-    }...`,
+    `Bundled: ${resourceRows.length} resources and ${waitlistRows.length} waitlists${
+      apply ? '' : ' (dry run, nothing will be written)'
+    }.`,
   );
 
-  if (dryRun) {
-    console.log(JSON.stringify({ resources: resourceRows[0], waitlists: waitlistRows[0] }, null, 2));
+  if (!haveCreds) {
+    console.log(
+      'No Supabase credentials, so the live tables were not read. Offline summary: at most ' +
+        `${resourceRows.length} resource inserts and ${waitlistRows.length} waitlist inserts, ` +
+        'all unpublished; existing rows are skipped; 0 updates; 0 deletes.',
+    );
+    console.log('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to see the exact plan.');
     return;
   }
 
-  const client = createClient(url, serviceKey, {
+  const target = new URL(url!).host;
+  console.log(`Target: ${target}`);
+  const client = createClient(url!, serviceKey!, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Resources: insert (no upsert key — UUIDs assigned by Supabase). To make
-  // re-runs idempotent, clear the table first when --reset is passed.
-  if (process.argv.includes('--reset')) {
-    console.log('Clearing existing resources...');
-    const { error } = await client.from('resources').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (error) throw error;
+  const liveResources = await fetchAll<LiveResourceIdentity>(client, 'resources', 'id, name, website, source_url');
+  const liveWaitlistIds = new Set(
+    (await fetchAll<{ id: string }>(client, 'waitlists', 'id')).map((row) => row.id),
+  );
+
+  const resourcePlan = planCatalogResources(resourceRows, liveResources);
+  const newWaitlists = waitlistRows.filter((row) => !liveWaitlistIds.has(row.id));
+  const exactSkips = resourcePlan.skips.filter((skip) => skip.match === 'exact').length;
+  const similarSkips = resourcePlan.skips.filter((skip) => skip.match === 'similar');
+
+  console.log(
+    `Plan: ${resourcePlan.inserts.length} resource insert (unpublished), ` +
+      `${resourcePlan.skips.length} resource skip (${exactSkips} exact, ${similarSkips.length} similar), ` +
+      `${newWaitlists.length} waitlist insert (unpublished), ` +
+      `${waitlistRows.length - newWaitlists.length} waitlist skip, 0 update, 0 delete.`,
+  );
+  for (const skip of similarSkips) {
+    console.log(`  similar match, skipped: "${skip.row.name}" ~ live resource ${skip.liveId}`);
+  }
+  for (const row of resourcePlan.inserts) {
+    console.log(JSON.stringify({ action: 'insert resource', row }, null, 2));
+  }
+  for (const row of newWaitlists) {
+    console.log(JSON.stringify({ action: 'insert waitlist', row }, null, 2));
   }
 
-  const { error: resourceError } = await client.from('resources').insert(resourceRows);
-  if (resourceError) throw resourceError;
-  console.log(`Inserted ${resourceRows.length} resources.`);
+  if (!apply) {
+    console.log(
+      '\nDry run: no changes written. To write, re-run with --apply ' +
+        '--expected-project-ref <ref> --confirm APPLY:<ref>.',
+    );
+    return;
+  }
 
-  const { error: waitlistError } = await client
-    .from('waitlists')
-    .upsert(waitlistRows, { onConflict: 'id' });
-  if (waitlistError) throw waitlistError;
-  console.log(`Upserted ${waitlistRows.length} waitlists.`);
-
-  console.log('Done.');
+  if (resourcePlan.inserts.length > 0) {
+    const { error } = await client.from('resources').insert(resourcePlan.inserts);
+    if (error) throw error;
+  }
+  if (newWaitlists.length > 0) {
+    // ignoreDuplicates = INSERT ... ON CONFLICT DO NOTHING: a row created
+    // since the plan was read is left exactly as it is.
+    const { error } = await client
+      .from('waitlists')
+      .upsert(newWaitlists, { onConflict: 'id', ignoreDuplicates: true });
+    if (error) throw error;
+  }
+  console.log(
+    `Applied: inserted ${resourcePlan.inserts.length} resources and ${newWaitlists.length} waitlists, ` +
+      'all unpublished. Review and publish them in the admin CMS.',
+  );
 }
 
 main().catch((err) => {
