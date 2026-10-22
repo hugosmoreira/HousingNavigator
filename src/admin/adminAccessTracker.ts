@@ -1,5 +1,5 @@
 /**
- * Bookkeeping that binds the admin flag to the user it was verified for.
+ * Bookkeeping that binds admin membership to the user it was verified for.
  *
  * AdminAuthContext runs `admin_users` lookups asynchronously, while auth
  * events can switch the signed-in user at any moment (another tab signs
@@ -9,7 +9,8 @@
  */
 
 export interface AdminAccessSnapshot {
-  isAdmin: boolean;
+  /** Row in admin_users for this user (MFA is decided separately, see adminAccess.ts). */
+  isMember: boolean;
   /** The lookup failed before this user was ever verified: answer unknown. */
   adminCheckFailed: boolean;
 }
@@ -38,7 +39,7 @@ export class AdminAccessTracker {
     this.sessionUserId = userId;
     this.verifiedUserId = null;
     this.generation += 1;
-    return { isAdmin: false, adminCheckFailed: false };
+    return { isMember: false, adminCheckFailed: false };
   }
 
   /** Start a lookup for the current user, or null when nobody is signed in. */
@@ -53,10 +54,10 @@ export class AdminAccessTracker {
   }
 
   /** A lookup answered. Returns the snapshot to apply, or null if a different user is signed in now. */
-  succeed(ticket: AdminCheckTicket, isAdmin: boolean): AdminAccessSnapshot | null {
+  succeed(ticket: AdminCheckTicket, isMember: boolean): AdminAccessSnapshot | null {
     if (!this.isCurrent(ticket)) return null;
     this.verifiedUserId = ticket.userId;
-    return { isAdmin, adminCheckFailed: false };
+    return { isMember, adminCheckFailed: false };
   }
 
   /**

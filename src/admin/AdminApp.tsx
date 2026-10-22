@@ -6,6 +6,7 @@ import AdminLayout from './AdminLayout';
 import RequireAdmin from './RequireAdmin';
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminMfa = lazy(() => import('./pages/AdminMfa'));
 const AdminResourcesList = lazy(() => import('./pages/AdminResourcesList'));
 const AdminResourceNew = lazy(() => import('./pages/AdminResourceNew'));
 const AdminResourceEdit = lazy(() => import('./pages/AdminResourceEdit'));
@@ -32,6 +33,9 @@ export default function AdminApp() {
           <Route element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="login" element={<AdminLogin />} />
+            {/* Two-factor setup and code entry. Not behind RequireAdmin: it is
+                where RequireAdmin sends members who still need their code. */}
+            <Route path="verify" element={<AdminMfa />} />
             <Route
               path="dashboard"
               element={

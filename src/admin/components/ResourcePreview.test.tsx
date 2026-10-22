@@ -105,6 +105,8 @@ describe('public behavior and admin boundary stay intact', () => {
     {session: null, isAdmin: false, loading: false},
     {session: {}, isAdmin: false, loading: false},
     {session: {}, isAdmin: true, loading: true},
+    // An admin member who still has to enter a two-factor code.
+    {session: {}, isAdmin: false, isAdminMember: true, needsMfaVerification: true, loading: false},
   ])('does not mount preview for unauthorized/unresolved sessions: %j', auth => {
     state.auth = {...auth, configured: true};
     const html = render(<RequireAdmin><ResourcePreview resource={resource} /></RequireAdmin>);

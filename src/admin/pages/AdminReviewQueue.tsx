@@ -265,10 +265,24 @@ export default function AdminReviewQueue() {
                   )}
                 </div>
 
-                {s.evidence && (
+                {/* Handoff EDGE-003: only text the checker found on the page is
+                    shown as a quote. Older rows can carry model text that was
+                    never matched against the page; label it so it is not
+                    mistaken for evidence. */}
+                {s.evidence && s.evidence_verified && (
                   <blockquote className="mt-3 border-l-2 border-primary/40 pl-3 text-sm italic text-on-surface-variant">
+                    <span className="block not-italic text-xs font-semibold text-primary mb-1">
+                      Verified page quote
+                    </span>
                     “{s.evidence}”
                   </blockquote>
+                )}
+                {s.evidence && !s.evidence_verified && (
+                  <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                    <span className="font-semibold">Not found on the page:</span> the
+                    checker&apos;s explanation, not a quote. Check the source before approving.
+                    <span className="mt-1 block italic">{s.evidence}</span>
+                  </div>
                 )}
 
                 <div className="mt-4 flex items-center gap-3 flex-wrap">

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AdminVerificationError, useAdminAuth } from '../AdminAuthContext';
+import { adminReturnPath } from '../adminAccess';
 import { getSupabaseClient } from '../../lib/supabaseClient';
 import TurnstileChallenge, {
   isTurnstileConfigured,
@@ -31,7 +32,7 @@ const VERIFY_FAILED_MESSAGE =
 const IS_DEV = import.meta.env.DEV;
 
 export default function AdminLogin() {
-  const { signIn, signOut, session, isAdmin, configured } = useAdminAuth();
+  const { signIn, signOut, session, isAdminMember, configured } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
@@ -47,16 +48,15 @@ export default function AdminLogin() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaGeneration, setCaptchaGeneration] = useState(0);
 
-  // If the page mounts while a valid admin session is already cached
-  // (returning visit, magic link, etc.), bounce straight to the dashboard.
+  // If the page mounts while an admin member's session is already cached
+  // (returning visit, magic link, etc.), continue to the admin area. A member
+  // who still needs a two-factor code is then sent to /admin/verify by
+  // RequireAdmin, so this keys on membership rather than full access.
   useEffect(() => {
-    if (session && isAdmin) {
-      navigate(
-        state.from && state.from.startsWith('/admin') ? state.from : '/admin/dashboard',
-        { replace: true },
-      );
+    if (session && isAdminMember) {
+      navigate(adminReturnPath(state.from), { replace: true });
     }
-  }, [session, isAdmin, navigate, state.from]);
+  }, [session, isAdminMember, navigate, state.from]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,12 +67,9 @@ export default function AdminLogin() {
     }
     setSubmitting(true);
     try {
-      const ok = await signIn(email.trim(), password, captchaToken ?? undefined);
-      if (ok) {
-        navigate(
-          state.from && state.from.startsWith('/admin') ? state.from : '/admin/dashboard',
-          { replace: true },
-        );
+      const member = await signIn(email.trim(), password, captchaToken ?? undefined);
+      if (member) {
+        navigate(adminReturnPath(state.from), { replace: true });
       } else {
         // Auth succeeded but the user is not authorized. Sign them back
         // out so the session does not linger, then surface a safe

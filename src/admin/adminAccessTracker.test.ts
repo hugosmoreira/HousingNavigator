@@ -4,11 +4,11 @@ import { AdminAccessTracker } from './adminAccessTracker';
 describe('AdminAccessTracker', () => {
   it('resets the admin flag when a different user takes over the tab', () => {
     const tracker = new AdminAccessTracker();
-    expect(tracker.setUser('admin-a')).toEqual({ isAdmin: false, adminCheckFailed: false });
-    expect(tracker.succeed(tracker.begin()!, true)).toEqual({ isAdmin: true, adminCheckFailed: false });
+    expect(tracker.setUser('admin-a')).toEqual({ isMember: false, adminCheckFailed: false });
+    expect(tracker.succeed(tracker.begin()!, true)).toEqual({ isMember: true, adminCheckFailed: false });
 
     expect(tracker.setUser('admin-a')).toBeNull();
-    expect(tracker.setUser('user-b')).toEqual({ isAdmin: false, adminCheckFailed: false });
+    expect(tracker.setUser('user-b')).toEqual({ isMember: false, adminCheckFailed: false });
   });
 
   it("ignores a slow lookup for the previous user (admin A's answer never applies to B)", () => {
