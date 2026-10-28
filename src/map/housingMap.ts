@@ -7,10 +7,12 @@
  * pages, the server bundle, or visitors who do not open the map.
  */
 import {
+  AJAXError,
   GPUInitializationError,
   LngLatBounds,
   Map as MapLibreMap,
   Marker,
+  addProtocol,
   setWorkerUrl,
   type ExpressionSpecification,
   type GeoJSONSource,
@@ -32,10 +34,21 @@ import {
   type MapTheme,
 } from './mapStyle';
 import { easeOutCubic } from './motion';
+import { SHARED_TILE_PROTOCOL, createSharedTileLoader, toSharedTileUrl } from './tileRequests';
 
 // Same-origin module worker: allowed by the site's script-src 'self' policy,
 // so no blob: worker exception is needed.
 setWorkerUrl(workerUrl);
+
+// Copies of one basemap tile share a single download (see tileRequests.ts).
+const BASEMAP_TILE_ORIGIN = `${new URL(BASE_STYLE_URL).origin}/`;
+addProtocol(
+  SHARED_TILE_PROTOCOL,
+  createSharedTileLoader(
+    (url, signal) => fetch(url, { signal }),
+    (response, url, body) => new AJAXError(response.status, response.statusText, url, body),
+  ),
+);
 
 export { GPUInitializationError };
 
@@ -118,6 +131,12 @@ const COLUMN_RADIUS_M = { listing: 120, city: 80 } as const;
 const MAX_BUILDING_QUERIES = 60;
 /** How far a geocoded point may sit from a footprint and still claim it. */
 const NEAREST_BUILDING_M = 30;
+/**
+ * Time one pass of footprint queries may take before yielding to the page.
+ * A single query takes about 8 ms on a desktop at a steep pitch, and about
+ * four times that on a mid-range phone.
+ */
+const HIGHLIGHT_SLICE_MS = 8;
 
 function circlePolygon(lng: number, lat: number, radiusMeters: number, steps = 20): Polygon {
   const dLat = radiusMeters / 111_320;
@@ -276,6 +295,10 @@ export function createHousingMap(options: HousingMapOptions): HousingMap {
     pixelRatio: Math.min(window.devicePixelRatio || 1, options.lowPower ? 1.5 : 2),
     attributionControl: { compact: true },
     fadeDuration: options.lowPower ? 0 : 300,
+    transformRequest: (url, resourceType) =>
+      (resourceType as string | undefined) === 'Tile' && url.startsWith(BASEMAP_TILE_ORIGIN)
+        ? { url: toSharedTileUrl(url) }
+        : undefined,
   });
 
   if (import.meta.env.DEV) (window as Window & { __hnMap?: MapLibreMap }).__hnMap = map;
@@ -524,43 +547,71 @@ export function createHousingMap(options: HousingMapOptions): HousingMap {
   }
 
   /**
+   * Matched footprints by point key and whole zoom level (tiles clip shapes
+   * differently per level), or null when no building is near. Each match is a
+   * rendered-features query, slow at a steep pitch, so a view is paid for once.
+   */
+  const footprints = new Map<string, Feature<Polygon> | null>();
+
+  function matchFootprint(point: MapPoint, at: { x: number; y: number }, radius: number): Feature<Polygon> | null {
+    const candidates = map.queryRenderedFeatures(
+      [
+        [at.x - radius, at.y - radius],
+        [at.x + radius, at.y + radius],
+      ],
+      { layers: [BUILDING_LAYER] },
+    );
+    const hit = footprintAt(candidates, point, NEAREST_BUILDING_M);
+    if (!hit) return null;
+    return {
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [grow(hit.ring, 0.8)] },
+      properties: {
+        key: point.key,
+        height: Number(hit.feature.properties?.render_height ?? 6) + 0.8,
+        base: Number(hit.feature.properties?.render_min_height ?? 0),
+      },
+    };
+  }
+
+  /**
    * Outline the OpenStreetMap building under each property in brand color.
    * Building ids in the tiles are not unique, so instead of feature-state the
    * matched footprint is copied into its own extrusion layer, grown slightly
    * so its walls never z-fight with the original.
    */
   function refreshBuildingHighlights(): void {
+    window.clearTimeout(highlightTimer);
     if (!styleReady || destroyed || !map.getLayer(BUILDING_LAYER)) return;
+    // Queries only see what is drawn, so wait for a settled, fully loaded view;
+    // the moveend or idle that follows calls this again.
+    if (map.isMoving() || !map.areTilesLoaded()) return;
     const features: Array<Feature<Polygon>> = [];
     if (map.getZoom() >= 14) {
       const canvas = map.getCanvas();
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
+      const level = Math.floor(map.getZoom());
       const radius = Math.max(10, Math.min(40, 2 ** (map.getZoom() - 14) * 8));
       const visible = points
         .map((point) => ({ point, at: map.project([point.lng, point.lat]) }))
         .filter(({ at }) => at.x >= 0 && at.y >= 0 && at.x <= width && at.y <= height)
         .sort((a, b) => Number(b.point.key === selected) - Number(a.point.key === selected))
         .slice(0, MAX_BUILDING_QUERIES);
+      const deadline = performance.now() + HIGHLIGHT_SLICE_MS;
       for (const { point, at } of visible) {
-        const candidates = map.queryRenderedFeatures(
-          [
-            [at.x - radius, at.y - radius],
-            [at.x + radius, at.y + radius],
-          ],
-          { layers: [BUILDING_LAYER] },
-        );
-        const hit = footprintAt(candidates, point, NEAREST_BUILDING_M);
-        if (!hit) continue;
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Polygon', coordinates: [grow(hit.ring, 0.8)] },
-          properties: {
-            key: point.key,
-            height: Number(hit.feature.properties?.render_height ?? 6) + 0.8,
-            base: Number(hit.feature.properties?.render_min_height ?? 0),
-          },
-        });
+        const cacheKey = `${point.key}@${level}`;
+        let footprint = footprints.get(cacheKey);
+        if (footprint === undefined) {
+          // Out of time: finish in a later pass instead of freezing the page.
+          if (performance.now() > deadline) {
+            highlightTimer = window.setTimeout(refreshBuildingHighlights, 0);
+            return;
+          }
+          footprint = matchFootprint(point, at, radius);
+          footprints.set(cacheKey, footprint);
+        }
+        if (footprint) features.push(footprint);
       }
     }
     // setData makes MapLibre repaint and go idle again, so skip it when

@@ -108,6 +108,20 @@ separate, sourced note.
 - **Building highlights:** building ids in the tiles are not unique (the
   tiles merge neighbors), so the footprint under each property is copied into
   its own slightly larger extrusion rather than recolored by feature-state.
+  Each footprint is found with a rendered-features query, which takes about
+  8 ms on a desktop at a steep pitch and about four times that on a mid-range
+  phone. Matches are remembered per property and zoom level, queries wait
+  until the map is still and its tiles are loaded, and a pass yields to the
+  page after 8 ms. Before this, settling at street level downtown froze a
+  mid-range phone for 1.2 s and again for 1.0 s, because every refresh
+  repeated all 60 queries.
+- **Tile requests:** MapLibre loads a basemap tile from the top zoom (14)
+  once for every overscaled zoom it is drawn at, and again for each fallback
+  parent while a sharper copy loads. The browser downloaded every copy: the
+  desktop intro received 8.9 MB from the tile host for 5.3 MB of distinct
+  tiles. Basemap tile URLs are rewritten to an `hn-tile://` protocol
+  (`src/map/tileRequests.ts`), so copies requested while one is in flight
+  share its download. Repeats after that are answered by the HTTP cache.
 - **Fallbacks:** WebGL2 is checked before loading the engine. MapLibre's
   `GPUInitializationError` and repeated tile failures show a message while
   the panel and list keep working. A lost WebGL context (common when a phone
@@ -142,6 +156,7 @@ src/map/mapUrlState.ts             shareable URL state
 src/map/DataPanel.tsx              "Explore the data" charts
 src/map/MapSearch.tsx, MapFilters.tsx, MapStats.tsx, PlaceList.tsx,
   PropertyDetails.tsx, MapControls.tsx, BottomSheet.tsx
+src/map/tileRequests.ts            one download per basemap tile URL in flight
 src/map/tour.ts, places.ts, motion.ts, device.ts, map.css, map-ui.css
 src/data/affordablePropertyLocations.{ts,json}
 public/data/portland-rental-portfolio.json, portland-neighborhoods.json
