@@ -7,12 +7,10 @@
  * pages, the server bundle, or visitors who do not open the map.
  */
 import {
-  AJAXError,
   GPUInitializationError,
   LngLatBounds,
   Map as MapLibreMap,
   Marker,
-  addProtocol,
   setWorkerUrl,
   type ExpressionSpecification,
   type GeoJSONSource,
@@ -34,21 +32,10 @@ import {
   type MapTheme,
 } from './mapStyle';
 import { easeOutCubic } from './motion';
-import { SHARED_TILE_PROTOCOL, createSharedTileLoader, toSharedTileUrl } from './tileRequests';
 
 // Same-origin module worker: allowed by the site's script-src 'self' policy,
 // so no blob: worker exception is needed.
 setWorkerUrl(workerUrl);
-
-// Copies of one basemap tile share a single download (see tileRequests.ts).
-const BASEMAP_TILE_ORIGIN = `${new URL(BASE_STYLE_URL).origin}/`;
-addProtocol(
-  SHARED_TILE_PROTOCOL,
-  createSharedTileLoader(
-    (url, signal) => fetch(url, { signal }),
-    (response, url, body) => new AJAXError(response.status, response.statusText, url, body),
-  ),
-);
 
 export { GPUInitializationError };
 
@@ -295,10 +282,6 @@ export function createHousingMap(options: HousingMapOptions): HousingMap {
     pixelRatio: Math.min(window.devicePixelRatio || 1, options.lowPower ? 1.5 : 2),
     attributionControl: { compact: true },
     fadeDuration: options.lowPower ? 0 : 300,
-    transformRequest: (url, resourceType) =>
-      (resourceType as string | undefined) === 'Tile' && url.startsWith(BASEMAP_TILE_ORIGIN)
-        ? { url: toSharedTileUrl(url) }
-        : undefined,
   });
 
   if (import.meta.env.DEV) (window as Window & { __hnMap?: MapLibreMap }).__hnMap = map;

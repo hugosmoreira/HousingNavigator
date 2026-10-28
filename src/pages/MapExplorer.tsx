@@ -124,7 +124,8 @@ export default function MapExplorer() {
   const [initialCamera] = useState<CameraState>(() => initialUrl.camera ?? overviewCamera(view, isDesktop));
   // Only wide screens get the opening flight. It starts at street level
   // downtown, the heaviest tiles in the city, and nothing draws until they
-  // arrive: on a phone over slow 4G that pushed the first map from 8 s to 15 s.
+  // arrive: on a phone over slow 4G the first map took 10 s instead of 8 s,
+  // and the flight ran until 14 s.
   const [introFrom] = useState<CameraState | null>(() =>
     isDesktop && !initialUrl.camera && !selectedKey && !focus && view === '3d' && !lowPower && !reducedMotion
       ? INTRO_CAMERA

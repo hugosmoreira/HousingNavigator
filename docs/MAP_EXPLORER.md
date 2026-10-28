@@ -113,15 +113,14 @@ separate, sourced note.
   phone. Matches are remembered per property and zoom level, queries wait
   until the map is still and its tiles are loaded, and a pass yields to the
   page after 8 ms. Before this, settling at street level downtown froze a
-  mid-range phone for 1.2 s and again for 1.0 s, because every refresh
-  repeated all 60 queries.
-- **Tile requests:** MapLibre loads a basemap tile from the top zoom (14)
-  once for every overscaled zoom it is drawn at, and again for each fallback
-  parent while a sharper copy loads. The browser downloaded every copy: the
-  desktop intro received 8.9 MB from the tile host for 5.3 MB of distinct
-  tiles. Basemap tile URLs are rewritten to an `hn-tile://` protocol
-  (`src/map/tileRequests.ts`), so copies requested while one is in flight
-  share its download. Repeats after that are answered by the HTTP cache.
+  mid-range phone for about 1 s, two or three times in a row, because every
+  refresh repeated all 60 queries.
+- **Repeated tile requests:** MapLibre requests a basemap tile from the top
+  zoom (14) once for every overscaled zoom it is drawn at, and again for each
+  fallback parent, so the network panel lists the same tile URL several
+  times. Chrome's HTTP cache merges these and serves the repeats: the desktop
+  intro downloads about 4.9 MB from the tile host with or without a layer
+  that shares the downloads (tried and removed). Not checked in Safari.
 - **Fallbacks:** WebGL2 is checked before loading the engine. MapLibre's
   `GPUInitializationError` and repeated tile failures show a message while
   the panel and list keep working. A lost WebGL context (common when a phone
@@ -137,8 +136,9 @@ separate, sourced note.
   high pixel ratios. Screens narrower than 1024 px open on the overview
   without the intro: its street-level start needs the heaviest downtown
   tiles before anything draws. Measured on a mid-range phone over slow 4G,
-  skipping the intro brought the first complete map from about 15 s to 8 s and
-  the download from 2.8 MB to 1.2 MB.
+  skipping the intro brought the first complete map from about 10 s to 8 s
+  (the flight itself ran until about 14 s) and the tile download from 2.0 MB
+  to 0.5 MB.
 - **Accessibility:** every map point is also reachable from the panel list;
   controls are labeled buttons; search is a combobox with arrow-key support;
   the map canvas has keyboard pan/zoom.
@@ -156,7 +156,6 @@ src/map/mapUrlState.ts             shareable URL state
 src/map/DataPanel.tsx              "Explore the data" charts
 src/map/MapSearch.tsx, MapFilters.tsx, MapStats.tsx, PlaceList.tsx,
   PropertyDetails.tsx, MapControls.tsx, BottomSheet.tsx
-src/map/tileRequests.ts            one download per basemap tile URL in flight
 src/map/tour.ts, places.ts, motion.ts, device.ts, map.css, map-ui.css
 src/data/affordablePropertyLocations.{ts,json}
 public/data/portland-rental-portfolio.json, portland-neighborhoods.json
