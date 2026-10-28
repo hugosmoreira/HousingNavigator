@@ -126,6 +126,14 @@ const PRIVATE_PAGE_METADATA: Record<string, PageMetadata> = {
     description: 'Manage saved housing resources and waitlist alerts.',
     index: false,
   },
+  // Kept out of search results while the map is evaluated. To launch it, move
+  // this entry to INDEXABLE_PAGE_METADATA and follow docs/MAP_EXPLORER.md.
+  '/map': {
+    title: 'Explore the affordable housing map | Housing Navigator',
+    description:
+      'Explore verified affordable apartment properties across Portland on an interactive 2D and 3D map.',
+    index: false,
+  },
 };
 
 const NOT_FOUND_METADATA: PageMetadata = {

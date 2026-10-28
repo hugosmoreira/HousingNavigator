@@ -15,6 +15,7 @@ export const PUBLIC_ANALYTICS_PAGES = {
   '/terms': 'terms',
   '/help': 'help',
   '/accessibility': 'accessibility',
+  '/map': 'map',
   ...Object.fromEntries(
     LOCAL_LANDING_PAGES.map((page) => [
       page.path,

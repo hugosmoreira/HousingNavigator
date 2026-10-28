@@ -37,6 +37,24 @@ export default defineConfig(({mode}) => {
       // The manifest lets the budget check distinguish render-blocking entry
       // imports from account/admin chunks that are loaded only on demand.
       manifest: true,
+      rollupOptions: {
+        output: {
+          // Keep the map engine in one named chunk so the budget check can
+          // hold it to its own limit. It loads only on /map.
+          manualChunks(id) {
+            if (id.includes('/node_modules/maplibre-gl/')) return 'maplibre';
+            return undefined;
+          },
+          // MapLibre's worker ships as .mjs. Hosts do not all serve .mjs as
+          // JavaScript, and nosniff would then block it, so emit it as .js.
+          assetFileNames(assetInfo) {
+            const name = assetInfo.names?.[0] ?? '';
+            return name.endsWith('.mjs')
+              ? 'assets/[name]-[hash].js'
+              : 'assets/[name]-[hash][extname]';
+          },
+        },
+      },
     },
     server: {
       // HMR can be disabled via the DISABLE_HMR env var (used by some
