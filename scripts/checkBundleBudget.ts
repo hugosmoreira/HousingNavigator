@@ -1,7 +1,7 @@
-import { readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { collectInitialAssets, type ViteManifest } from './bundleBudget';
+import { collectInitialAssets, isMapEngineChunk, type ViteManifest } from './bundleBudget';
 
 const distDir = resolve('dist');
 const manifestPath = join(distDir, '.vite', 'manifest.json');
@@ -15,6 +15,9 @@ const budgets = {
   initialJavascriptGzip: 90 * 1024,
   initialCssGzip: 12 * 1024,
   largestDeferredJavascriptRaw: 225 * 1024,
+  // MapLibre 6 engine (~1.1 MiB) plus its worker (~0.5 MiB), fetched only by /map.
+  mapEngineJavascriptRaw: 1700 * 1024,
+  mapEngineJavascriptGzip: 470 * 1024,
 } as const;
 
 function bytesFor(file: string): number {
@@ -37,11 +40,29 @@ const initialJavascriptRaw = sum(initial.javascript, bytesFor);
 const initialJavascriptGzip = sum(initial.javascript, gzipBytesFor);
 const initialCssGzip = sum(initial.css, gzipBytesFor);
 const initialSet = new Set(initial.javascript);
+// The worker is emitted as a plain asset, which the manifest may omit, so it
+// is also found by name.
+const mapEngineJavascript = [
+  ...new Set([
+    ...Object.values(manifest)
+      .filter((chunk) => isMapEngineChunk(chunk) && chunk.file.endsWith('.js'))
+      .map((chunk) => chunk.file),
+    ...readdirSync(join(distDir, 'assets'))
+      .filter((file) => /^maplibre-gl-worker-[\w-]+\.js$/.test(file))
+      .map((file) => `assets/${file}`),
+  ]),
+];
+const mapEngineSet = new Set(mapEngineJavascript);
+for (const file of mapEngineJavascript) {
+  if (initialSet.has(file)) {
+    throw new Error(`The map engine must never load with the first page: ${file}`);
+  }
+}
 const deferredJavascript = [
   ...new Set(
     Object.values(manifest)
       .map((chunk) => chunk.file)
-      .filter((file) => file.endsWith('.js') && !initialSet.has(file)),
+      .filter((file) => file.endsWith('.js') && !initialSet.has(file) && !mapEngineSet.has(file)),
   ),
 ];
 const largestDeferredJavascriptRaw = deferredJavascript.reduce(
@@ -69,6 +90,16 @@ const checks = [
     label: 'Largest deferred JavaScript chunk (raw)',
     actual: largestDeferredJavascriptRaw,
     budget: budgets.largestDeferredJavascriptRaw,
+  },
+  {
+    label: 'Map engine JavaScript, /map only (raw)',
+    actual: sum(mapEngineJavascript, bytesFor),
+    budget: budgets.mapEngineJavascriptRaw,
+  },
+  {
+    label: 'Map engine JavaScript, /map only (gzip)',
+    actual: sum(mapEngineJavascript, gzipBytesFor),
+    budget: budgets.mapEngineJavascriptGzip,
   },
 ];
 

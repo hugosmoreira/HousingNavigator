@@ -62,16 +62,24 @@ export default function Layout() {
     navigate('/', { replace: true });
   }
 
-  const navLinks = [
+  // shortName keeps the desktop bar on one line between the lg and xl breakpoints.
+  const navLinks: Array<{ name: string; path: string; shortName?: string }> = [
     { name: 'Home', path: '/' },
     { name: 'Find resources', path: '/resources/' },
     { name: 'Affordable housing', path: '/affordable-housing/' },
+    { name: 'Explore map', path: '/map/', shortName: 'Map' },
     { name: 'Waitlists', path: '/waitlist/' },
     { name: 'About', path: '/mission/' },
   ];
 
+  // The map fills the viewport under the nav bar, so it has no footer and the
+  // page itself never scrolls.
+  const fullBleed = location.pathname === '/map' || location.pathname.startsWith('/map/');
+
   function isActive(path: string) {
     if (path === '/resources/' && location.pathname.startsWith('/housing-help/')) return true;
+    // Client-only routes such as /map are served without the trailing slash.
+    if (path !== '/' && location.pathname === path.replace(/\/$/, '')) return true;
     return location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
   }
 
@@ -92,18 +100,25 @@ export default function Layout() {
             <Home className="w-[1.125rem] h-[1.125rem] text-primary" fill="currentColor" />
             Housing Navigator
           </Link>
-          <div className="hidden lg:flex items-center gap-6 lg:gap-8">
+          <div className="hidden lg:flex items-center gap-6 lg:gap-4 xl:gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`font-semibold py-[26px] text-sm tracking-wide transition-all ${
+                className={`font-semibold py-[26px] text-sm tracking-wide whitespace-nowrap transition-all ${
                   isActive(link.path)
                     ? 'text-primary border-b-[2.5px] border-primary translate-y-[1px]'
                     : 'text-on-surface-variant hover:text-on-surface border-b-[2.5px] border-transparent hover:border-surface-variant'
                 }`}
               >
-                {link.name}
+                {link.shortName ? (
+                  <>
+                    <span className="xl:hidden">{link.shortName}</span>
+                    <span className="hidden xl:inline">{link.name}</span>
+                  </>
+                ) : (
+                  link.name
+                )}
               </Link>
             ))}
           </div>
@@ -214,12 +229,15 @@ export default function Layout() {
         )}
       </nav>
 
-      <main id="main-content" className="flex-grow flex flex-col">
+      <main
+        id="main-content"
+        className={fullBleed ? 'relative flex flex-col h-[calc(100dvh-5rem-1px)] overflow-hidden' : 'flex-grow flex flex-col'}
+      >
         <Outlet />
       </main>
 
       {/* Footer */}
-      <footer className="bg-surface w-full py-16 border-t border-surface-container-highest mt-auto">
+      <footer className={`bg-surface w-full py-16 border-t border-surface-container-highest mt-auto ${fullBleed ? 'hidden' : ''}`}>
         <div className="flex flex-col md:flex-row justify-between items-center gap-8 px-6 lg:px-12 max-w-7xl mx-auto">
           <div className="flex flex-col items-center md:items-start gap-2">
             <span className="font-headline font-bold text-on-surface text-lg tracking-tight">Housing Navigator</span>

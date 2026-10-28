@@ -19,6 +19,7 @@ const applicationRoutes = [
   '/forgot-password',
   '/reset-password',
   '/dashboard',
+  '/map',
   '/admin',
   '/admin/login',
   '/admin/verify',

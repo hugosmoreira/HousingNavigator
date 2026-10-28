@@ -29,6 +29,8 @@
     "import:supabase": "tsx scripts/importToSupabase.ts",
     "import:waitlists": "tsx scripts/importWaitlistsCsv.ts",
     "import:resources": "tsx scripts/importResourcesCsv.ts",
+    "geocode:properties": "tsx scripts/geocodeAffordableProperties.ts",
+    "map-data:sync": "tsx scripts/syncPortlandRentalPortfolio.ts",
     "verify:rls": "tsx scripts/verifyRls.ts"
   },
   "dependencies": {
@@ -38,6 +40,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.546.0",
+    "maplibre-gl": "^6.16.0",
     "posthog-js": "^1.404.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

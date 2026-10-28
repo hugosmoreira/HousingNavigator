@@ -84,6 +84,11 @@
   to = "/spa.html"
   status = 200
 
+[[redirects]]
+  from = "/map"
+  to = "/spa.html"
+  status = 200
+
 # Admin routes. Dynamic edit routes use one-segment placeholders so arbitrary
 # nested admin paths still receive a real 404.
 [[redirects]]
@@ -174,7 +179,10 @@
 #   * style-src includes 'unsafe-inline' (React style attributes) and
 #     fonts.googleapis.com (loaded from src/index.css via @import).
 #   * connect-src allows the Supabase REST/auth/functions endpoints plus
-#     websockets (realtime), nothing else.
+#     websockets (realtime), and tiles.openfreemap.org, which serves the
+#     /map basemap style, vector tiles, fonts and sprites.
+#   * img-src includes blob: because MapLibre decodes some map images from
+#     blob URLs. Its web worker is a same-origin file, covered by script-src.
 #   * frame-ancestors 'none' + X-Frame-Options DENY: the app is never framed,
 #     which blocks clickjacking on the admin CMS.
 # If a new external service is added (analytics, image CDN), extend the
@@ -182,7 +190,7 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://us.i.posthog.com https://challenges.cloudflare.com https://tiles.openfreemap.org; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"

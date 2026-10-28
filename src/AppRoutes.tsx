@@ -30,6 +30,8 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminApp = lazy(() => import('./admin/AdminApp'));
+// The map needs WebGL and the browser, so it is never prerendered.
+const MapExplorer = lazy(() => import('./pages/MapExplorer'));
 
 function PublicProviders() {
   return (
@@ -95,6 +97,7 @@ export default function AppRoutes({
           <Route path="terms" element={<DeferredRoute><Terms /></DeferredRoute>} />
           <Route path="help" element={<DeferredRoute><Help /></DeferredRoute>} />
           <Route path="accessibility" element={<DeferredRoute><Accessibility /></DeferredRoute>} />
+          <Route path="map" element={<DeferredRoute><MapExplorer /></DeferredRoute>} />
           <Route path="login" element={<DeferredRoute><LoginRoute /></DeferredRoute>} />
           <Route path="signup" element={<DeferredRoute><Signup /></DeferredRoute>} />
           <Route

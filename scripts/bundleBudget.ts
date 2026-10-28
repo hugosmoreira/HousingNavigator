@@ -1,7 +1,9 @@
 export interface ViteManifestChunk {
   file: string;
+  name?: string;
   src?: string;
   isEntry?: boolean;
+  isDynamicEntry?: boolean;
   imports?: string[];
   dynamicImports?: string[];
   css?: string[];
@@ -44,4 +46,13 @@ export function collectInitialAssets(manifest: ViteManifest): InitialAssets {
     javascript: [...javascript].sort(),
     css: [...css].sort(),
   };
+}
+
+/**
+ * The MapLibre engine and its worker load only on /map. They are far larger
+ * than any other lazy chunk, so they get their own ceiling instead of raising
+ * the deferred-chunk limit that guards every other route.
+ */
+export function isMapEngineChunk(chunk: ViteManifestChunk): boolean {
+  return chunk.name === 'maplibre' || Boolean(chunk.src?.includes('node_modules/maplibre-gl/'));
 }

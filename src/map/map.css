@@ -1,0 +1,61 @@
+/*
+ * Styles that live inside the MapLibre canvas container. MapLibre writes a
+ * transform onto each marker's root element every frame, so animation stays
+ * on the inner element.
+ */
+.hn-map-pulse {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.hn-map-pulse span {
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 2px solid var(--hn-pulse, #0053dd);
+  opacity: 0;
+  animation: hn-map-pulse 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+.hn-map-pulse span + span {
+  animation-delay: 1.2s;
+}
+
+@keyframes hn-map-pulse {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.85;
+  }
+  80%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hn-map-pulse span {
+    animation: none;
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+
+  .hn-map-pulse span + span {
+    display: none;
+  }
+}
+
+.hn-map .maplibregl-ctrl-attrib {
+  font-family: var(--font-body, "Inter", sans-serif);
+  font-size: 11px;
+}
+
+.hn-map .maplibregl-canvas:focus-visible {
+  outline: 3px solid var(--color-primary, #0053dd);
+  outline-offset: -3px;
+}

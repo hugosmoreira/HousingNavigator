@@ -1,0 +1,64 @@
+/* Page-level motion for /map. Loaded with the map page chunk only. */
+
+.hn-map-rise {
+  animation: hn-map-rise 320ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes hn-map-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hn-map-sheet {
+  transition: height 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.hn-map-fade {
+  transition: opacity 600ms ease;
+}
+
+.hn-map-tour-progress {
+  transform-origin: left center;
+  animation: hn-map-tour-progress var(--hn-tour-ms, 7000ms) linear both;
+}
+
+@keyframes hn-map-tour-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.hn-map-loading-bar {
+  animation: hn-map-loading 1.4s ease-in-out infinite;
+}
+
+@keyframes hn-map-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hn-map-rise,
+  .hn-map-tour-progress,
+  .hn-map-loading-bar {
+    animation: none;
+  }
+
+  .hn-map-sheet,
+  .hn-map-fade {
+    transition: none;
+  }
+}
