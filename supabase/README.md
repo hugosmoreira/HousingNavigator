@@ -98,6 +98,19 @@ Successful invitations, blocks, unblocks, and deletions are recorded in
 `admin_user_actions`. Administrator accounts are protected from block/delete
 operations in this interface.
 
+## Property address lookup
+
+The `geocode-address` Edge Function powers *Find on map* in the affordable
+property form. It verifies the administrator JWT and `admin_users` membership,
+asks the U.S. Census Bureau geocoder (public domain, no key) for one address,
+and returns the match. It stores nothing and needs no secrets beyond the
+Supabase defaults. Migration 0029 must be applied first, because the form
+saves the location columns.
+
+```bash
+supabase functions deploy geocode-address --no-verify-jwt
+```
+
 ## Row level security
 
 Policies live in `migrations/0002_admin_catalog.sql`:

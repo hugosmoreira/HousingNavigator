@@ -48,6 +48,19 @@ describe('toMapProperties', () => {
     expect(items.map((item) => item.location !== null)).toEqual([true, false]);
     expect(toFeatureCollection(items).features).toHaveLength(1);
   });
+
+  it('prefers the coordinates stored on the record over the JSON file', () => {
+    const [item] = toMapProperties(
+      [property({ id: 'a', latitude: 45.52, longitude: -122.68, location_source: 'manual', location_checked_on: '2026-10-28' })],
+      { a: location(45.5, -122.6) },
+    );
+    expect(item.location).toEqual({ lat: 45.52, lng: -122.68 });
+  });
+
+  it('falls back to the JSON file when the record has no coordinates', () => {
+    const [item] = toMapProperties([property({ id: 'a' })], { a: location(45.5, -122.6) });
+    expect(item.location).toEqual({ lat: 45.5, lng: -122.6 });
+  });
 });
 
 describe('matchesFilters', () => {

@@ -209,29 +209,43 @@ engine), `package.json` (dependency and two scripts).
 
 Migration `0029_affordable_property_locations.sql` adds `latitude`,
 `longitude`, `location_source` (`census_geocoder` or `manual`) and
-`location_checked_on` to `affordable_properties`. It is written and tested,
-**not yet applied**. A location is all four fields or none, inside the
-Oregon/Washington box. Visitors can read the four columns of published
-properties; `internal_notes` stays ungranted. The public view gains the columns
-at the end; the admin view is rebuilt so its `p.*` includes them. The 11
-coordinates in `src/data/affordablePropertyLocations.json` are copied in;
-Dolores Apartments waits until its address is confirmed.
+`location_checked_on` to `affordable_properties`. A location is all four
+fields or none, inside the Oregon/Washington box. Visitors can read the four
+columns of published properties; `internal_notes` stays ungranted. The public
+view gains the columns at the end; the admin view is rebuilt so its `p.*`
+includes them. The 11 coordinates in `src/data/affordablePropertyLocations.json`
+are copied in; Dolores Apartments waits until its address is confirmed.
 
 Order matters, because Netlify's build asks the public view for named columns
 and the admin form saves every field it holds:
 
 1. Apply 0029 to production, then run `npm run verify:rls` (checks 19–19e).
-   Code that does not know the columns keeps working.
-2. Deploy an admin-only `geocode-address` Edge Function: the Census geocoder
-   sends no CORS headers, so the browser cannot call it directly.
-3. Ship the app changes: read the columns (types, mapper, snapshot column
-   list), prefer them on `/map` with the JSON file as a fallback, and add
-   location fields with an address lookup to the admin form.
+   Code that does not know the columns keeps working. Done on 2026-10-28.
+2. Deploy the admin-only `geocode-address` Edge Function (below).
+3. Ship the app changes: the types, mapper and snapshot column list read the
+   columns, `/map` prefers them over the JSON file, and the admin form gets a
+   map pin.
 4. Remove the JSON file and turn `geocode:properties` into a read-only check.
 
+**The admin map pin.** The Location section of the property form shows where
+the listing sits on `/map`. *Find on map* sends the street address to
+`geocode-address`, which asks the Census geocoder (it sends no CORS headers, so
+the browser cannot call it directly) and returns the first match, rounded to
+six decimals. When the match differs from the published address, such as
+another direction or ZIP, the form says so: check the source before saving.
+Typing coordinates places the pin by hand (`manual`), and *Remove pin* clears
+all four fields. If the address changes after a pin is placed, the form asks
+for a new lookup. Nothing is stored until the form is saved.
+
+The function checks the caller's token and `admin_users` membership, accepts
+only the four address fields, sends one request to the Census host and writes
+nothing.
+
 Tests: `src/security/affordablePropertyLocations.test.ts` (migration
-contract) and `scripts/testAffordablePropertyLocationsDatabase.mjs`
-(in-memory Postgres, part of `npm run test:database`).
+contract), `scripts/testAffordablePropertyLocationsDatabase.mjs` (in-memory
+Postgres, part of `npm run test:database`), `src/security/addressGeocoding.test.ts`
+(lookup helpers and the function's checks) and `src/admin/propertyMapPin.test.ts`
+(the pin the form saves).
 
 ## Proposed database changes (not applied)
 

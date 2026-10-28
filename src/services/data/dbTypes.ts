@@ -18,6 +18,7 @@ import type {
   ProgramCategory,
   ProgramStatus,
   PropertyAudience,
+  PropertyLocationSource,
   ResourceServiceTag,
   ServiceArea,
   StatusConfidence,
@@ -116,6 +117,10 @@ export interface AffordablePropertyRow {
   county: string;
   state: 'OR' | 'WA';
   postal_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_source: PropertyLocationSource | null;
+  location_checked_on: string | null;
   description: string | null;
   eligibility_summary: string | null;
   ami_levels: number[];

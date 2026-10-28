@@ -103,6 +103,9 @@ export type PropertyAudience =
   | 'formerly_homeless'
   | 'recovery';
 
+/** How a property's map position was found (migration 0029). */
+export type PropertyLocationSource = 'census_geocoder' | 'manual';
+
 export interface IntakeState {
   county: County | null;
   situation: IntakeSituation | null;
@@ -204,6 +207,11 @@ export interface AffordableProperty {
   county: string;
   state: SupportedState;
   postal_code?: string;
+  /** Map position of the street address; all four fields or none. */
+  latitude?: number;
+  longitude?: number;
+  location_source?: PropertyLocationSource;
+  location_checked_on?: string;
   description?: string;
   eligibility_summary?: string;
   ami_levels: number[];

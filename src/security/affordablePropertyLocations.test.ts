@@ -2,8 +2,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { AFFORDABLE_PROPERTY_LOCATIONS } from '../data/affordablePropertyLocations';
 
+// Windows checkouts with core.autocrlf get CRLF; the checks below expect LF.
 const read = (name: string) =>
-  readFileSync(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8');
+  readFileSync(new URL(`../../supabase/migrations/${name}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const original = read('0020_affordable_properties.sql');
 const migration = read('0029_affordable_property_locations.sql');
 const DOLORES = 'dd2cd8f6-6bd1-46be-b3ad-a20c3725f155';
