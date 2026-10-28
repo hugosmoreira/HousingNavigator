@@ -456,10 +456,12 @@ exception when others then
   insert into results (test, outcome) values ('19c anon moves a property', 'PASS: blocked (' || sqlerrm || ')');
 end $$;
 
+-- Check 17 makes the fixture user an admin until cleanup, so this check signs
+-- in as a different user that is never in admin_users.
 do $$
 declare cnt int;
 begin
-  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  perform set_config('request.jwt.claims', '{"sub":"55555555-5555-5555-5555-555555555555","role":"authenticated"}', true);
   set local role authenticated;
   update public.affordable_properties set latitude = 46.0 where id = '33333333-3333-3333-3333-333333333333';
   get diagnostics cnt = row_count;
