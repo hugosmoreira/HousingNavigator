@@ -205,25 +205,37 @@ engine), `package.json` (dependency and two scripts).
 3. Store coordinates in the database (below) so new listings appear on the
    map without running the geocoder by hand.
 
+## Listing coordinates in the database
+
+Migration `0029_affordable_property_locations.sql` adds `latitude`,
+`longitude`, `location_source` (`census_geocoder` or `manual`) and
+`location_checked_on` to `affordable_properties`. It is written and tested,
+**not yet applied**. A location is all four fields or none, inside the
+Oregon/Washington box. Visitors can read the four columns of published
+properties; `internal_notes` stays ungranted. The public view gains the columns
+at the end; the admin view is rebuilt so its `p.*` includes them. The 11
+coordinates in `src/data/affordablePropertyLocations.json` are copied in;
+Dolores Apartments waits until its address is confirmed.
+
+Order matters, because Netlify's build asks the public view for named columns
+and the admin form saves every field it holds:
+
+1. Apply 0029 to production, then run `npm run verify:rls` (checks 19–19e).
+   Code that does not know the columns keeps working.
+2. Deploy an admin-only `geocode-address` Edge Function: the Census geocoder
+   sends no CORS headers, so the browser cannot call it directly.
+3. Ship the app changes: read the columns (types, mapper, snapshot column
+   list), prefer them on `/map` with the JSON file as a fallback, and add
+   location fields with an address lookup to the admin form.
+4. Remove the JSON file and turn `geocode:properties` into a read-only check.
+
+Tests: `src/security/affordablePropertyLocations.test.ts` (migration
+contract) and `scripts/testAffordablePropertyLocationsDatabase.mjs`
+(in-memory Postgres, part of `npm run test:database`).
+
 ## Proposed database changes (not applied)
 
 Nothing below has been run. All of it is additive.
-
-**Listing coordinates** — replaces the JSON sidecar once the admin form can
-set or geocode a location:
-
-```sql
-alter table public.affordable_properties
-  add column if not exists latitude double precision
-    check (latitude is null or latitude between -90 and 90),
-  add column if not exists longitude double precision
-    check (longitude is null or longitude between -180 and 180),
-  add column if not exists location_source text,
-  add column if not exists location_checked_on date;
--- Then add the four columns to the affordable_properties_public view, the
--- anon column grants, AFFORDABLE_PROPERTY_COLUMNS, AffordablePropertyRow and
--- affordablePropertyFromRow.
-```
 
 **Ownership** — sourced claims with confidence, in a separate schema area so
 no existing table changes:

@@ -3,7 +3,8 @@
 -- Run with `npm run verify:rls` (scripts/verifyRls.ts) after applying any
 -- migration. Simulates the `authenticated` and `anon` PostgREST roles with
 -- `set local role` + a fake JWT claim, exercises every security invariant
--- from migrations 0004-0013, and prints one PASS/FAIL row per check.
+-- from migrations 0004-0013 and the property location grants from 0029, and
+-- prints one PASS/FAIL row per check.
 --
 -- Self-contained: creates a throwaway auth user + two test waitlists, and
 -- deletes them at the end (cascades clean up profiles, alerts, events,
@@ -404,9 +405,86 @@ exception when others then
   insert into results (test, outcome) values ('18 authed reads *_public views + last_opened_at', 'FAIL: blocked (' || sqlerrm || ')');
 end $$;
 
+-- ---- 19. property map coordinates (migration 0029) ----
+-- Fixtures are inserted here rather than above so a database without 0029
+-- reports these checks as failed instead of aborting the whole suite.
+do $$
+begin
+  insert into public.affordable_properties (id, name, city, county, state, published, internal_notes,
+    latitude, longitude, location_source, location_checked_on)
+  values ('33333333-3333-3333-3333-333333333333', 'Test Property Published', 'Portland', 'Multnomah', 'OR', true,
+          'secret property note', 45.5, -122.6, 'manual', current_date),
+         ('44444444-4444-4444-4444-444444444444', 'Test Property Draft', 'Portland', 'Multnomah', 'OR', false,
+          'secret property note', 45.5, -122.6, 'manual', current_date);
+  insert into results (test, outcome) values ('19 property fixtures with locations', 'PASS: inserted');
+exception when others then
+  insert into results (test, outcome) values ('19 property fixtures with locations', 'FAIL: ' || sqlerrm || ' (is 0029 applied?)');
+end $$;
+
+do $$
+declare cnt int;
+begin
+  set local role anon;
+  select count(*) into cnt from public.affordable_properties_public
+   where id in ('33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444')
+     and latitude is not null;
+  reset role;
+  insert into results (test, outcome) values ('19a anon reads published property locations only',
+    case when cnt = 1 then 'PASS: 1 of 2 visible' else 'FAIL: ' || cnt || ' visible' end);
+exception when others then
+  insert into results (test, outcome) values ('19a anon reads published property locations only', 'FAIL: error (' || sqlerrm || ')');
+end $$;
+
+do $$
+declare v text;
+begin
+  set local role anon;
+  select internal_notes into v from public.affordable_properties where id = '33333333-3333-3333-3333-333333333333';
+  reset role;
+  insert into results (test, outcome) values ('19b anon reads property internal_notes', 'FAIL: select allowed');
+exception when others then
+  insert into results (test, outcome) values ('19b anon reads property internal_notes', 'PASS: blocked (' || sqlerrm || ')');
+end $$;
+
+do $$
+begin
+  set local role anon;
+  update public.affordable_properties set latitude = 46.0 where id = '33333333-3333-3333-3333-333333333333';
+  reset role;
+  insert into results (test, outcome) values ('19c anon moves a property', 'FAIL: update allowed');
+exception when others then
+  insert into results (test, outcome) values ('19c anon moves a property', 'PASS: blocked (' || sqlerrm || ')');
+end $$;
+
+do $$
+declare cnt int;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  set local role authenticated;
+  update public.affordable_properties set latitude = 46.0 where id = '33333333-3333-3333-3333-333333333333';
+  get diagnostics cnt = row_count;
+  reset role;
+  insert into results (test, outcome) values ('19d non-admin moves a property',
+    case when cnt = 0 then 'PASS: 0 rows updated' else 'FAIL: ' || cnt || ' rows updated' end);
+exception when others then
+  insert into results (test, outcome) values ('19d non-admin moves a property', 'PASS: blocked (' || sqlerrm || ')');
+end $$;
+
+do $$
+begin
+  update public.affordable_properties set longitude = null where id = '33333333-3333-3333-3333-333333333333';
+  insert into results (test, outcome) values ('19e half a location is refused', 'FAIL: update allowed');
+exception when check_violation then
+  insert into results (test, outcome) values ('19e half a location is refused', 'PASS: ' || sqlerrm);
+when others then
+  insert into results (test, outcome) values ('19e half a location is refused', 'FAIL: error (' || sqlerrm || ')');
+end $$;
+
 -- ---- cleanup: cascades remove profiles, alerts, events, history, claims ----
 delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
 delete from public.waitlists where id in ('test-wl-pub', 'test-wl-draft');
 delete from public.resources where id = '22222222-2222-2222-2222-222222222222';
+delete from public.affordable_properties
+ where id in ('33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444');
 
 select test, outcome from results order by n;
