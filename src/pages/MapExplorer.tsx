@@ -122,8 +122,11 @@ export default function MapExplorer() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   const [initialCamera] = useState<CameraState>(() => initialUrl.camera ?? overviewCamera(view, isDesktop));
+  // Only wide screens get the opening flight. It starts at street level
+  // downtown, the heaviest tiles in the city, and nothing draws until they
+  // arrive: on a phone over slow 4G that pushed the first map from 8 s to 15 s.
   const [introFrom] = useState<CameraState | null>(() =>
-    !initialUrl.camera && !selectedKey && !focus && view === '3d' && !lowPower && !reducedMotion
+    isDesktop && !initialUrl.camera && !selectedKey && !focus && view === '3d' && !lowPower && !reducedMotion
       ? INTRO_CAMERA
       : null,
   );

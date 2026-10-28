@@ -120,7 +120,11 @@ separate, sourced note.
 - **Motion and devices:** honors `prefers-reduced-motion` (camera jumps
   instead of flying, no intro, no tour autoplay, no pulse). Devices with
   little memory or Data Saver start in 2D without the intro, antialiasing or
-  high pixel ratios.
+  high pixel ratios. Screens narrower than 1024 px open on the overview
+  without the intro: its street-level start needs the heaviest downtown
+  tiles before anything draws. Measured on a mid-range phone over slow 4G,
+  skipping the intro brought the first complete map from about 15 s to 8 s and
+  the download from 2.8 MB to 1.2 MB.
 - **Accessibility:** every map point is also reachable from the panel list;
   controls are labeled buttons; search is a combobox with arrow-key support;
   the map canvas has keyboard pan/zoom.
@@ -180,7 +184,10 @@ engine), `package.json` (dependency and two scripts).
    `structuredData.ts`, and add the URL to `public/sitemap.xml`.
 2. Add `MapExplorer` to `PublicPageComponents` (lazy in `App.tsx`, eager in
    `AppServer.tsx`) so a static shell is prerendered, and remove the `/map`
-   redirect from `netlify.toml` and `netlifyRouting.test.ts`.
+   redirect from `netlify.toml` and `netlifyRouting.test.ts`. The page picks
+   its opening camera and the intro from the screen width on its first
+   render, and a hydrated shell reports a narrow screen on that render, so
+   read the width after hydration first.
 3. Store coordinates in the database (below) so new listings appear on the
    map without running the geocoder by hand.
 
