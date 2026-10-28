@@ -16,6 +16,7 @@ describe('release-check configuration', () => {
       'node scripts/testResourceSourceDatabase.mjs',
       'node scripts/testResourcePublicationDatabase.mjs',
       'node scripts/testWaitlistSecurityDatabase.mjs',
+      'node scripts/testAffordablePropertyLocationsDatabase.mjs',
     ]);
   });
 
@@ -40,7 +41,12 @@ describe('release-check configuration', () => {
     expect(pkg.dependencies).not.toHaveProperty('@electric-sql/pglite');
     expect(lock.packages['node_modules/@electric-sql/pglite'].version).toBe(version);
     expect(lock.packages['node_modules/@electric-sql/pglite'].dev).toBe(true);
-    for (const file of ['testResourceSourceDatabase.mjs', 'testResourcePublicationDatabase.mjs', 'testWaitlistSecurityDatabase.mjs']) {
+    for (const file of [
+      'testResourceSourceDatabase.mjs',
+      'testResourcePublicationDatabase.mjs',
+      'testWaitlistSecurityDatabase.mjs',
+      'testAffordablePropertyLocationsDatabase.mjs',
+    ]) {
       const source = read('scripts/' + file);
       expect(source).toContain("from '@electric-sql/pglite'");
       expect(source).not.toContain('tmp/source-check-tests/node_modules');
