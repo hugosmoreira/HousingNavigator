@@ -119,8 +119,8 @@ separate, sourced note.
   zoom (14) once for every overscaled zoom it is drawn at, and again for each
   fallback parent, so the network panel lists the same tile URL several
   times. Chrome's HTTP cache merges these and serves the repeats: the desktop
-  intro downloads about 4.9 MB from the tile host with or without a layer
-  that shares the downloads (tried and removed). Not checked in Safari.
+  intro downloads 5 to 6 MB from the tile host with or without a layer that
+  shares the downloads (tried and removed). Not checked in Safari.
 - **Fallbacks:** WebGL2 is checked before loading the engine. MapLibre's
   `GPUInitializationError` and repeated tile failures show a message while
   the panel and list keep working. A lost WebGL context (common when a phone
