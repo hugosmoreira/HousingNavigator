@@ -14,7 +14,9 @@ import { COUNTIES_BY_STATE, SUPPORTED_STATES } from '../../data/serviceAreas';
 import { requireSupabase } from '../../lib/supabaseClient';
 import type { AffordablePropertyRow, WaitlistRow } from '../../services/data/dbTypes';
 import type { BedroomType, PropertyAudience, SupportedState } from '../../types';
+import { localToday, pinProblem, savedPin, type PropertyPin } from '../propertyMapPin';
 import { Field, Select, TextArea, TextInput, Toggle } from './FormField';
+import PropertyMapPin from './PropertyMapPin';
 
 type PropertyDraft = Omit<
   AffordablePropertyRow,
@@ -32,6 +34,10 @@ const EMPTY: PropertyDraft = {
   county: 'Multnomah',
   state: 'OR',
   postal_code: '',
+  latitude: null,
+  longitude: null,
+  location_source: null,
+  location_checked_on: null,
   description: '',
   eligibility_summary: '',
   ami_levels: [],
@@ -95,6 +101,10 @@ export default function AffordablePropertyForm({
             county: row.county,
             state: row.state,
             postal_code: row.postal_code ?? '',
+            latitude: row.latitude ?? null,
+            longitude: row.longitude ?? null,
+            location_source: row.location_source ?? null,
+            location_checked_on: row.location_checked_on ?? null,
             description: row.description ?? '',
             eligibility_summary: row.eligibility_summary ?? '',
             ami_levels: row.ami_levels ?? [],
@@ -144,8 +154,17 @@ export default function AffordablePropertyForm({
     return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
   }
 
+  function updatePin(pin: PropertyPin) {
+    setDraft((previous) => ({ ...previous, ...pin }));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const pinError = pinProblem(draft);
+    if (pinError) {
+      setError(pinError);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -236,6 +255,12 @@ export default function AffordablePropertyForm({
             <Field label="ZIP code"><TextInput value={draft.postal_code ?? ''} onChange={(e) => update('postal_code', e.target.value)} /></Field>
             <Field label="Total apartments"><TextInput type="number" min={1} value={draft.total_units ?? ''} onChange={(e) => update('total_units', e.target.value ? Number(e.target.value) : null)} /></Field>
           </div>
+          <PropertyMapPin
+            pin={{ latitude: draft.latitude, longitude: draft.longitude, location_source: draft.location_source, location_checked_on: draft.location_checked_on }}
+            address={{ address: draft.address, city: draft.city, state: draft.state, postal_code: draft.postal_code }}
+            disabled={saving}
+            onChange={updatePin}
+          />
         </Section>
 
         <Section title="Public information">
@@ -315,6 +340,7 @@ function emptyToNull(value: string | null | undefined): string | null {
 function sanitize(draft: PropertyDraft): PropertyDraft {
   return {
     ...draft,
+    ...savedPin(draft, localToday()),
     name: draft.name.trim(),
     city: draft.city.trim(),
     county: draft.county.trim(),

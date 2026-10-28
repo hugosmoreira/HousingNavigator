@@ -57,18 +57,18 @@ export function partitionResourceCurationChecks(checks: ResourceCurationCheck[])
   };
 }
 
-export function edgeFunctionError(error: unknown): Promise<Error> | Error {
+export function edgeFunctionError(error: unknown, action = 'Resource curation'): Promise<Error> | Error {
   const context = (error as { context?: unknown })?.context;
   if (context instanceof Response) {
     return context
       .clone()
       .json()
       .then((body: { error?: string }) =>
-        new Error(body?.error || `Resource curation failed (HTTP ${context.status})`),
+        new Error(body?.error || `${action} failed (HTTP ${context.status})`),
       )
-      .catch(() => new Error(`Resource curation failed (HTTP ${context.status})`));
+      .catch(() => new Error(`${action} failed (HTTP ${context.status})`));
   }
-  return new Error(error instanceof Error ? error.message : 'Resource curation failed');
+  return new Error(error instanceof Error ? error.message : `${action} failed`);
 }
 
 /**

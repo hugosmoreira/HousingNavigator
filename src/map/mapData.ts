@@ -13,11 +13,16 @@ import type {
   WaitlistStatus,
 } from '../types';
 
+export interface MapLocation {
+  lat: number;
+  lng: number;
+}
+
 export interface MapProperty {
   slug: string;
   property: AffordableProperty;
   /** Null when the record has no geocoded street address yet. */
-  location: AffordablePropertyLocation | null;
+  location: MapLocation | null;
 }
 
 export interface MapFilters {
@@ -62,15 +67,30 @@ export interface PropertyFeatureProps {
   manager: string;
 }
 
+/**
+ * The record's own coordinates (migration 0029) win. The JSON file covers
+ * data that predates them, such as an older build snapshot, and goes away
+ * once every source carries the columns.
+ */
 export function toMapProperties(
   properties: readonly AffordableProperty[],
-  locations: Record<string, AffordablePropertyLocation> = AFFORDABLE_PROPERTY_LOCATIONS.locations,
+  fallback: Record<string, AffordablePropertyLocation> = AFFORDABLE_PROPERTY_LOCATIONS.locations,
 ): MapProperty[] {
   return properties.map((property) => ({
     slug: affordablePropertySlug(property),
     property,
-    location: locations[property.id] ?? null,
+    location: locationOf(property, fallback[property.id]),
   }));
+}
+
+function locationOf(
+  property: AffordableProperty,
+  saved: AffordablePropertyLocation | undefined,
+): MapLocation | null {
+  if (property.latitude !== undefined && property.longitude !== undefined) {
+    return { lat: property.latitude, lng: property.longitude };
+  }
+  return saved ? { lat: saved.lat, lng: saved.lng } : null;
 }
 
 function normalize(value: string): string {
