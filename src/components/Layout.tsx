@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Home, LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
+import { Bell, Home, LayoutDashboard, LogIn, LogOut, Menu, X } from 'lucide-react';
 import { usePublicAuth } from '../auth/PublicAuthContext';
+import AccountMenu from './AccountMenu';
 
 // Build-time constant (vite.config.ts) so prerendered HTML and the hydrated
 // page always agree. The fallback covers code run outside Vite.
@@ -62,14 +63,13 @@ export default function Layout() {
     navigate('/', { replace: true });
   }
 
-  // shortName keeps the desktop bar on one line between the lg and xl breakpoints.
-  const navLinks: Array<{ name: string; path: string; shortName?: string }> = [
-    { name: 'Home', path: '/' },
+  // The logo links home and About sits in the footer, so the bar holds the four
+  // sections and one account action, and stays on one line at the lg breakpoint.
+  const navLinks: Array<{ name: string; path: string }> = [
     { name: 'Find resources', path: '/resources/' },
-    { name: 'Affordable housing', path: '/affordable-housing/' },
-    { name: 'Explore map', path: '/map/', shortName: 'Map' },
     { name: 'Waitlists', path: '/waitlist/' },
-    { name: 'About', path: '/mission/' },
+    { name: 'Affordable housing', path: '/affordable-housing/' },
+    { name: 'Map', path: '/map/' },
   ];
 
   // The map fills the viewport under the nav bar, so it has no footer and the
@@ -100,7 +100,7 @@ export default function Layout() {
             <Home className="w-[1.125rem] h-[1.125rem] text-primary" fill="currentColor" />
             Housing Navigator
           </Link>
-          <div className="hidden lg:flex items-center gap-6 lg:gap-4 xl:gap-6">
+          <div className="hidden lg:flex items-center gap-7">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -111,50 +111,22 @@ export default function Layout() {
                     : 'text-on-surface-variant hover:text-on-surface border-b-[2.5px] border-transparent hover:border-surface-variant'
                 }`}
               >
-                {link.shortName ? (
-                  <>
-                    <span className="xl:hidden">{link.shortName}</span>
-                    <span className="hidden xl:inline">{link.name}</span>
-                  </>
-                ) : (
-                  link.name
-                )}
+                {link.name}
               </Link>
             ))}
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
+            {/* One account slot: sign-up for alerts, or the signed-in account links. */}
             {publicAuthConfigured && (isAuthed ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
-                >
-                  <LayoutDashboard className="w-4 h-4" /> Dashboard
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign out</span>
-                </button>
-              </>
+              <AccountMenu onSignOut={handleSignOut} />
             ) : (
               <Link
-                to="/login"
-                className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-colors"
+                to="/signup"
+                className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap transition-colors px-5 py-2.5 rounded-full font-semibold text-sm shadow-sm hover:shadow bg-primary text-on-primary hover:bg-primary-dim"
               >
-                <LogIn className="w-4 h-4" />
-                <span>Sign in</span>
+                <Bell className="w-4 h-4" /> Get alerts
               </Link>
             ))}
-            <Link
-              to="/resources/"
-              className="hidden sm:inline-flex transition-colors px-5 py-2.5 rounded-full font-semibold text-sm shadow-sm hover:shadow bg-primary text-on-primary hover:bg-primary-dim"
-            >
-              Find resources
-            </Link>
 
             {/* Mobile menu toggle */}
             <button
@@ -193,6 +165,17 @@ export default function Layout() {
 
               <div className="h-px bg-surface-container-highest my-2" />
 
+              <Link
+                to="/mission/"
+                className={`px-3 py-2.5 rounded-xl text-base font-semibold transition-colors ${
+                  isActive('/mission/')
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
+                }`}
+              >
+                About
+              </Link>
+
               {publicAuthConfigured && (isAuthed ? (
                 <>
                   <Link
@@ -210,20 +193,21 @@ export default function Layout() {
                   </button>
                 </>
               ) : (
-                <Link
-                  to="/login"
-                  className="px-3 py-2.5 rounded-xl text-base font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors inline-flex items-center gap-2"
-                >
-                  <LogIn className="w-4 h-4" /> Sign in
-                </Link>
+                <>
+                  <Link
+                    to="/login"
+                    className="px-3 py-2.5 rounded-xl text-base font-semibold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors inline-flex items-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4" /> Sign in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="mt-2 px-3 py-3 rounded-full font-semibold text-sm bg-primary text-on-primary hover:bg-primary-dim transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <Bell className="w-4 h-4" /> Get alerts
+                  </Link>
+                </>
               ))}
-
-              <Link
-                to="/resources/"
-                className="mt-2 px-3 py-3 rounded-full font-semibold text-sm text-center bg-primary text-on-primary hover:bg-primary-dim transition-colors"
-              >
-                Find resources
-              </Link>
             </div>
           </div>
         )}
@@ -246,6 +230,7 @@ export default function Layout() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-8">
+            <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/mission/">About</Link>
             <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/privacy/">Privacy Policy</Link>
             <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/terms/">Terms of Service</Link>
             <Link className="text-on-surface-variant hover:text-primary transition-colors font-body text-sm tracking-wide font-medium" to="/help/">Help Center</Link>
