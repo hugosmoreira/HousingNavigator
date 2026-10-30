@@ -543,7 +543,7 @@ export default function MapExplorer() {
       )}
       {unmapped.length > 0 && (
         <p className="text-xs leading-relaxed text-on-surface-variant">
-          Not on the map yet (no street address published):{' '}
+          Not on the map yet (no confirmed street address):{' '}
           {unmapped.map((listing, index) => (
             <span key={listing.slug}>
               {index > 0 && ', '}

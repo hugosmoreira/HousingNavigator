@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { AFFORDABLE_PROPERTY_LOCATIONS } from '../data/affordablePropertyLocations';
+import { insideLocationBounds } from '../../supabase/functions/_shared/addressGeocoding.ts';
 
 // Windows checkouts with core.autocrlf get CRLF; the checks below expect LF.
 const read = (name: string) =>
@@ -52,14 +52,17 @@ describe('affordable-property location migration', () => {
     expect(migration).not.toMatch(/grant select on public\.affordable_properties_admin to [^;]*anon/);
   });
 
-  it('copies the saved map coordinates exactly, without Dolores Apartments', () => {
+  // The values came from src/data/affordablePropertyLocations.json, which was
+  // removed once the records carried them; production matched it on 2026-10-30.
+  it('copies 11 saved map coordinates, without Dolores Apartments, and never overwrites a pin', () => {
     const rows = [...migration.matchAll(/\('([0-9a-f-]{36})'::uuid, (-?[\d.]+), (-?[\d.]+), date '(\d{4}-\d{2}-\d{2})'\)/g)];
-    const saved = AFFORDABLE_PROPERTY_LOCATIONS.locations;
-    expect(rows.map(([, id]) => id).sort()).toEqual(Object.keys(saved).filter((id) => id !== DOLORES).sort());
-    for (const [, id, lat, lng, checkedOn] of rows) {
-      expect(Number(lat)).toBe(saved[id].lat);
-      expect(Number(lng)).toBe(saved[id].lng);
-      expect(checkedOn).toBe(saved[id].geocoded_on);
+    const ids = rows.map(([, id]) => id);
+    expect(rows).toHaveLength(11);
+    expect(new Set(ids).size).toBe(11);
+    expect(ids).not.toContain(DOLORES);
+    for (const [, , lat, lng, checkedOn] of rows) {
+      expect(insideLocationBounds(Number(lat), Number(lng))).toBe(true);
+      expect(checkedOn).toBe('2026-10-27');
     }
     expect(migration).toMatch(/where p\.id = v\.id\s+and p\.latitude is null;/);
   });

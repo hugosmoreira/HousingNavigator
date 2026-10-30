@@ -1,8 +1,4 @@
 import type { FeatureCollection, Point } from 'geojson';
-import {
-  AFFORDABLE_PROPERTY_LOCATIONS,
-  type AffordablePropertyLocation,
-} from '../data/affordablePropertyLocations';
 import { affordablePropertySlug } from '../lib/entityRoutes';
 import type { RegulatedProperty } from './regulatedHousing';
 import type {
@@ -21,7 +17,7 @@ export interface MapLocation {
 export interface MapProperty {
   slug: string;
   property: AffordableProperty;
-  /** Null when the record has no geocoded street address yet. */
+  /** Null when the record has no stored coordinates yet. */
   location: MapLocation | null;
 }
 
@@ -68,29 +64,19 @@ export interface PropertyFeatureProps {
 }
 
 /**
- * The record's own coordinates (migration 0029) win. The JSON file covers
- * data that predates them, such as an older build snapshot, and goes away
- * once every source carries the columns.
+ * Places each listing at the coordinates stored on its record (migration
+ * 0029). A listing without them stays off the map rather than being guessed
+ * at a city centre; administrators pin it from the property form.
  */
-export function toMapProperties(
-  properties: readonly AffordableProperty[],
-  fallback: Record<string, AffordablePropertyLocation> = AFFORDABLE_PROPERTY_LOCATIONS.locations,
-): MapProperty[] {
+export function toMapProperties(properties: readonly AffordableProperty[]): MapProperty[] {
   return properties.map((property) => ({
     slug: affordablePropertySlug(property),
     property,
-    location: locationOf(property, fallback[property.id]),
+    location:
+      property.latitude !== undefined && property.longitude !== undefined
+        ? { lat: property.latitude, lng: property.longitude }
+        : null,
   }));
-}
-
-function locationOf(
-  property: AffordableProperty,
-  saved: AffordablePropertyLocation | undefined,
-): MapLocation | null {
-  if (property.latitude !== undefined && property.longitude !== undefined) {
-    return { lat: property.latitude, lng: property.longitude };
-  }
-  return saved ? { lat: saved.lat, lng: saved.lng } : null;
 }
 
 function normalize(value: string): string {

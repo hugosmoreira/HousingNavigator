@@ -81,7 +81,8 @@ function distinctiveWords(name: string): string[] {
     .filter((word) => word.length > 3 && !GENERIC_NAME_WORDS.has(word));
 }
 
-function metersBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+/** Flat-earth distance; accurate to well under a metre at city scale. */
+export function metersBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const dLat = (a.lat - b.lat) * 111_320;
   const dLng = (a.lng - b.lng) * 111_320 * Math.cos((a.lat * Math.PI) / 180);
   return Math.hypot(dLat, dLng);

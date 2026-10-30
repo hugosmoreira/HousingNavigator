@@ -1,163 +1,116 @@
 /**
- * Add map coordinates for published affordable properties.
+ * Check the map pins of published affordable properties. Read-only.
  *
- * Input:
- *   - src/data/affordableProperties.json   (public snapshot)
- *   - src/data/affordablePropertyLocations.json (previous results, if any)
+ * Pins live on the property records (migration 0029) and are set in the admin
+ * property form, with "Find on map" or by hand. This script looks up every
+ * published street address in the U.S. Census Bureau geocoder, a public-domain
+ * federal service that needs no key, and reports:
+ *   - listings with a street address but no pin;
+ *   - published addresses that differ from the Census match (another
+ *     direction, street or ZIP), which usually means a typo in the record;
+ *   - pins far from the Census match, which usually means the address changed
+ *     after the pin was placed (see ./propertyLocationReview.ts for the limits).
  *
- * Output:
- *   - src/data/affordablePropertyLocations.json, keyed by property id
+ * Input: production's public view when VITE_SUPABASE_URL and
+ * VITE_SUPABASE_ANON_KEY are set (as in .env), otherwise the committed
+ * snapshot in src/data/affordableProperties.json.
+ *
+ * It never writes anything. It exits with status 1 when a listing needs
+ * attention, so it can gate a release later.
  *
  * Run with: `npm run geocode:properties`
- *
- * Coordinates come from the U.S. Census Bureau geocoder, a public-domain
- * federal service that needs no key. A property is looked up again only when
- * it has no saved location or its published address changed, so reruns send
- * one request per new or edited property. Properties without a street address
- * stay off the map rather than being placed at a city centroid.
- *
- * The script never edits property records. When the Census match differs from
- * the published address (a different ZIP, street type, or direction) it prints
- * a warning so a curator can correct the source record.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AffordableProperty } from '../src/types';
-import type { AffordablePropertyLocationFile } from '../src/data/affordablePropertyLocations';
+import 'dotenv/config';
+import {
+  censusLookupUrl,
+  firstCensusMatch,
+  oneLineAddress,
+} from '../supabase/functions/_shared/addressGeocoding.ts';
+import {
+  addressLookupFor,
+  reviewPropertyLocation,
+  type ReviewedProperty,
+} from './propertyLocationReview';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const propertiesPath = join(repoRoot, 'src', 'data', 'affordableProperties.json');
-const locationsPath = join(repoRoot, 'src', 'data', 'affordablePropertyLocations.json');
+const snapshotPath = join(repoRoot, 'src', 'data', 'affordableProperties.json');
+const supabaseUrl = process.env.VITE_SUPABASE_URL?.trim().replace(/\/$/, '');
+const anonKey = process.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-const CENSUS_ENDPOINT =
-  'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress';
+const COLUMNS = 'id,name,address,city,state,postal_code,latitude,longitude,location_source';
 const REQUEST_GAP_MS = 400;
 
-interface CensusMatch {
-  matchedAddress: string;
-  coordinates: { x: number; y: number };
-}
+type PublicRow = Omit<ReviewedProperty, 'latitude' | 'longitude' | 'location_source'> & {
+  latitude: number | null;
+  longitude: number | null;
+  location_source: ReviewedProperty['location_source'] | null;
+};
 
-function oneLineAddress(property: AffordableProperty): string | null {
-  if (!property.address?.trim()) return null;
-  const zip = property.postal_code ? ` ${property.postal_code}` : '';
-  return `${property.address.trim()}, ${property.city}, ${property.state}${zip}`;
-}
-
-function normalize(value: string): string {
-  return value
-    .toUpperCase()
-    .replace(/[^A-Z0-9 ]/g, ' ')
-    .replace(/\b(STREET)\b/g, 'ST')
-    .replace(/\b(AVENUE)\b/g, 'AVE')
-    .replace(/\b(ROAD)\b/g, 'RD')
-    .replace(/\b(BOULEVARD)\b/g, 'BLVD')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function differences(input: string, matched: string): string[] {
-  const inputTokens = new Set(normalize(input).split(' '));
-  const inputHasZip = [...inputTokens].some((token) => /^\d{5}$/.test(token));
-  const matchedTokens = normalize(matched).split(' ');
-  // A ZIP the record never published is extra detail, not a conflict.
-  return matchedTokens.filter(
-    (token) => !inputTokens.has(token) && (inputHasZip || !/^\d{5}$/.test(token)),
-  );
-}
-
-async function geocode(address: string): Promise<CensusMatch | null> {
-  const url = new URL(CENSUS_ENDPOINT);
-  url.searchParams.set('address', address);
-  url.searchParams.set('benchmark', 'Public_AR_Current');
-  url.searchParams.set('format', 'json');
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) throw new Error(`Census geocoder returned ${response.status}.`);
-    const body = (await response.json()) as {
-      result?: { addressMatches?: CensusMatch[] };
-    };
-    return body.result?.addressMatches?.[0] ?? null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-function readLocations(): AffordablePropertyLocationFile {
-  if (!existsSync(locationsPath)) {
+async function loadProperties(): Promise<{ from: string; properties: ReviewedProperty[] }> {
+  if (!supabaseUrl || !anonKey) {
     return {
-      source: 'U.S. Census Bureau Geocoder (Public_AR_Current benchmark)',
-      source_url: 'https://geocoding.geo.census.gov/geocoder/',
-      locations: {},
+      from: 'the committed snapshot (src/data/affordableProperties.json)',
+      properties: JSON.parse(readFileSync(snapshotPath, 'utf8')) as ReviewedProperty[],
     };
   }
-  return JSON.parse(readFileSync(locationsPath, 'utf8')) as AffordablePropertyLocationFile;
+  if (new URL(supabaseUrl).protocol !== 'https:') {
+    throw new Error('VITE_SUPABASE_URL must use HTTPS.');
+  }
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/affordable_properties_public?select=${encodeURIComponent(COLUMNS)}&published=eq.true&order=name`,
+    {
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
+  if (!response.ok) throw new Error(`The public property view returned ${response.status}.`);
+  const rows = (await response.json()) as PublicRow[];
+  return {
+    from: 'the live public property view',
+    properties: rows.map((row) => ({
+      ...row,
+      latitude: row.latitude ?? undefined,
+      longitude: row.longitude ?? undefined,
+      location_source: row.location_source ?? undefined,
+    })),
+  };
 }
 
 async function main(): Promise<void> {
-  const properties = JSON.parse(readFileSync(propertiesPath, 'utf8')) as AffordableProperty[];
-  const file = readLocations();
-  const today = new Date().toISOString().slice(0, 10);
-  const liveIds = new Set(properties.map((property) => property.id));
+  const { from, properties } = await loadProperties();
+  console.log(`Checking ${properties.length} published properties from ${from}.\n`);
   let looked = 0;
+  let needsAttention = 0;
 
   for (const property of properties) {
-    const address = oneLineAddress(property);
-    if (!address) {
-      console.log(`- ${property.name}: no street address published; left off the map.`);
-      delete file.locations[property.id];
+    const lookup = addressLookupFor(property);
+    if (!lookup) {
+      console.log(`- ${property.name}: no street address published; stays off the map.`);
       continue;
     }
-
-    const saved = file.locations[property.id];
-    if (saved && saved.input_address === address) continue;
 
     if (looked > 0) await new Promise((resolve) => setTimeout(resolve, REQUEST_GAP_MS));
     looked += 1;
+    const response = await fetch(censusLookupUrl(lookup), { signal: AbortSignal.timeout(20_000) });
+    if (!response.ok) throw new Error(`Census geocoder returned ${response.status}.`);
+    const match = firstCensusMatch(await response.json(), oneLineAddress(lookup));
 
-    const match = await geocode(address);
-    if (!match) {
-      console.warn(`! ${property.name}: no Census match for "${address}"; left off the map.`);
-      delete file.locations[property.id];
-      continue;
-    }
-
-    file.locations[property.id] = {
-      lat: Number(match.coordinates.y.toFixed(6)),
-      lng: Number(match.coordinates.x.toFixed(6)),
-      input_address: address,
-      matched_address: match.matchedAddress,
-      geocoded_on: today,
-    };
-
-    const changed = differences(address, match.matchedAddress);
-    if (changed.length) {
-      console.warn(
-        `! ${property.name}: matched "${match.matchedAddress}" (differs from published address in: ${changed.join(', ')}). Check the source record.`,
-      );
+    const problems = reviewPropertyLocation(property, match);
+    if (problems.length) {
+      needsAttention += 1;
+      console.warn(`! ${property.name} (${oneLineAddress(lookup)})`);
+      for (const problem of problems) console.warn(`    ${problem}`);
     } else {
       console.log(`+ ${property.name}`);
     }
   }
 
-  for (const id of Object.keys(file.locations)) {
-    if (!liveIds.has(id)) delete file.locations[id];
-  }
-
-  const ordered = Object.fromEntries(
-    Object.entries(file.locations).sort(([a], [b]) => a.localeCompare(b)),
-  );
-  writeFileSync(
-    locationsPath,
-    `${JSON.stringify({ ...file, locations: ordered }, null, 2)}\n`,
-    'utf8',
-  );
-  console.log(`Saved ${Object.keys(ordered).length} property locations (${looked} looked up).`);
+  console.log(`\nLooked up ${looked} addresses; ${needsAttention} listing(s) need attention. Nothing was changed.`);
+  if (needsAttention) process.exitCode = 1;
 }
 
 main().catch((error: unknown) => {

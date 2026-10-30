@@ -64,7 +64,7 @@ export function parseAddressLookup(body: unknown): AddressLookup | null {
   return { address, city, state: record.state, postal_code: postalCode };
 }
 
-/** The one-line form `npm run geocode:properties` uses, so results agree. */
+/** The one-line form both the admin form's lookup and `npm run geocode:properties` send, so results agree. */
 export function oneLineAddress(lookup: AddressLookup): string {
   const zip = lookup.postal_code ? ` ${lookup.postal_code}` : '';
   return `${lookup.address}, ${lookup.city}, ${lookup.state}${zip}`;
