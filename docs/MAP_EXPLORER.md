@@ -67,28 +67,31 @@ Privacy and naming rules (enforced in `scripts/syncPortlandRentalPortfolio.ts`):
 | Layer | Source | How it gets here |
 | --- | --- | --- |
 | Housing Navigator listings | Existing `affordable_properties` data (`useAffordableProperties`, snapshot first, live Supabase when configured) | Unchanged data path |
-| Listing coordinates | U.S. Census Bureau geocoder (public domain) | `npm run geocode:properties` writes `src/data/affordablePropertyLocations.json`, keyed by property id |
+| Listing coordinates | The `latitude`/`longitude` columns of `affordable_properties` (migration 0029), set in the admin property form with the U.S. Census Bureau geocoder (public domain) or by hand | Same data path as the listings; `npm run geocode:properties` checks them without writing |
 | City-financed buildings | Portland Housing Bureau "Rental Portfolio", City of Portland open data (379 records with a location, 26,140 homes) | `npm run map-data:sync` writes `public/data/portland-rental-portfolio.json`, fetched only by `/map` |
 | Neighborhoods | City of Portland "Neighborhood Boundaries" (by-law boundaries of neighborhood associations) | The same sync script assigns each City building to the neighborhood that contains it and writes simplified shapes to `public/data/portland-neighborhoods.json` (fetched only by the data view). 366 of 379 buildings fall inside a Portland neighborhood; the rest (Gresham, Milwaukie and similar) are grouped as "Outside Portland neighborhoods". |
 | Neighborhood search targets | Approximate centers of Portland neighborhoods, checked against OpenStreetMap, for neighborhoods with no City-financed buildings | `src/map/places.ts` |
 | Basemap and 3D buildings | OpenStreetMap via OpenFreeMap (OpenMapTiles schema, `render_height`) | Fetched at runtime from `tiles.openfreemap.org` |
 
-Neither script runs during the build. Run them by hand, review the diff, and
-commit. The geocoder only looks up properties that are new or whose address
-changed, and prints a warning when the Census match differs from the
-published address.
+Neither script runs during the build. Run `map-data:sync` by hand, review the
+diff, and commit. `geocode:properties` changes nothing: it looks up every
+published street address and lists listings with no pin, addresses that differ
+from the Census match, and pins far from it. It reads the live public view when
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set, otherwise the
+committed snapshot, and exits with status 1 when something needs attention.
 
 Listings and City records for the same building (same house number and
 street, or within 60 m with a shared distinctive name word) are shown as one
 point. The listing's own facts are always used; the City figures appear in a
 separate, sourced note.
 
-**Records to check** (found by the geocoder, not changed):
+**Records to check** (found by `geocode:properties` on 2026-10-30, not changed):
 
 - Dolores Apartments is published as "9965 NE Walker Road … 97223". The Census
-  match is "9965 NW Walker Rd, Hillsboro, OR 97006".
+  match is "9965 NW Walker Rd, Hillsboro, OR 97006". It has no pin, so it is
+  not on the map until its address is confirmed and it is pinned.
 - Jim and Salle's Place is published on "SE Steele Avenue". The Census match
-  and the City record say "SE Steele St".
+  and the City record say "SE Steele St". Its pin is correct.
 - Armonía Apartments has no street address, so it is not on the map.
 
 ## Architecture
@@ -157,9 +160,9 @@ src/map/DataPanel.tsx              "Explore the data" charts
 src/map/MapSearch.tsx, MapFilters.tsx, MapStats.tsx, PlaceList.tsx,
   PropertyDetails.tsx, MapControls.tsx, BottomSheet.tsx
 src/map/tour.ts, places.ts, motion.ts, device.ts, map.css, map-ui.css
-src/data/affordablePropertyLocations.{ts,json}
 public/data/portland-rental-portfolio.json, portland-neighborhoods.json
-scripts/geocodeAffordableProperties.ts, scripts/syncPortlandRentalPortfolio.ts
+scripts/geocodeAffordableProperties.ts, propertyLocationReview.ts  read-only pin check
+scripts/syncPortlandRentalPortfolio.ts
 scripts/data/phbSponsors.json      reviewed sponsor names (privacy list)
 ```
 
@@ -202,8 +205,8 @@ engine), `package.json` (dependency and two scripts).
    its opening camera and the intro from the screen width on its first
    render, and a hydrated shell reports a narrow screen on that render, so
    read the width after hydration first.
-3. Store coordinates in the database (below) so new listings appear on the
-   map without running the geocoder by hand.
+3. ~~Store coordinates in the database~~ Done (below): a new listing appears
+   on the map once it is pinned in the admin form.
 
 ## Listing coordinates in the database
 
@@ -213,19 +216,22 @@ Migration `0029_affordable_property_locations.sql` adds `latitude`,
 fields or none, inside the Oregon/Washington box. Visitors can read the four
 columns of published properties; `internal_notes` stays ungranted. The public
 view gains the columns at the end; the admin view is rebuilt so its `p.*`
-includes them. The 11 coordinates in `src/data/affordablePropertyLocations.json`
-are copied in; Dolores Apartments waits until its address is confirmed.
+includes them. It copied in the 11 coordinates from the JSON file that held
+them before (`src/data/affordablePropertyLocations.json`, since removed);
+Dolores Apartments waits until its address is confirmed.
 
-Order matters, because Netlify's build asks the public view for named columns
-and the admin form saves every field it holds:
+`/map` places a listing only at the coordinates on its record. A listing
+without them stays off the map rather than being guessed at a city centre.
+
+How it shipped (all done by 2026-10-30):
 
 1. Apply 0029 to production, then run `npm run verify:rls` (checks 19–19e).
-   Code that does not know the columns keeps working. Done on 2026-10-28.
 2. Deploy the admin-only `geocode-address` Edge Function (below).
-3. Ship the app changes: the types, mapper and snapshot column list read the
-   columns, `/map` prefers them over the JSON file, and the admin form gets a
-   map pin.
-4. Remove the JSON file and turn `geocode:properties` into a read-only check.
+3. Read the columns in the app (types, mapper, snapshot column list) and add
+   the map pin to the admin form (#52).
+4. Remove the JSON file, write the coordinates into the committed snapshot so
+   local development still shows the map, and turn `geocode:properties` into
+   a read-only check.
 
 **The admin map pin.** The Location section of the property form shows where
 the listing sits on `/map`. *Find on map* sends the street address to
@@ -244,8 +250,9 @@ nothing.
 Tests: `src/security/affordablePropertyLocations.test.ts` (migration
 contract), `scripts/testAffordablePropertyLocationsDatabase.mjs` (in-memory
 Postgres, part of `npm run test:database`), `src/security/addressGeocoding.test.ts`
-(lookup helpers and the function's checks) and `src/admin/propertyMapPin.test.ts`
-(the pin the form saves).
+(lookup helpers and the function's checks), `src/admin/propertyMapPin.test.ts`
+(the pin the form saves) and `scripts/propertyLocationReview.test.ts` (what
+`geocode:properties` reports).
 
 ## Proposed database changes (not applied)
 

@@ -31,35 +31,27 @@ function property(overrides: Partial<AffordableProperty>): AffordableProperty {
   };
 }
 
-const location = (lat: number, lng: number) => ({
-  lat,
-  lng,
-  input_address: 'x',
-  matched_address: 'x',
-  geocoded_on: '2026-10-27',
+/** The four 0029 location fields, as the mapper copies them onto a record. */
+const pinned = (latitude: number, longitude: number): Partial<AffordableProperty> => ({
+  latitude,
+  longitude,
+  location_source: 'census_geocoder',
+  location_checked_on: '2026-10-27',
 });
 
 describe('toMapProperties', () => {
-  it('leaves properties without a geocoded address off the map', () => {
-    const items = toMapProperties(
-      [property({ id: 'a' }), property({ id: 'b', name: 'No Address' })],
-      { a: location(45.5, -122.6) },
-    );
-    expect(items.map((item) => item.location !== null)).toEqual([true, false]);
-    expect(toFeatureCollection(items).features).toHaveLength(1);
-  });
-
-  it('prefers the coordinates stored on the record over the JSON file', () => {
-    const [item] = toMapProperties(
-      [property({ id: 'a', latitude: 45.52, longitude: -122.68, location_source: 'manual', location_checked_on: '2026-10-28' })],
-      { a: location(45.5, -122.6) },
-    );
+  it('places a listing at the coordinates stored on its record', () => {
+    const [item] = toMapProperties([property({ id: 'a', ...pinned(45.52, -122.68) })]);
     expect(item.location).toEqual({ lat: 45.52, lng: -122.68 });
   });
 
-  it('falls back to the JSON file when the record has no coordinates', () => {
-    const [item] = toMapProperties([property({ id: 'a' })], { a: location(45.5, -122.6) });
-    expect(item.location).toEqual({ lat: 45.5, lng: -122.6 });
+  it('leaves properties without stored coordinates off the map', () => {
+    const items = toMapProperties([
+      property({ id: 'a', ...pinned(45.5, -122.6) }),
+      property({ id: 'b', name: 'No Address' }),
+    ]);
+    expect(items.map((item) => item.location !== null)).toEqual([true, false]);
+    expect(toFeatureCollection(items).features).toHaveLength(1);
   });
 });
 
@@ -94,13 +86,10 @@ describe('matchesFilters', () => {
 
 describe('viewportStats', () => {
   it('flags unit totals as partial when a property omits its unit count', () => {
-    const items = toMapProperties(
-      [
-        property({ id: 'a', total_units: 64, ami_levels: [30, 60], waitlist_status: 'open' }),
-        property({ id: 'b', ami_levels: [50] }),
-      ],
-      {},
-    );
+    const items = toMapProperties([
+      property({ id: 'a', total_units: 64, ami_levels: [30, 60], waitlist_status: 'open' }),
+      property({ id: 'b', ami_levels: [50] }),
+    ]);
     expect(viewportStats(items)).toEqual({
       properties: 2,
       homes: 64,
@@ -113,7 +102,7 @@ describe('viewportStats', () => {
 
 describe('boundsOf', () => {
   it('returns null when nothing is mapped', () => {
-    expect(boundsOf(toMapProperties([property({})], {}))).toBeNull();
+    expect(boundsOf(toMapProperties([property({})]))).toBeNull();
   });
 });
 
@@ -136,10 +125,7 @@ const cityRecord = (overrides: Partial<RegulatedProperty>): RegulatedProperty =>
 
 describe('buildMapItems', () => {
   it('shows a listing and its City record for the same building as one point', () => {
-    const listings = toMapProperties(
-      [property({ id: 'a', total_units: undefined })],
-      { a: location(45.5, -122.6) },
-    );
+    const listings = toMapProperties([property({ id: 'a', total_units: undefined, ...pinned(45.5, -122.6) })]);
     const shared = cityRecord({ id: 'R1', total_units: 51 });
     const other = cityRecord({ id: 'R2', name: 'Other' });
     const items = buildMapItems(listings, [shared, other], new Map([[listings[0].slug, shared]]));
@@ -152,9 +138,7 @@ describe('buildMapItems', () => {
 });
 
 describe('filterItems', () => {
-  const listings = toMapProperties([property({ id: 'a', waitlist_status: 'open' })], {
-    a: location(45.5, -122.6),
-  });
+  const listings = toMapProperties([property({ id: 'a', waitlist_status: 'open', ...pinned(45.5, -122.6) })]);
   const items = buildMapItems(
     listings,
     [cityRecord({ sponsor: 'Home Forward', neighborhood: 'Lents' })],
@@ -174,7 +158,7 @@ describe('filterItems', () => {
 });
 
 describe('filterItems with shared buildings', () => {
-  const listings = toMapProperties([property({ id: 'a', ami_levels: [] })], { a: location(45.5, -122.6) });
+  const listings = toMapProperties([property({ id: 'a', ami_levels: [], ...pinned(45.5, -122.6) })]);
   const shared = cityRecord({ id: 'R9', ami_units: { '50': 12 }, sponsor: 'Rose CDC' });
   const items = buildMapItems(listings, [shared], new Map([[listings[0].slug, shared]]));
 
@@ -190,7 +174,7 @@ describe('filterItems with shared buildings', () => {
 
 describe('cityBreakdowns', () => {
   it('groups City records by neighborhood, tier and published sponsor only', () => {
-    const listings = toMapProperties([property({ id: 'a' })], { a: location(45.5, -122.6) });
+    const listings = toMapProperties([property({ id: 'a', ...pinned(45.5, -122.6) })]);
     const shared = cityRecord({ id: 'R1', regulated_units: 50, ami_units: { '30': 10, '60': 40 }, neighborhood: 'Lents', sponsor: 'Rose CDC' });
     const other = cityRecord({ id: 'R2', regulated_units: 20, ami_units: { '60': 20 }, neighborhood: null, sponsor: null });
     const items = buildMapItems(listings, [shared, other], new Map([[listings[0].slug, shared]]));
