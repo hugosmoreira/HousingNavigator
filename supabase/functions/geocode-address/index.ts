@@ -7,12 +7,14 @@
 // where RLS and the 0029 location check apply as usual.
 //
 // Deploy with JWT verification disabled because this function validates the
-// administrator's JWT itself (the same pattern as admin-users):
+// administrator's JWT and two-factor sign-in itself (the same pattern as
+// admin-users):
 //   supabase functions deploy geocode-address --no-verify-jwt
 
 /// <reference lib="deno.ns" />
 // @ts-expect-error Deno resolves npm specifiers.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { authorizeAdminRequest } from '../_shared/adminAuthorization.ts';
 import {
   censusLookupUrl,
   firstCensusMatch,
@@ -41,14 +43,8 @@ Deno.serve(async (request: Request) => {
   if (!url || !serviceKey) return json({ error: 'Address lookup is not configured.' }, 503);
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (!token) return json({ error: 'Sign in required.' }, 401);
-  const { data: user, error: userError } = await admin.auth.getUser(token);
-  if (userError || !user?.user) return json({ error: 'Sign in required.' }, 401);
-  const { data: member, error: memberError } = await admin.from('admin_users').select('user_id')
-    .eq('user_id', user.user.id).maybeSingle();
-  if (memberError) return json({ error: 'Admin access could not be checked.' }, 503);
-  if (!member) return json({ error: 'Admin access required.' }, 403);
+  const access = await authorizeAdminRequest(admin, request);
+  if (!access.authorized) return json({ error: access.message }, access.status);
 
   let lookup = null;
   try {

@@ -125,8 +125,8 @@ describe('database and edge safeguards',()=>{
     expect(complete).not.toMatch(/update public.resources\s/i);
   });
   it('protects administration, approved fields and concurrent edits',()=>{
-    expect(edge).toContain("admin.auth.getUser(token)");
-    expect(edge).toContain(".from('admin_users')");
+    expect(edge).toContain("await authorizeAdminRequest(admin,request)");
+    expect(edge).toContain("if (!access.authorized) return json(");
     expect(migration).toContain('if not public.is_admin()');
     expect(migration).toContain('v_resource.updated_at is distinct from v_finding.base_updated_at');
     expect(migration).toContain('unique(resource_id,fingerprint)');

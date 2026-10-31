@@ -11,9 +11,9 @@
 // Security:
 //   * Resend API key + service-role key are read from env (never ship to
 //     the browser bundle).
-//   * Admin verification re-validates the caller's JWT against
-//     public.admin_users. The service-role client is only used AFTER
-//     that gate passes.
+//   * Admin verification re-validates the caller's JWT, requires two-factor
+//     sign-in (AAL2) and checks public.admin_users. The service-role client
+//     is only used AFTER that gate passes.
 //
 // Failure modes:
 //   * RESEND_API_KEY missing → returns sent_count=0, failed_count=N,
@@ -48,6 +48,7 @@ import {
   WAITLIST_STATUS_LABEL as STATUS_LABEL,
 } from '../_shared/waitlistTransitions.ts';
 import type { WaitlistStatus } from '../_shared/waitlistTransitions.ts';
+import { authorizeAdminRequest } from '../_shared/adminAuthorization.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -260,8 +261,9 @@ serve(async (req: Request) => {
 
   // ---- AuthN / AuthZ ---------------------------------------------------
   // Two callers are allowed:
-  //   1. An admin from the CMS — verified via their JWT against
-  //      public.admin_users (the user-facing path).
+  //   1. An admin from the CMS — verified via their JWT, which must carry
+  //      two-factor sign-in (AAL2), against public.admin_users (the
+  //      user-facing path).
   //   2. An internal server-to-server call from the DB status-change
   //      trigger (migration 0009 `on_waitlist_status_change`), which carries
   //      a shared secret in the `x-internal-secret` header. The secret lives
@@ -283,30 +285,9 @@ serve(async (req: Request) => {
 
   let adminUserId: string | null = null;
   if (!isInternal) {
-    const authz = req.headers.get('authorization') ?? '';
-    const token = authz.replace(/^Bearer\s+/i, '').trim();
-    if (!token) return json({ error: 'missing bearer token' }, 401);
-
-    // Validate the JWT explicitly. `getUser()` without an argument resolves
-    // the session from client-side storage — an edge function has none, so
-    // supabase-js rejects with "Auth session missing" before ever asking the
-    // auth server. Passing the token forces a real server-side check.
-    const { data: userData, error: userErr } = await admin.auth.getUser(token);
-    if (userErr || !userData?.user) {
-      return json({ error: 'unauthorized' }, 401);
-    }
-    const { data: adminRow, error: adminErr } = await admin
-      .from('admin_users')
-      .select('user_id')
-      .eq('user_id', userData.user.id)
-      .maybeSingle();
-    if (adminErr) {
-      return json({ error: 'admin lookup failed' }, 500);
-    }
-    if (!adminRow) {
-      return json({ error: 'not admin' }, 403);
-    }
-    adminUserId = userData.user.id;
+    const access = await authorizeAdminRequest(admin, req);
+    if (!access.authorized) return json({ error: access.message }, access.status);
+    adminUserId = access.userId;
   }
 
   // ---- Parse + validate body ------------------------------------------
