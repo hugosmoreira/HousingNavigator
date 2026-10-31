@@ -205,7 +205,7 @@ function AdminMfaForm({ optional, from }: { optional: boolean; from: string }) {
       </h1>
       <p className="text-sm text-on-surface-variant mb-6">
         {enrolling
-          ? 'Admin accounts can change public housing information. An authenticator app adds a second check, so a stolen password alone is not enough.'
+          ? `${optional ? '' : 'You need two-factor sign-in before you can use the admin area. '}Admin accounts can change public housing information. An authenticator app adds a second check, so a stolen password alone is not enough.`
           : 'Open your authenticator app and enter the 6-digit code for Housing Navigator.'}
       </p>
 
