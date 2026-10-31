@@ -3,8 +3,10 @@
 -- Run with `npm run verify:rls` (scripts/verifyRls.ts) after applying any
 -- migration. Simulates the `authenticated` and `anon` PostgREST roles with
 -- `set local role` + a fake JWT claim, exercises every security invariant
--- from migrations 0004-0013 and the property location grants from 0029, and
--- prints one PASS/FAIL row per check.
+-- from migrations 0004-0013, the property location grants from 0029 and the
+-- admin two-factor rule from 0030, and prints one PASS/FAIL row per check.
+-- Admin checks send an `aal` claim, because since 0030 is_admin() also
+-- requires a session that passed two-factor sign-in (aal2).
 --
 -- Self-contained: creates a throwaway auth user + two test waitlists, and
 -- deletes them at the end (cascades clean up profiles, alerts, events,
@@ -342,7 +344,7 @@ insert into public.admin_users (user_id) values ('11111111-1111-1111-1111-111111
 do $$
 declare cnt int; v text;
 begin
-  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated","aal":"aal2"}', true);
   set local role authenticated;
   select count(*) into cnt from public.waitlists_admin where id like 'test-wl-%';
   select internal_notes into v from public.waitlists_admin where id = 'test-wl-draft';
@@ -356,7 +358,7 @@ end $$;
 do $$
 declare v text; automation_ok boolean;
 begin
-  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated","aal":"aal2"}', true);
   set local role authenticated;
   select internal_notes into v
     from public.resources_admin
@@ -377,7 +379,7 @@ end $$;
 do $$
 declare cnt int;
 begin
-  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated","aal":"aal2"}', true);
   set local role authenticated;
   select count(*) into cnt
     from public.alert_send_log_admin
@@ -387,6 +389,39 @@ begin
     case when cnt = 1 then 'PASS: aggregate readable' else 'FAIL: ' || cnt || ' rows' end);
 exception when others then
   insert into results (test, outcome) values ('17c admin alert aggregate remains readable', 'FAIL: error (' || sqlerrm || ')');
+end $$;
+
+-- ---- 17d/17e. admin two-factor rule (migration 0030) ----
+-- The same admin with a password-only (aal1) session gets no admin authority,
+-- but can still read its own admin_users row so the app can send it to
+-- /admin/verify.
+do $$
+declare cnt int; flag boolean;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated","aal":"aal1"}', true);
+  set local role authenticated;
+  select public.is_admin() into flag;
+  select count(*) into cnt from public.waitlists_admin where id like 'test-wl-%';
+  reset role;
+  insert into results (test, outcome) values ('17d aal1 admin session has no admin authority',
+    case when flag is false and cnt = 0
+      then 'PASS: is_admin false, 0 admin rows'
+      else 'FAIL: is_admin=' || coalesce(flag::text, 'null') || ' rows=' || cnt || ' (is 0030 applied?)' end);
+exception when others then
+  insert into results (test, outcome) values ('17d aal1 admin session has no admin authority', 'FAIL: error (' || sqlerrm || ')');
+end $$;
+
+do $$
+declare cnt int;
+begin
+  perform set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated","aal":"aal1"}', true);
+  set local role authenticated;
+  select count(*) into cnt from public.admin_users where user_id = '11111111-1111-1111-1111-111111111111';
+  reset role;
+  insert into results (test, outcome) values ('17e aal1 admin can read own admin_users row',
+    case when cnt = 1 then 'PASS: membership visible' else 'FAIL: ' || cnt || ' rows' end);
+exception when others then
+  insert into results (test, outcome) values ('17e aal1 admin can read own admin_users row', 'FAIL: error (' || sqlerrm || ')');
 end $$;
 
 -- ---- 18. regression: public read surfaces still work ----
