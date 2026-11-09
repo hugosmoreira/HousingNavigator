@@ -459,17 +459,29 @@ export function createHousingMap(options: HousingMapOptions): HousingMap {
       id: LAYER_DOT,
       type: 'circle',
       source: SOURCE_POINTS,
+      // Listings draw over City records, and open listings over the rest, so
+      // the places a visitor can act on are never hidden under reference dots.
+      layout: {
+        'circle-sort-key': [
+          'case',
+          ['==', ['get', 'open'], true],
+          2,
+          ['==', ['get', 'kind'], 'city'],
+          0,
+          1,
+        ],
+      },
       paint: {
         'circle-radius': [
           'interpolate',
           ['linear'],
           ['zoom'],
           9,
-          radiusAt(8, 7, 2.6, 5.5),
+          radiusAt(9, 8, 2.2, 6.5),
           13,
-          radiusAt(10, 9, 4, 7),
+          radiusAt(11, 10, 3.6, 8),
           16,
-          radiusAt(12, 11, 7, 9),
+          radiusAt(12.5, 11.5, 7, 9.5),
         ],
         'circle-stroke-width': [
           'case',
@@ -495,7 +507,7 @@ export function createHousingMap(options: HousingMapOptions): HousingMap {
           'text-font': [kind === 'listing' ? 'Noto Sans Bold' : 'Noto Sans Regular'],
           'text-size':
             kind === 'listing'
-              ? ['interpolate', ['linear'], ['zoom'], 11, 11, 16, 13.5]
+              ? ['interpolate', ['linear'], ['zoom'], 9.5, 11, 16, 13.5]
               : ['interpolate', ['linear'], ['zoom'], 14, 10.5, 17, 12],
           'text-offset': [0, kind === 'listing' ? 1.3 : 1],
           'text-anchor': 'top',
@@ -506,7 +518,8 @@ export function createHousingMap(options: HousingMapOptions): HousingMap {
         paint: { 'text-halo-width': 1.6, 'text-halo-blur': 0.4 },
       });
     label(LAYER_LABEL_CITY, 'city', 14.2);
-    label(LAYER_LABEL, 'listing', 11);
+    // Listing names show from the citywide view; City names wait for street level.
+    label(LAYER_LABEL, 'listing', 9.5);
   }
 
   function setColumnScale(target: number): void {

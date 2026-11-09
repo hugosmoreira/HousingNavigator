@@ -70,6 +70,12 @@ export type ApplicationSurface =
   | 'admin'
   | 'unknown';
 
+const MAP_CITY_BUILDING_PROPERTIES = [
+  ...POSTHOG_TECHNICAL_PROPERTIES,
+  'building_id',
+  'building_name',
+] as const;
+
 let globalErrorMonitoringInitialized = false;
 
 function pickAnalyticsProperties(
@@ -93,6 +99,12 @@ export function sanitizeApplicationErrorProperties(
   source: Record<string, unknown>,
 ): Record<string, unknown> {
   return pickAnalyticsProperties(source, APPLICATION_ERROR_PROPERTIES);
+}
+
+export function sanitizeMapCityBuildingProperties(
+  source: Record<string, unknown>,
+): Record<string, unknown> {
+  return pickAnalyticsProperties(source, MAP_CITY_BUILDING_PROPERTIES);
 }
 
 export function classifyApplicationSurface(pathname: string): ApplicationSurface {
@@ -168,6 +180,8 @@ async function loadAnalytics(): Promise<PostHogClient | null> {
             properties = sanitizeAnalyticsProperties(event.properties ?? {});
           } else if (event.event === 'application_error') {
             properties = sanitizeApplicationErrorProperties(event.properties ?? {});
+          } else if (event.event === 'map_city_building_opened') {
+            properties = sanitizeMapCityBuildingProperties(event.properties ?? {});
           } else {
             return null;
           }
@@ -194,6 +208,25 @@ export function capturePublicPageView(page: PublicAnalyticsPage): void {
   void loadAnalytics()
     .then((posthog) =>
       posthog?.capture('public_page_view', { page, $geoip_disable: true }),
+    )
+    .catch(() => {
+      // Analytics must be fail-open.
+    });
+}
+
+/**
+ * Counts openings of a City-financed building's card on /map. The building
+ * is a public City record; nothing about the visitor, their search, filters
+ * or map position is sent.
+ */
+export function captureMapCityBuildingOpened(buildingId: string, buildingName: string): void {
+  void loadAnalytics()
+    .then((posthog) =>
+      posthog?.capture('map_city_building_opened', {
+        building_id: buildingId.slice(0, 40),
+        building_name: buildingName.slice(0, 120),
+        $geoip_disable: true,
+      }),
     )
     .catch(() => {
       // Analytics must be fail-open.
