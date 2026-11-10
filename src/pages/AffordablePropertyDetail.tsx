@@ -209,7 +209,7 @@ export default function AffordablePropertyDetail() {
                 )}
               </div>
               {(directionsUrl || streetView) && (
-                <p className="mt-2 text-xs text-on-surface-variant">Directions and the building view open Google Maps in a new tab.</p>
+                <p className="mt-2 text-xs text-on-surface-variant">{directionsUrl && streetView ? 'Directions and the building view open' : directionsUrl ? 'Directions open' : 'The building view opens'} Google Maps in a new tab.</p>
               )}
             </section>
           )}
