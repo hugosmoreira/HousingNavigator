@@ -4,7 +4,9 @@ import { AlertTriangle, Building2, ChevronDown, Pause, Play, SkipBack, SkipForwa
 import type { PaddingOptions } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { useAffordableProperties } from '../hooks/useAffordableProperties';
-import { affordablePropertyPath } from '../lib/entityRoutes';
+import { useWaitlists } from '../hooks/useWaitlists';
+import { captureMapCityBuildingOpened } from '../lib/analytics';
+import { affordablePropertyPath, waitlistPath } from '../lib/entityRoutes';
 import BottomSheet, { sheetHeight, type SheetSnap } from '../map/BottomSheet';
 import DataPanel from '../map/DataPanel';
 import MapCanvas, { MapErrorBoundary, type MapCanvasHandle } from '../map/MapCanvas';
@@ -91,6 +93,7 @@ export default function MapExplorer() {
   // The URL seeds the first render only; afterwards the page writes it.
   const [initialUrl] = useState(() => parseMapUrlState(searchParams));
   const { properties, error: liveError } = useAffordableProperties();
+  const { waitlists } = useWaitlists();
   const [cityFile, setCityFile] = useState<PortlandRentalPortfolioFile | null>(null);
   const [cityState, setCityState] = useState<'loading' | 'ready' | 'error'>('loading');
 
@@ -100,7 +103,11 @@ export default function MapExplorer() {
   const [webgl] = useState(supportsWebGL2);
 
   const [mode, setMode] = useState<MapMode>(initialUrl.mode);
-  const [view, setView] = useState<MapView>(initialUrl.view ?? (lowPower ? '2d' : '3d'));
+  const [view, setView] = useState<MapView>(
+    // Finding a place to live opens flat, where listings read clearly; the
+    // data view opens in 3D, where column height carries the numbers.
+    initialUrl.view ?? (initialUrl.mode === 'data' && !lowPower ? '3d' : '2d'),
+  );
   const [theme, setTheme] = useState<MapTheme>(readTheme);
   const [filters, setFilters] = useState<Filters>(initialUrl.filters);
   const [showCity, setShowCity] = useState(initialUrl.showCity);
@@ -327,6 +334,8 @@ export default function MapExplorer() {
     (item: MapItem | null, fly = true) => {
       setSelectedKey(item?.key ?? null);
       if (!item) return;
+      // Which unverified buildings visitors open tells us what to verify next.
+      if (item.kind === 'city' && item.city) captureMapCityBuildingOpened(item.city.id, item.name);
       // Open the sheet first and fly with the padding it will have, so the
       // property is not left behind the sheet's top edge.
       const { sheet: snap, containerHeight: height } = layout.current;
@@ -569,8 +578,17 @@ export default function MapExplorer() {
       <DataPanel breakdowns={breakdowns} totals={dataTotals} focus={focus} focused={focused} onFocus={selectFocus} />
     );
 
+  const selectedWaitlistId = selectedItem?.listing?.property.waitlist_id;
+  const selectedWaitlist = selectedWaitlistId ? waitlists.find((waitlist) => waitlist.id === selectedWaitlistId) : undefined;
+
   const panelBody = selectedItem ? (
-    <PropertyDetails key={selectedItem.key} item={selectedItem} citySource={citySource} onBack={() => setSelectedKey(null)} />
+    <PropertyDetails
+      key={selectedItem.key}
+      item={selectedItem}
+      citySource={citySource}
+      waitlistHref={selectedWaitlist ? waitlistPath(selectedWaitlist) : null}
+      onBack={() => setSelectedKey(null)}
+    />
   ) : mode === 'data' ? (
     dataPanel
   ) : (

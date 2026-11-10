@@ -6,6 +6,7 @@ import {
   normalizeApplicationErrorName,
   sanitizeApplicationErrorProperties,
   sanitizeAnalyticsProperties,
+  sanitizeMapCityBuildingProperties,
 } from './analytics';
 
 describe('privacy-limited analytics', () => {
@@ -27,6 +28,26 @@ describe('privacy-limited analytics', () => {
       token: 'public-project-token',
       distinct_id: 'anonymous-id',
       page: 'resources',
+    });
+  });
+
+  it('sends only the building for a City building opened on the map', () => {
+    const result = sanitizeMapCityBuildingProperties({
+      token: 'public-project-token',
+      building_id: 'R123456',
+      building_name: 'Example Apartments',
+      $current_url: 'https://housingnavigator.us/map?q=97201&cam=45.5,-122.6,14',
+      $pathname: '/map',
+      search: '97201',
+      filters: 'open',
+      camera: '45.5,-122.6',
+      email: 'person@example.test',
+    });
+
+    expect(result).toEqual({
+      token: 'public-project-token',
+      building_id: 'R123456',
+      building_name: 'Example Apartments',
     });
   });
 

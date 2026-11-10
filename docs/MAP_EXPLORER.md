@@ -12,7 +12,9 @@ while it is evaluated. Page views are counted under the analytics page name
 ## What visitors can do
 
 - Switch between a flat 2D map and a pitched 3D city view. The camera eases
-  between them, and 3D columns grow out of the ground.
+  between them, and 3D columns grow out of the ground. "Find housing" opens
+  in 2D, where listings are large named points drawn over the small City
+  dots; a link that opens "Explore the data" starts in 3D.
 - See every published Housing Navigator listing with a geocoded address
   (blue; green when the linked waitlist is open) and every City-financed
   rental building from the Portland Housing Bureau (muted). In 3D, each
@@ -21,7 +23,13 @@ while it is evaluated. Page views are counted under the analytics page name
 - Click a point, a highlighted building or a list row to fly to it and open a
   details card. Listing cards link to the existing property page and the
   official application link. City records say plainly that Housing Navigator
-  has not verified application details.
+  has not verified application details. Every card, City records included,
+  has **Get directions** (transit directions) and **See the building**
+  (Street View). Both are plain Google Maps links (`src/lib/mapLinks.ts`): no
+  key, no Google code on our pages, nothing sent until a visitor opens one. A
+  listing with a linked waitlist also has **Follow this waitlist**.
+- Reach the map from a listing's own page: **See on map** appears once the
+  listing has a pin.
 - Search by property name, street address, ZIP code, sponsor organization or
   Portland neighborhood. "Show all matches" filters the map to the search.
 - Filter by unit size, income limit (AMI), property type and "accepting
@@ -61,6 +69,14 @@ Privacy and naming rules (enforced in `scripts/syncPortlandRentalPortfolio.ts`):
 - Aliases in that file merge only spellings of the same organization (for
   example "REACH CDC" and "Reach CDC").
 - Loan borrower names are not copied at all.
+
+### What is counted
+
+Opening a City-financed building's card (from the map, the list or search)
+sends one analytics event, `map_city_building_opened`, with the City's record
+id and building name and nothing else, so the most-opened unverified buildings
+can be verified first. Tour stops and shared links are not counted. The
+privacy page says so.
 
 ## Data
 

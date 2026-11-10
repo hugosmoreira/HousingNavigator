@@ -5,8 +5,11 @@ import {
   Building2,
   CalendarCheck,
   CheckCircle2,
+  Bus,
+  Eye,
   HelpCircle,
   Lock,
+  Map as MapIcon,
   MapPin,
   MinusCircle,
   Phone,
@@ -26,9 +29,11 @@ import {
 import { useAffordableProperties } from '../hooks/useAffordableProperties';
 import { useWaitlists } from '../hooks/useWaitlists';
 import {
+  affordablePropertySlug,
   findAffordablePropertyBySlug,
   waitlistPath,
 } from '../lib/entityRoutes';
+import { streetViewUrl, transitDirectionsUrl } from '../lib/mapLinks';
 import type { WaitlistStatus } from '../types';
 import NotFound from './NotFound';
 
@@ -74,6 +79,20 @@ export default function AffordablePropertyDetail() {
   const mapUrl = property.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
     : null;
+  const place = {
+    address: property.address ? address : null,
+    latitude: property.latitude,
+    longitude: property.longitude,
+  };
+  const directionsUrl = transitDirectionsUrl(place);
+  const streetView = streetViewUrl(place);
+  // /map only places listings that have a pin, so the link appears with one.
+  const onMapPath =
+    property.latitude !== undefined && property.longitude !== undefined
+      ? `/map?property=${encodeURIComponent(affordablePropertySlug(property))}`
+      : null;
+  const locationLink =
+    'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-surface-container-highest px-3 py-2 text-sm font-semibold text-on-surface hover:border-primary/40';
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-surface">
@@ -169,6 +188,31 @@ export default function AffordablePropertyDetail() {
             {(property.management_company || property.owner_organization) && <p className="flex items-start gap-3 text-on-surface-variant"><Building2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> Managed by {property.management_company || property.owner_organization}</p>}
             <p className="flex items-start gap-3 text-on-surface-variant"><CalendarCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> {verified ? `Property verified ${verified}` : 'Verification pending'}</p>
           </div>
+
+          {(onMapPath || directionsUrl || streetView) && (
+            <section aria-label="Getting there" className="mt-5">
+              <div className="flex flex-wrap gap-2">
+                {onMapPath && (
+                  <Link to={onMapPath} className={locationLink}>
+                    <MapIcon className="h-4 w-4 text-primary" aria-hidden="true" /> See on map
+                  </Link>
+                )}
+                {directionsUrl && (
+                  <a href={directionsUrl} target="_blank" rel="noreferrer noopener" className={locationLink}>
+                    <Bus className="h-4 w-4 text-primary" aria-hidden="true" /> Get directions
+                  </a>
+                )}
+                {streetView && (
+                  <a href={streetView} target="_blank" rel="noreferrer noopener" className={locationLink}>
+                    <Eye className="h-4 w-4 text-primary" aria-hidden="true" /> See the building
+                  </a>
+                )}
+              </div>
+              {(directionsUrl || streetView) && (
+                <p className="mt-2 text-xs text-on-surface-variant">{directionsUrl && streetView ? 'Directions and the building view open' : directionsUrl ? 'Directions open' : 'The building view opens'} Google Maps in a new tab.</p>
+              )}
+            </section>
+          )}
 
           {applicationUrl && (
             <a href={applicationUrl} target="_blank" rel="noreferrer noopener" className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary hover:bg-primary-dim">

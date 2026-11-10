@@ -2,9 +2,12 @@ import {
   ArrowLeft,
   ArrowUpRight,
   BedDouble,
+  Bell,
   Building2,
+  Bus,
   CalendarCheck,
   CheckCircle2,
+  Eye,
   HandHeart,
   Info,
   Landmark,
@@ -15,6 +18,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AFFORDABLE_PROPERTY_TYPE_LABELS, BEDROOM_LABELS } from '../data/affordableHousing';
 import { affordablePropertyPath } from '../lib/entityRoutes';
+import { streetViewUrl, transitDirectionsUrl } from '../lib/mapLinks';
 import { phoneHref } from '../lib/phoneLinks';
 import { OUTSIDE_NEIGHBORHOODS, type MapItem } from './mapData';
 import { amiSummary } from './regulatedHousing';
@@ -43,10 +47,13 @@ function Fact({ icon: Icon, children }: { icon: typeof MapPin; children: ReactNo
 export default function PropertyDetails({
   item,
   citySource,
+  waitlistHref = null,
   onBack,
 }: {
   item: MapItem;
   citySource: CitySourceInfo | null;
+  /** Page of the waitlist linked to this listing, where a visitor can follow it. */
+  waitlistHref?: string | null;
   onBack: () => void;
 }) {
   const property = item.listing?.property;
@@ -55,6 +62,19 @@ export default function PropertyDetails({
   const homes = property ? property.total_units : city?.total_units;
   const applyUrl = property?.waitlist_application_link || property?.application_url;
   const phone = property?.phone ? phoneHref(property.phone) : null;
+  // A listing publishes its full address. City records carry a street line
+  // only, so their links use the point itself.
+  const place = {
+    address: property?.address
+      ? [property.address, property.city, property.state, property.postal_code].filter(Boolean).join(', ')
+      : null,
+    latitude: item.lat,
+    longitude: item.lng,
+  };
+  const directionsUrl = transitDirectionsUrl(place);
+  const streetView = streetViewUrl(place);
+  const outlineButton =
+    'inline-flex items-center gap-1.5 rounded-full border border-surface-container-highest px-4 py-2.5 text-sm font-semibold text-on-surface hover:border-primary/40';
 
   return (
     <article aria-labelledby="map-detail-title" className="hn-map-rise space-y-5">
@@ -169,7 +189,30 @@ export default function PropertyDetails({
               <Phone className="h-4 w-4" aria-hidden="true" /> {property.phone}
             </a>
           )}
+          {waitlistHref && (
+            <Link to={waitlistHref} className={outlineButton}>
+              <Bell className="h-4 w-4 text-primary" aria-hidden="true" /> Follow this waitlist
+            </Link>
+          )}
         </div>
+      )}
+
+      {(directionsUrl || streetView) && (
+        <section aria-label="Getting there">
+          <div className="flex flex-wrap gap-2">
+            {directionsUrl && (
+              <a href={directionsUrl} target="_blank" rel="noreferrer noopener" className={outlineButton}>
+                <Bus className="h-4 w-4 text-primary" aria-hidden="true" /> Get directions
+              </a>
+            )}
+            {streetView && (
+              <a href={streetView} target="_blank" rel="noreferrer noopener" className={outlineButton}>
+                <Eye className="h-4 w-4 text-primary" aria-hidden="true" /> See the building
+              </a>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-on-surface-variant">Both open Google Maps in a new tab.</p>
+        </section>
       )}
 
       {property && city && (

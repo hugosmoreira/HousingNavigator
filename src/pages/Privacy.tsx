@@ -53,7 +53,10 @@ export default function Privacy() {
             We use PostHog in cookieless mode to count visits to a short list of
             public pages. Page-view events do not include full URLs, search
             terms, form values, or resource or waitlist selections, and are not
-            sent from account, dashboard, or admin pages. Automatic click
+            sent from account, dashboard, or admin pages. On the map, we also
+            count how often each City-financed building is opened — the
+            building only, never your search, filters, or map position — so
+            we know which buildings to verify next. Automatic click
             tracking, user profiles, session replay, heatmaps, and vendor error
             capture are disabled. If the app crashes, we send only a coarse
             error category and page group — never the error message, stack
