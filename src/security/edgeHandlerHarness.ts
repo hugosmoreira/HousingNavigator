@@ -33,6 +33,12 @@ export function fakeDatabase(initial: Record<string, Row[]> = {}) {
         data: { user: { id: 'admin-1' } as { id: string } | null },
         error: null as { message: string } | null,
       })),
+      // A session that passed two-factor sign-in, unless a test says otherwise.
+      getClaims: vi.fn(async (_token: string) => ({
+        data: { claims: { sub: 'admin-1', aal: 'aal2' as unknown } } as
+          { claims: { sub?: string; aal?: unknown } } | null,
+        error: null as { message: string } | null,
+      })),
     },
     rpc: vi.fn(async (name: string, _args: Row) => {
       if (!rpcResults[name]) throw new Error(`Unexpected fake RPC: ${name}`);
@@ -118,6 +124,18 @@ type HarnessOptions = {
   resolveDns?: (hostname: string, type: 'A' | 'AAAA') => Promise<string[]>;
 };
 
+/** Functions an administrator calls from the browser with their own JWT. */
+export const ADMIN_EDGE_FUNCTIONS = [
+  'admin-users',
+  'check-resource-sources',
+  'check-waitlist-status',
+  'curate-resources',
+  'geocode-address',
+  'send-waitlist-alert',
+] as const;
+
+type EdgeFunctionName = (typeof ADMIN_EDGE_FUNCTIONS)[number] | 'unsubscribe-alerts';
+
 const functionsRoot = fileURLToPath(new URL('../../supabase/functions/', import.meta.url));
 const transpiled = new Map<string, { source: string; output: string }>();
 
@@ -128,7 +146,7 @@ const transpiled = new Map<string, { source: string; output: string }>();
  * This is a deterministic Deno API adapter, not a security sandbox for hostile code.
  */
 export function loadEdgeHandler(
-  name: 'check-waitlist-status' | 'send-waitlist-alert' | 'unsubscribe-alerts',
+  name: EdgeFunctionName,
   options: HarnessOptions = {},
 ) {
   const database = options.database ?? fakeDatabase();
@@ -152,15 +170,20 @@ export function loadEdgeHandler(
   };
   let uuidCount = 0;
   const randomUUID = vi.fn(() => `00000000-0000-4000-8000-${String(++uuidCount).padStart(12, '0')}`);
+  let handler: ((request: Request) => Promise<Response>) | undefined;
   const context = vm.createContext({
     Request, Response, Headers, URL, URLSearchParams, TextEncoder, TextDecoder,
     ReadableStream, AbortController, setTimeout, clearTimeout,
     fetch: fetchSpy,
     crypto: { subtle: webcrypto.subtle, randomUUID },
     console: { log: vi.fn(), warn: vi.fn(), error: vi.fn() },
-    Deno: { env: { get: (key: string) => env[key] }, resolveDns },
+    // Newer functions register with Deno.serve instead of the std serve().
+    Deno: {
+      env: { get: (key: string) => env[key] },
+      resolveDns,
+      serve: (callback: typeof handler) => { handler = callback; },
+    },
   });
-  let handler: ((request: Request) => Promise<Response>) | undefined;
   const modules = new Map<string, { exports: Record<string, unknown> }>();
   const load = (filename: string): Record<string, unknown> => {
     const cached = modules.get(filename);

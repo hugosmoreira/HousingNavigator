@@ -17,6 +17,7 @@ describe('release-check configuration', () => {
       'node scripts/testResourcePublicationDatabase.mjs',
       'node scripts/testWaitlistSecurityDatabase.mjs',
       'node scripts/testAffordablePropertyLocationsDatabase.mjs',
+      'node scripts/testAdminMfaDatabase.mjs',
     ]);
   });
 
@@ -46,6 +47,7 @@ describe('release-check configuration', () => {
       'testResourcePublicationDatabase.mjs',
       'testWaitlistSecurityDatabase.mjs',
       'testAffordablePropertyLocationsDatabase.mjs',
+      'testAdminMfaDatabase.mjs',
     ]) {
       const source = read('scripts/' + file);
       expect(source).toContain("from '@electric-sql/pglite'");

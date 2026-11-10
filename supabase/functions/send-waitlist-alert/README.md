@@ -79,8 +79,8 @@ dev path.
 | Layer | Guarantee |
 |---|---|
 | Frontend bundle | Has the anon key only. Cannot call Resend directly. Cannot insert into `notification_events`. |
-| Edge Function — AuthN | Constant-time internal-secret comparison, or `auth.getUser(token)` with explicit JWT validation. |
-| Edge Function — AuthZ | Looks up the caller in `public.admin_users` via the service-role client. Rejects 403 for non-admins. |
+| Edge Function — AuthN | Constant-time internal-secret comparison, or `auth.getUser(token)` with explicit JWT validation (shared `_shared/adminAuthorization.ts`). |
+| Edge Function — AuthZ | Requires two-factor sign-in (`aal2` in the verified claims), then looks up the caller in `public.admin_users` via the service-role client. Rejects 403 otherwise. |
 | Subscriber data | Loaded with the service-role client AFTER the internal/admin gate. Subscribers' RLS is preserved for every other caller. |
 | Master opt-out | `profiles.email_notifications_enabled = false` → recipient skipped. |
 | Per-alert prefs | `notify_on_open` and `notify_on_status_change` honored. |
@@ -121,5 +121,6 @@ Resend not configured:
 { "subscriber_count": 12, "sent_count": 0, "failed_count": 12, "reason": "resend_not_configured" }
 ```
 
-Errors: `400 transition not eligible`, `401 missing bearer`,
-`403 not admin`, `404 waitlist not found`.
+Errors: `400 transition not eligible`, `401 sign in required`,
+`403 two-factor sign-in required`, `403 admin access required`,
+`404 waitlist not found`, `503 admin access could not be checked`.

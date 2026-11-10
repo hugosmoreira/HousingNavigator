@@ -2,11 +2,12 @@
 //
 // Auth user administration must never run in the browser because the Auth
 // Admin API requires the service-role key. This function validates the caller's
-// JWT, confirms membership in public.admin_users, then exposes a deliberately
-// small action surface for the Housing Navigator admin dashboard.
+// JWT, requires two-factor sign-in (AAL2), confirms membership in
+// public.admin_users, then exposes a deliberately small action surface for the
+// Housing Navigator admin dashboard.
 //
-// Deploy with JWT verification disabled because the function explicitly calls
-// auth.getUser(token) before authorizing any operation:
+// Deploy with JWT verification disabled because the function explicitly
+// authorizes the token (authorizeAdminRequest) before any operation:
 //   supabase functions deploy admin-users --no-verify-jwt
 
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
@@ -24,6 +25,7 @@ import {
   validAdminEmail,
   validAdminUserId,
 } from '../_shared/adminUserManagement.ts';
+import { authorizeAdminRequest } from '../_shared/adminAuthorization.ts';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -79,19 +81,9 @@ serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
 
-  const token = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) return json({ error: 'missing bearer token' }, 401);
-  const { data: userData, error: userError } = await admin.auth.getUser(token);
-  if (userError || !userData?.user) return json({ error: 'unauthorized' }, 401);
-
-  const actorId = userData.user.id;
-  const { data: actorAdmin, error: actorError } = await admin
-    .from('admin_users')
-    .select('user_id')
-    .eq('user_id', actorId)
-    .maybeSingle();
-  if (actorError) return json({ error: 'admin authorization lookup failed' }, 500);
-  if (!actorAdmin) return json({ error: 'not admin' }, 403);
+  const access = await authorizeAdminRequest(admin, req);
+  if (!access.authorized) return json({ error: access.message }, access.status);
+  const actorId = access.userId;
 
   let body: RequestBody;
   try {

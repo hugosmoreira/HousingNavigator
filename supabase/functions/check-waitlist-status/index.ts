@@ -24,8 +24,9 @@
 //
 // Security:
 //   * Two callers: the DB cron function (x-internal-secret, compared in
-//     constant time) or an admin JWT re-validated against admin_users.
-//     Deployed with --no-verify-jwt, so this block is the only gate.
+//     constant time) or an admin JWT with two-factor sign-in (AAL2),
+//     re-validated against admin_users. Deployed with --no-verify-jwt, so
+//     this block is the only gate.
 //   * The classifier only ever reads PUBLIC web pages the admin already
 //     entered as source_url; nothing user-generated reaches the model.
 //
@@ -53,6 +54,7 @@ import Anthropic from 'npm:@anthropic-ai/sdk';
 // @ts-expect-error — Deno std http
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import type { WaitlistStatus } from '../_shared/waitlistTransitions.ts';
+import { authorizeAdminRequest } from '../_shared/adminAuthorization.ts';
 import {
   buildAdminNudgePayloads,
   fetchPublicHttpText,
@@ -526,25 +528,8 @@ serve(async (req: Request) => {
     (await timingSafeEqual(headerSecret, INTERNAL_TRIGGER_SECRET));
 
   if (!isInternal) {
-    const authz = req.headers.get('authorization') ?? '';
-    const token = authz.replace(/^Bearer\s+/i, '').trim();
-    if (!token) return json({ error: 'missing bearer token' }, 401);
-
-    // Validate the JWT explicitly. `getUser()` without an argument resolves
-    // the session from client-side storage — an edge function has none, so
-    // supabase-js rejects with "Auth session missing" before ever asking the
-    // auth server. Passing the token forces a real server-side check.
-    const { data: userData, error: userErr } = await admin.auth.getUser(token);
-    if (userErr || !userData?.user) {
-      return json({ error: 'unauthorized' }, 401);
-    }
-    const { data: adminRow, error: adminErr } = await admin
-      .from('admin_users')
-      .select('user_id')
-      .eq('user_id', userData.user.id)
-      .maybeSingle();
-    if (adminErr) return json({ error: 'admin lookup failed' }, 500);
-    if (!adminRow) return json({ error: 'not admin' }, 403);
+    const access = await authorizeAdminRequest(admin, req);
+    if (!access.authorized) return json({ error: access.message }, access.status);
   }
 
   // ---- Pick the work ------------------------------------------------------

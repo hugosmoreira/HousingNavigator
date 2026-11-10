@@ -132,13 +132,11 @@ describe('geocode-address function', () => {
   const source = read('supabase/functions/geocode-address/index.ts');
 
   it('checks the caller is an administrator before reading the request', () => {
-    const getUser = source.indexOf('admin.auth.getUser(token)');
-    const membership = source.indexOf(".from('admin_users')");
-    const forbidden = source.indexOf("'Admin access required.' }, 403");
+    const authorize = source.indexOf('await authorizeAdminRequest(admin, request)');
+    const forbidden = source.indexOf('if (!access.authorized) return json(');
     const body = source.indexOf('request.json()');
-    expect(getUser).toBeGreaterThan(0);
-    expect(membership).toBeGreaterThan(getUser);
-    expect(forbidden).toBeGreaterThan(membership);
+    expect(authorize).toBeGreaterThan(0);
+    expect(forbidden).toBeGreaterThan(authorize);
     expect(body).toBeGreaterThan(forbidden);
   });
 

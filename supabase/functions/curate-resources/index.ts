@@ -12,7 +12,8 @@
 //   * every attempt and every applied field is recorded in the audit tables.
 //
 // Deploy with JWT verification disabled because this function performs its own
-// explicit admin JWT validation (the same pattern as the waitlist checker):
+// explicit admin JWT and two-factor validation (the same pattern as the
+// waitlist checker):
 //   supabase functions deploy curate-resources --no-verify-jwt
 
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
@@ -24,6 +25,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk';
 // @ts-expect-error — Deno std http
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { authorizeAdminRequest } from '../_shared/adminAuthorization.ts';
 import { fetchPublicHttpText } from '../_shared/checkerSecurity.ts';
 import {
   buildResourceCurationPlan,
@@ -411,18 +413,8 @@ serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const authz = req.headers.get('authorization') ?? '';
-  const token = authz.replace(/^Bearer\s+/i, '').trim();
-  if (!token) return json({ error: 'missing bearer token' }, 401);
-  const { data: userData, error: userError } = await admin.auth.getUser(token);
-  if (userError || !userData?.user) return json({ error: 'unauthorized' }, 401);
-  const { data: adminRow, error: adminError } = await admin
-    .from('admin_users')
-    .select('user_id')
-    .eq('user_id', userData.user.id)
-    .maybeSingle();
-  if (adminError) return json({ error: 'admin lookup failed' }, 500);
-  if (!adminRow) return json({ error: 'not admin' }, 403);
+  const access = await authorizeAdminRequest(admin, req);
+  if (!access.authorized) return json({ error: access.message }, access.status);
 
   let body: { run_id?: string; batch_size?: number } = {};
   try {
@@ -468,7 +460,7 @@ serve(async (req: Request) => {
       .insert({
         target_resource_ids: targetIds,
         target_count: targetIds.length,
-        created_by: userData.user.id,
+        created_by: access.userId,
         status: targetIds.length === 0 ? 'completed' : 'running',
         finished_at: targetIds.length === 0 ? new Date().toISOString() : null,
       })

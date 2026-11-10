@@ -61,33 +61,45 @@ describe('readAssurance', () => {
   });
 });
 
-describe('decideAdminAccess (rollout stage 1)', () => {
-  const aal1 = { currentLevel: 'aal1', nextLevel: 'aal1' } as const;
-  const aal1Enrolled = { currentLevel: 'aal1', nextLevel: 'aal2' } as const;
-  const aal2 = { currentLevel: 'aal2', nextLevel: 'aal2' } as const;
+const aal1 = { currentLevel: 'aal1', nextLevel: 'aal1' } as const;
+const aal1Enrolled = { currentLevel: 'aal1', nextLevel: 'aal2' } as const;
+const aal2 = { currentLevel: 'aal2', nextLevel: 'aal2' } as const;
 
-  it('does not yet require MFA in this release', () => {
-    expect(REQUIRE_ADMIN_MFA).toBe(false);
+describe('decideAdminAccess (rollout stage 2, this release)', () => {
+  it('requires MFA for admins in this release', () => {
+    expect(REQUIRE_ADMIN_MFA).toBe(true);
   });
 
-  it('lets a member without an authenticator in, and invites setup', () => {
-    expect(decideAdminAccess(true, aal1)).toEqual({
-      isAdmin: true,
+  it('sends a member without an authenticator to set one up instead of letting them in', () => {
+    const access = decideAdminAccess(true, aal1);
+    expect(access).toEqual({
+      isAdmin: false,
       mfaEnrolled: false,
       mfaVerified: false,
+      needsMfaVerification: true,
+    });
+    // RequireAdmin sends them to /admin/verify, which offers setup: not a lockout.
+    expect(adminRouteFor({ loading: false, hasSession: true, isAdminMember: true, ...access })).toBe('verify');
+    expect(
+      mfaPageFor({ loading: false, hasSession: true, isAdminMember: true, adminCheckFailed: false, ...access }),
+    ).toBe('enroll');
+  });
+
+  it('asks an enrolled member for the code, and lets an AAL2 session in', () => {
+    expect(decideAdminAccess(true, aal1Enrolled)).toMatchObject({
+      isAdmin: false,
+      mfaEnrolled: true,
+      needsMfaVerification: true,
+    });
+    expect(decideAdminAccess(true, aal2)).toEqual({
+      isAdmin: true,
+      mfaEnrolled: true,
+      mfaVerified: true,
       needsMfaVerification: false,
     });
   });
 
-  it('requires the code once the member has a verified authenticator', () => {
-    expect(decideAdminAccess(true, aal1Enrolled)).toMatchObject({
-      isAdmin: false,
-      needsMfaVerification: true,
-    });
-    expect(decideAdminAccess(true, aal2)).toMatchObject({ isAdmin: true, mfaVerified: true });
-  });
-
-  it('never grants access to a non-member', () => {
+  it('never grants access to a non-member, even with AAL2', () => {
     for (const assurance of [aal1, aal1Enrolled, aal2]) {
       expect(decideAdminAccess(false, assurance)).toMatchObject({
         isAdmin: false,
@@ -96,12 +108,27 @@ describe('decideAdminAccess (rollout stage 1)', () => {
     }
   });
 
-  it('requires AAL2 for everyone once enforcement is switched on (stage 2)', () => {
-    expect(decideAdminAccess(true, aal1, true)).toMatchObject({
+  it('keeps a signed-out tab out', () => {
+    expect(decideAdminAccess(true, readAssurance(null)).isAdmin).toBe(false);
+  });
+});
+
+describe('decideAdminAccess with enforcement off (stage 1 rollback)', () => {
+  it('lets a member without an authenticator in, and invites setup', () => {
+    expect(decideAdminAccess(true, aal1, false)).toEqual({
+      isAdmin: true,
+      mfaEnrolled: false,
+      mfaVerified: false,
+      needsMfaVerification: false,
+    });
+  });
+
+  it('still requires the code once the member has a verified authenticator', () => {
+    expect(decideAdminAccess(true, aal1Enrolled, false)).toMatchObject({
       isAdmin: false,
       needsMfaVerification: true,
     });
-    expect(decideAdminAccess(true, aal2, true).isAdmin).toBe(true);
+    expect(decideAdminAccess(true, aal2, false)).toMatchObject({ isAdmin: true, mfaVerified: true });
   });
 });
 

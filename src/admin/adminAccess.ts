@@ -4,17 +4,20 @@
  * Pure functions only, so the rules are unit tested without rendering
  * AdminAuthContext, RequireAdmin or AdminMfa.
  *
- * Rollout stage 1 (this file, REQUIRE_ADMIN_MFA = false): an admin without
- * a verified authenticator still gets in with a password and is invited to
- * set one up. Once a verified factor exists, a password-only (AAL1) session
- * must enter the code first. Stage 2 flips REQUIRE_ADMIN_MFA together with
- * the database migration that makes `is_admin()` require AAL2, after every
- * admin has enrolled.
+ * Rollout stage 2 (REQUIRE_ADMIN_MFA = true): every admin page needs an
+ * AAL2 session. A member who has not set up an authenticator yet is sent to
+ * /admin/verify to enroll, not locked out; a member who has one enters the
+ * code. The server enforces the same rule: migration 0030 makes
+ * `is_admin()` require AAL2, and the admin Edge Functions check it in
+ * supabase/functions/_shared/adminAuthorization.ts.
+ *
+ * Stage 1 (false) let a member without a verified factor in on a password
+ * alone and only invited setup.
  */
 
 import type { Session } from '@supabase/supabase-js';
 
-export const REQUIRE_ADMIN_MFA = false;
+export const REQUIRE_ADMIN_MFA = true;
 
 export type AssuranceLevel = 'aal1' | 'aal2' | null;
 

@@ -129,6 +129,20 @@ Policies live in `migrations/0002_admin_catalog.sql`:
 `is_admin()` is a `security definer` helper used by every admin policy
 so RLS checks against `admin_users` cannot recurse.
 
+## Admin two-factor sign-in (migration 0030)
+
+Since `0030_admin_mfa_required.sql`, `is_admin()` is true only when the
+caller is in `admin_users` **and** the session passed two-factor sign-in
+(the JWT `aal` claim is `aal2`). A password-only admin session sees what a
+signed-in visitor sees. The admin Edge Functions apply the same rule through
+`functions/_shared/adminAuthorization.ts`, and the admin pages send an admin
+without a code to `/admin/verify` to set up an authenticator app or enter
+its code. `admin_users_self_read` still works without a code, so the app can
+tell a member apart from a visitor.
+
+Apply 0030 only after every admin has a verified authenticator. To undo it,
+run `rollback/0030_admin_mfa_required_rollback.sql` by hand.
+
 ## Statewide resource service areas
 
 Migration `0019_resource_service_areas.sql` adds normalized, multi-county
